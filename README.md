@@ -3,10 +3,11 @@
 Welcome to the TCHS Aero's main drone team repository! This project contains the core code, resources, and documentation for our team’s participation in SUAS (Small Unmanned Aerial Systems) competitions.
 
 ## Table of contents:
+
 | Categories    | What's shown?|
 | ------------- |:-------------:|
 | [Setup](#quickstart) | Setup/Installation instructions. |
-| [How does SITL work?](#howdoesitwork) | Explains how the PX4 drone simulation communicates with the python scripts. |
+| [How does SITL work?](#howdoesitwork) | Explains how the PX4 Software In The Loop Works |
 | [Used Packages](#pkgs) | All packages used in this repo. |
 
 <a name="quickstart">
@@ -43,22 +44,7 @@ Setting up the individual scripts is simple.
     ```bash
     python -m pip install mavsdk
     ```
-
-#### Please note: 
-When using an operating system such as Arch Linux, install your pip packages through a virtual environment. Virtual environments must be initiated to use their installed pip packages. Virtual enviroments can be created, initiated, and deactivated with three simple commands. 
-
-* Creation
-    ```bash
-    python -m venv <your_venv_name>
-    ```
-* Initiation
-    ```bash
-    source <your_venv_name>/bin/activate
-    ```
-* Deactivation
-    ```bash
-    deactivate
-    ```
+>When using an operating system such as Arch Linux, install your pip packages through a [virtual environment](https://docs.python.org/3/tutorial/venv.html). Virtual environments must be initiated to use their installed pip packages.
 
 ### Simulation
 
