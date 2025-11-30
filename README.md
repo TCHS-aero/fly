@@ -66,7 +66,7 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
     </details>
     <details>
     <summary>MacOS</summary>
-    <pre>bash Tools/setup/macos.sh</pre>
+    <pre>bash Tools/setup/macos.sh --sim-tools</pre>
     </details>
 
 3. Make PX4 SITL (Software In The Loop) and JMavSim
