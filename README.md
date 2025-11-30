@@ -19,36 +19,63 @@ Welcome to the TCHS Aero's main drone team repository! This project contains the
 Setting up the individual scripts is simple.
 
 1. Install git.
+    
     <details>
-    <summary>Arch Linux</summary>
-    <pre>sudo pacman -Sy git</pre>
+      <summary>Arch Linux</summary>
+        
+      1. Install using pacman. Sudo is required.
+
+            ```bash
+            sudo pacman -Sy git
+            ```
+
     </details>
+
     <details>
-    <summary>Debain/Ubuntu Linux</summary>
-    <pre>sudo apt install git</pre>
+      <summary>Debian/Ubuntu</summary>
+        
+      1. Install using the apt package manager. Sudo is required.
+
+            ```bash
+            sudo apt install git
+            ```
+
     </details>
+
     <details>
-    <summary>MacOS</summary>
-    1a. Make sure you have brew installed. If not, install it.
-    <pre>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</pre>
-    1b. Install git.
-    <pre>brew install git</pre>
+      <summary>MacOS</summary>
+        
+      1. Make sure you have brew installed. If not, install it.
+
+            ```bash
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            ```
+    
+      2. Install git.
+
+            ```bash
+            brew install git
+            ```
+
     </details>
+
 
 2. Clone this repository.
     ```bash
-    git clone https://github.com/TCHS-aero/fly/ && cd fly
+    git clone https://github.com/TCHS-aero/fly/; cd fly
     ```
 
 3. Install mavsdk using pip.
     ```bash
     python -m pip install mavsdk
     ```
->When using an operating system such as Arch Linux, install your pip packages through a [virtual environment](https://docs.python.org/3/tutorial/venv.html). Virtual environments must be initiated to use their installed pip packages.
+
+> [!CAUTION]
+> When using an operating system such as Arch Linux, install your pip packages through a [virtual environment](https://docs.python.org/3/tutorial/venv.html) to avoid system-wide python conflicts. While rare, it does happen because Arch uses python for some of it's core scripts. Virtual environments must be initiated to use their installed pip packages.
 
 ### Simulation
 
-This repository uses PX4 and MAVSDK-python to connect to the drone. In order to use these scripts in a simulation, you must first install the neccessary software. There are multiple simulators we can choose from, but for this project we use JMavSim, a drone simulator built in Java.
+This repository uses PX4 and MAVSDK-python to connect to the drone. In order to use these scripts in a simulation, you must first install the neccessary software. There are multiple simulators we can choose from, but for this project we use JMavSim, a drone simulator built in Java. JMabSim comes with plenty of keyboard bindings for altering things such as the weather conditions, as documented [here](https://github.com/PX4/jMAVSim).
 
 1. Clone the PX4-Autopilot repository.
     ```bash
@@ -56,20 +83,45 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
     ```
 
 2. Execute the setup script for your operating system. This should automatically install all required dependencies.
+   
     <details>
-    <summary>Arch Linux</summary>
-    <pre>bash Tools/setup/arch.sh</pre>
+      <summary>Arch Linux</summary>
+
+      1. This script installs applications through pacman, meaning you need **sudo** privilages.
+
+            ```bash
+            bash Tools/setup/arch.sh
+            ```
+
     </details>
+    
     <details>
-    <summary>Debain/Ubuntu Linux</summary>
-    <pre>bash Tools/setup/ubuntu.sh</pre>
+      <summary>Debain/Ubuntu Linux</summary>
+      
+      1. This script installs applications through apt, meaning you need **sudo** privilages.
+
+            ```bash
+            bash Tools/setup/ubuntu.sh
+            ```
+
     </details>
+    
     <details>
-    <summary>MacOS</summary>
-    <pre>bash Tools/setup/macos.sh --sim-tools</pre>
+      <summary>MacOS</summary>
+      
+      1. The `--sim-tools` flag must be specified when using the MacOS setup script.
+
+            ```bash
+            bash Tools/setup/macos.sh --sim-tools
+            ```
+
     </details>
 
-3. Make PX4 SITL (Software In The Loop) and JMavSim
+> [!IMPORTANT]
+> This script also installs python packages through pip. It will use the system-wide version of python if you do not have a virtual environment enabled. If you have a virtual environment running in the same shell as you run this script, it will use the virtual environment instead. This may be preferred for some arch users.
+
+4. Make PX4 SITL (Software In The Loop) and JMavSim
+   
     ```bash
     make px4_sitl jmavsim
     ```
