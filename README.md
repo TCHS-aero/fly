@@ -6,8 +6,8 @@ Welcome to the TCHS Aero's main drone team repository! This project contains the
 | Categories    | What's shown?|
 | ------------- |:-------------:|
 | [Setup](#quickstart) | Setup/Installation instructions. |
-| [Used Packages](#pkgs) | All packages used in this repo. |
 | [How does SITL work?](#howdoesitwork) | Explains how the PX4 drone simulation communicates with the python scripts. |
+| [Used Packages](#pkgs) | All packages used in this repo. |
 
 <a name="quickstart">
 
@@ -89,7 +89,7 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
     ```
 You may also want to use your simulation alongside an application such as QGroundControl. All you have to do is run it, and it will automatically connect.
 
-<a name="quickstart">
+<a name="howdoesitwork">
 
 ### How does SITL work?
 
