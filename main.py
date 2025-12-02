@@ -18,14 +18,14 @@ async def main():
 
     # get_yaw = asyncio.create_task(get_yaw(drone))
 
-    print("Waiting for drone to connect...")
+    print("-- Waiting for drone to connect...")
     # checks to see if drone is connected and has a stable connection
     async for state in drone.core.connection_state():
         if state.is_connected:
-            print("Drone discovered!")
+            print("-- Drone discovered!")
             break
 
-    print("Waiting for drone to have a global position estimate...")
+    print("-- Waiting for drone to have a global position estimate...")
     # checks to see if position is calibrated and stable
     async for health in drone.telemetry.health():
         if health.is_global_position_ok and health.is_home_position_ok:
@@ -53,21 +53,21 @@ async def main():
         await drone.action.disarm()
         return
 
-    print("-- Taking Off")
-    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, -3, 0.0))
-
     # finds yaw of the drone
     # asyncio.ensure_future(get_yaw(drone))
     # asyncio.ensure_future(get_position(drone))
 
-    await asyncio.sleep(15)
+    print("-- Taking Off")
+    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0, -3, 0))
 
+    await asyncio.sleep(15)
     await drone.offboard.set_position_ned(PositionNedYaw(0.0, 10.0, -3, 180.0))
     await asyncio.sleep(5)
     await drone.offboard.set_position_ned(PositionNedYaw(5.0, 10.0, -3, 90.0))
     await asyncio.sleep(10)
-    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, 0.0, 0.0))
+    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, -3, 0.0))
     await asyncio.sleep(10)
+    await drone.offboard.stop()
     await drone.action.land()
 
 
