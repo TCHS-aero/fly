@@ -1,8 +1,8 @@
-# imports
 import asyncio  # asyncio module for threading
 import math
 
 from mavsdk import System  # importing system class from mavsdk liibbrary
+from mavsdk.offboard import OffboardError, PositionNedYaw
 
 
 async def main():
@@ -13,7 +13,7 @@ async def main():
 
     drone = System()
     await drone.connect(
-        system_address="udp://:14540"
+        system_address="udpin://0.0.0.0:14540"
     )  # connects script to udp port to communicate with physical drone
 
     # get_yaw = asyncio.create_task(get_yaw(drone))
@@ -28,23 +28,46 @@ async def main():
     print("Waiting for drone to have a global position estimate...")
     # checks to see if position is calibrated and stable
     async for health in drone.telemetry.health():
-        if health.is_global_position_ok:
-            print("Global position estimate ok")
+        if health.is_global_position_ok and health.is_home_position_ok:
+            print("-- Global position estimate OK")
             break
 
     print("-- Arming")
-    await drone.action.arm()
+    try:
+        await drone.action.arm()
+    except Exception as e:
+        print(e)
+
+    print("-- Setting initial setpoint")
+    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, 0.0, 0.0))
+
+    print("-- Starting offboard")
+    try:
+        await drone.offboard.start()
+    except OffboardError as error:
+        print(
+            f"Starting offboard mode failed \
+                with error code: {error._result.result}"
+        )
+        print("-- Disarming")
+        await drone.action.disarm()
+        return
 
     print("-- Taking Off")
-    await drone.action.takeoff()
+    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, -3, 0.0))
 
     # finds yaw of the drone
-    asyncio.ensure_future(get_yaw(drone))
-    asyncio.ensure_future(get_position(drone))
+    # asyncio.ensure_future(get_yaw(drone))
+    # asyncio.ensure_future(get_position(drone))
 
     await asyncio.sleep(15)
-    # this prints the position of the drone after 15 seconds
 
+    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 10.0, -3, 180.0))
+    await asyncio.sleep(5)
+    await drone.offboard.set_position_ned(PositionNedYaw(5.0, 10.0, -3, 90.0))
+    await asyncio.sleep(10)
+    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, 0.0, 0.0))
+    await asyncio.sleep(10)
     await drone.action.land()
 
 
