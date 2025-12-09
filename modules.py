@@ -71,6 +71,7 @@ class telemetry:
             task.cancel()
             print(f'-- Closed coroutine: "{task.get_name()}"')
         await asyncio.gather(*self.tasks, return_exceptions=True)
+        tasks.clear()
 
 
 class health_check:
