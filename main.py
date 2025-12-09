@@ -1,99 +1,66 @@
-import asyncio  # asyncio module for threading
-import math
+import asyncio
 
-from mavsdk import System  # importing system class from mavsdk liibbrary
-from mavsdk.offboard import OffboardError, PositionNedYaw
+from mavsdk import System
+
+from modules import health_check, telemetry
+
+
+async def wait_until_landed(drone):
+    """
+    Halts script execution until the drone is completely stationary on the ground.
+    """
+
+    async for status in drone.telemetry.in_air():
+        if not status:
+            print("-- Landed")
+            break
 
 
 async def main():
     """
-    Main logic for the drone.
-    Takeoff, landing, telemetry.
+    The main code block. Returns recommended telemetry data and takes off for 15 seconds before landing.
     """
 
+    takeoff_altitude = 5
+
     drone = System()
-    await drone.connect(
-        system_address="udpin://0.0.0.0:14540"
-    )  # connects script to udp port to communicate with physical drone
+    await drone.connect(system_address="udpin://0.0.0.0:14540")
 
-    # get_yaw = asyncio.create_task(get_yaw(drone))
+    telemetry_func = telemetry(drone)
+    health_checks = health_check(drone)
 
-    print("-- Waiting for drone to connect...")
-    # checks to see if drone is connected and has a stable connection
-    async for state in drone.core.connection_state():
-        if state.is_connected:
-            print("-- Drone discovered!")
-            break
+    # Health checks to guarentee proper drone connections.
+    await health_checks.check_stable_connection()
+    await health_checks.position_checks()
 
-    print("-- Waiting for drone to have a global position estimate...")
-    # checks to see if position is calibrated and stable
-    async for health in drone.telemetry.health():
-        if health.is_global_position_ok and health.is_home_position_ok:
-            print("-- Global position estimate OK")
-            break
+    await drone.action.arm()
+    print("-- Armed")
 
-    print("-- Arming")
-    try:
-        await drone.action.arm()
-    except Exception as e:
-        print(e)
+    print(f"-- Setting takeoff altitude to {takeoff_altitude}")
+    await drone.action.set_takeoff_altitude(takeoff_altitude)
 
-    print("-- Setting initial setpoint")
-    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, 0.0, 0.0))
+    await drone.action.takeoff()
+    print("-- Taking off...")
 
-    print("-- Starting offboard")
-    try:
-        await drone.offboard.start()
-    except OffboardError as error:
-        print(
-            f"Starting offboard mode failed \
-                with error code: {error._result.result}"
-        )
-        print("-- Disarming")
-        await drone.action.disarm()
-        return
-
-    # finds yaw of the drone
-    # asyncio.ensure_future(get_yaw(drone))
-    # asyncio.ensure_future(get_position(drone))
-
-    print("-- Taking Off")
-    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0, -3, 0))
+    telemetry_func.log_altitude()
+    telemetry_func.log_battery()
 
     await asyncio.sleep(15)
-    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 10.0, -3, 180.0))
-    await asyncio.sleep(5)
-    await drone.offboard.set_position_ned(PositionNedYaw(5.0, 10.0, -3, 90.0))
-    await asyncio.sleep(10)
-    await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, -3, 0.0))
-    await asyncio.sleep(10)
-    await drone.offboard.stop()
+
     await drone.action.land()
+    print("-- Landing")
 
+    await wait_until_landed(drone)
 
-async def get_yaw(_drone):
-    async for altitude_euler in _drone.telemetry.attitude_euler():
-        yaw = altitude_euler
-        print(f"yaw of drone is {yaw} degrees")
+    await drone.action.disarm()
+    print("-- Disarmed")
 
+    print("-- Closing all running tasks...")
+    await telemetry_func.cancel_running_tasks()
 
-async def get_position(_drone):
-    R = 6371000  # this is the radius of the earth in meters
-    async for position in _drone.telemetry.position():
-        position_x = (
-            R
-            * math.cos(math.radians(position.latitude_deg))
-            * math.cos(math.radians(position.longitude_deg))
-        )
-        position_y = (
-            R
-            * math.cos(math.radians(position.latitude_deg))
-            * math.sin(math.radians(position.longitude_deg))
-        )
-        position_z = R * math.sin(math.radians(position.latitude_deg))
-        print(
-            f"positionX = {position_x} positionY = {position_y} positionZ = {position_z}"
-        )
+    print("Type exit to quit the program.")
+    while input("Input: ") != "exit":
+        pass
 
 
 if __name__ == "__main__":
