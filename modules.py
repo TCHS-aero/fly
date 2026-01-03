@@ -1,7 +1,13 @@
+# --- DISCLAIMER!! ---
+# This file is a custom module created for easier handling of logging.
+# This is merely a proof of concept rather than something that we can actively use during our real script.
+# File will eventually be modified for use on the drone.
+# As of now, this is tested on simulations only.
+
 import asyncio
 
 
-class telemetry:
+class TelemetryLogging:
     def __init__(self, drone):
         self.drone = drone
         self.tasks = []
@@ -74,7 +80,7 @@ class telemetry:
         self.tasks.clear()
 
 
-class health_check:
+class Checks:
     def __init__(self, drone):
         self.drone = drone
 
@@ -98,4 +104,14 @@ class health_check:
         async for health in self.drone.telemetry.health():
             if health.is_global_position_ok and health.is_home_position_ok:
                 print("-- Health checks satisfied")
+                break
+
+    async def wait_until_landed(self):
+        """
+        Halts script execution until the drone is completely stationary on the ground.
+        """
+
+        async for status in self.drone.telemetry.in_air():
+            if not status:
+                print("-- Landed")
                 break
