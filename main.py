@@ -3,7 +3,7 @@ import csv
 from math import cos, radians, sin, sqrt
 
 from mavsdk import System
-from mavsdk.offboard import PositionGlobalYaw
+from mavsdk.offboard import PositionGlobalYaw, PositionNedYaw
 
 from modules import Checks
 
@@ -186,6 +186,14 @@ async def main():
     await drone.action.disarm()
     print("drone 100% completed their mission.")
 
+async def test(drone):
+    while ans := input("Input Direction to move in meters. (Direction North, Direction East, Direction Down, Yaw in Degrees. Use negative values for inverse directions.)\nInput:"):
+        values = ans.split()
+        values = [float(i) for i in values]
+        try:
+            await drone.offboard.set_position_ned(PositionNedYaw(*ans))
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
     asyncio.run(main())
