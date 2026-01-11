@@ -40,23 +40,27 @@ async def mission_poi():
 
 
 def lla_to_xyz(lat_deg, lon_deg, alt_m):
+    # Changing the degree of latitude and longitude to radian mode
     lat = radians(lat_deg)
     lon = radians(lon_deg)
 
+    # the radius from the earth's center
     r = R_EARTH + alt_m
 
+    # getting (x, y, z) coordinates for the drone
     x = r * cos(lat) * cos(lon)
     y = r * cos(lat) * sin(lon)
     z = r * sin(lat)
-    print("debug test_ Math")
     print(x, y, z)
     return x, y, z
 
 
 def distance_3d_lla(lat1, lon1, alt1, lat2, lon2, alt2):
+    # converting the two waypoints to (x, y, z)
     x1, y1, z1 = lla_to_xyz(lat1, lon1, alt1)
     x2, y2, z2 = lla_to_xyz(lat2, lon2, alt2)
 
+    # 3D distance
     dx = x2 - x1
     dy = y2 - y1
     dz = z2 - z1
@@ -76,20 +80,25 @@ async def get_percentage_waypoint(original_waypoint, next_waypoint, drone):
         next_waypoint[1],
         next_waypoint[2],
     )
-    print("debug test, get percentage waypoint1")
+
+    # total distance for this leg (denominator)
+    leg_dist = distance_3d_lla(lat1, lon1, alt_m1, lat2, lon2, alt_m2)
+    if leg_dist == 0:
+        print("Waypoint Progress: 100%")
+        return
+
     async for position in drone.telemetry.position():
         Dlat, Dlon, Dalt_m = (
             position.latitude_deg,
             position.longitude_deg,
             position.relative_altitude_m,
         )
-        num = distance_3d_lla(
-            lat2=Dlat, lon2=Dlon, alt2=Dalt_m, lat1=lat1, lon1=lon1, alt1=alt_m1
-        )
-        den = distance_3d_lla(
-            lat2=lat2, lon2=lon2, alt2=alt_m2, lat1=lat1, lon1=lon1, alt1=alt_m1
-        )
-        percentage = 1 - (num / den)
+        dist_to_wp = distance_3d_lla(Dlat, Dlon, Dalt_m, lat2, lon2, alt_m2)
+
+        # clamp so it stays between 0 and 1
+        frac = max(0.0, min(1.0, 1.0 - dist_to_wp / leg_dist))
+        percentage = frac * 100.0
+        
         print("after percentage")
         print("debug test, get percentage waypoint3")
         print(percentage, "% of the way there waypoint-wise")
@@ -154,25 +163,20 @@ async def main():
 
     await asyncio.sleep(1)
 
-    for i in range(len(mission_waypoints)):
-        wp = mission_waypoints[i]
-        if i + 1 >= len(mission_waypoints):
-            percentage_telemetry = asyncio.create_task(
-                get_percentage_waypoint(
-                    mission_waypoints[-1],
-                    home,
-                    drone,
-                )
+    for i in range(len(mission_waypoints)-1):
+        start_wp = mission_waypoints[i]
+        end_wp   = mission_waypoints[i + 1]
+
+        percentage_telemetry = asyncio.create_task(
+            get_percentage_waypoint(
+                original_waypoint=start_wp,
+                next_waypoint=end_wp,
+                drone=drone,
             )
-        else:
-            percentage_telemetry = asyncio.create_task(
-                get_percentage_waypoint(
-                    mission_waypoints[-1],
-                    wp,
-                    drone,
-                )
-            )
-        await drone_movement(wp[0], wp[1], wp[2], 0, wp[3], drone)
+        )
+
+
+        await drone_movement(end_wp[0], end_wp[1], end_wp[2], 0, end_wp[3], drone)
         print(
             f"drone is {i + 1}/{number_of_waypoints + 1} including the home coordinate"
         )
