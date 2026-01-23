@@ -98,7 +98,7 @@ async def get_percentage_waypoint(original_waypoint, next_waypoint, drone):
         # clamp so it stays between 0 and 1
         frac = max(0.0, min(1.0, 1.0 - dist_to_wp / leg_dist))
         percentage = frac * 100.0
-        
+
         print("after percentage")
         print("debug test, get percentage waypoint3")
         print(percentage, "% of the way there waypoint-wise")
@@ -163,9 +163,9 @@ async def main():
 
     await asyncio.sleep(1)
 
-    for i in range(len(mission_waypoints)-1):
+    for i in range(len(mission_waypoints) - 1):
         start_wp = mission_waypoints[i]
-        end_wp   = mission_waypoints[i + 1]
+        end_wp = mission_waypoints[i + 1]
 
         percentage_telemetry = asyncio.create_task(
             get_percentage_waypoint(
@@ -174,7 +174,6 @@ async def main():
                 drone=drone,
             )
         )
-
 
         await drone_movement(end_wp[0], end_wp[1], end_wp[2], 0, end_wp[3], drone)
         print(
@@ -190,14 +189,6 @@ async def main():
     await drone.action.disarm()
     print("drone 100% completed their mission.")
 
-async def test(drone):
-    while ans := input("Input Direction to move in meters. (Direction North, Direction East, Direction Down, Yaw in Degrees. Use negative values for inverse directions.)\nInput:"):
-        values = ans.split()
-        values = [float(i) for i in values]
-        try:
-            await drone.offboard.set_position_ned(PositionNedYaw(*ans))
-        except Exception as e:
-            print(e)
 
 if __name__ == "__main__":
     asyncio.run(main())
