@@ -1,5 +1,6 @@
 import csv
 import asyncio
+import click
 from mavsdk import System
 from mavsdk.offboard import PositionGlobalYaw
 
@@ -13,6 +14,7 @@ class Mission:
         self.parse_file()
 
     def parse_file(self):
+        print(f"-- Parsing {self.file}")
         with open(self.file) as csvfile:
             reader = csv.DictReader(csvfile)
 
@@ -27,6 +29,8 @@ class Mission:
                         pass
                 self.waypoints.append(row)
                 self.total_waypoints = len(self.waypoints)
+            
+        print(f"-- Success!")
 
 
     def get_current_waypoint(self):
@@ -36,17 +40,17 @@ class Mission:
         try:
             return self.waypoints[index]
         except:
-            print("invalid index...try again...")
+            print("-- Invalid index, try again.")
             return None
 
     def advance_next_waypoint(self):
         if len(self.waypoints) == 0:
-            print("no waypoints to travel to.")
+            print("-- Reached the end of the mission. No more waypoints to continue")
         self.current_index += 1
         try:
             return self.waypoints[self.current_index]
-        except:
-            print("index is out of range!")
+        except Exception:
+            print("-- Invalid index, try again.")
 
     def reset_mission(self):
         self.current_index = 0
@@ -72,7 +76,7 @@ class Mission:
                 new_waypoint[keys[i]] = data[i]
             except Exception:
                 print(
-                    "-- No new data to assign to keys or too many data per column. Defaulting to None..."
+                    "-- No new data to assign to keys or too much data per column. Defaulting to None..."
                 )
                 new_waypoint[keys[i]] = None
 
@@ -91,29 +95,32 @@ class Mission:
         return self.waypoints
 
 class Drone():
-    def __init__(self, default_takeoff_altitude = 5):
+    def __init__(self, udpin = "udpin://0.0.0.0:14540", default_takeoff_altitude = 5):
         self.drone = System()
         self.takeoff_altitude = default_takeoff_altitude
         self.mode = PositionGlobalYaw.AltitudeType(0)
-        print(self.mode)
+        self.udpin = udpin
 
-    async def preflight_preparation(self):
-        await self.drone.connect(system_address="udpin://0.0.0.0:14540")
+    async def connect(self):
+        await self.drone.connect(system_address=self.udpin)
         async for state in self.drone.core.connection_state():
             if state.is_connected:
-                print("Found stable connecton")
+                print("-- Found stable connecton")
                 break
-            print("Stable connection not found, trying again...")
+            print("-- Stable connection not found, retrying...")
 
+    async def preflight_preparation(self):
+        
         async for health_check in self.drone.telemetry.health():
             if health_check.is_global_position_ok and health_check.is_home_position_ok:
-                print("Health check completed") 
+                print("-- Health check completed") 
                 break
-            print("Health checks failed, retrying...")
+            print("-- Health checks failed, retrying...")
+
         await self.drone.action.arm()
-        print('arming the drone')
+        print('-- Armed')
         await self.drone.action.set_takeoff_altitude(self.takeoff_altitude)
-        print("setting home coords...")
+        print("-- Setting home coordinates...")
 
         await self.drone.action.takeoff()
 
@@ -127,8 +134,6 @@ class Drone():
             return lat_deg, lon_deg, rel_altitude_m   
 
     async def move_to_location(self, lat, lon, alt, yaw):
-        print("Move to loca motive")
-
         clat, clon, calt = await self.current_position()
         await self.drone.offboard.set_position_global(
             PositionGlobalYaw(clat, clon, calt, 0, self.mode)
@@ -148,34 +153,40 @@ class Drone():
                 position.relative_altitude_m - 0.5 < alt < position.relative_altitude_m + 0.5
                 )
             ):
-                print('drone has arrived to the checkpoint! checkpoint!')
+                print('-- Successfully reached checkpoint')
                 break
 
         await self.drone.offboard.stop()
 
-    async def move_left_offset(self, offset, yaw):
+    async def move_left_offset(self, offset, yaw = 0):
         self.north_m, self.east_m, self.down_m = self.drone.telemetry.PositionNed()
         return await self.drone.offboard.PositionNedYaw(self.north_m, (self.east_m - offset), self.down_m, yaw)
 
-    async def move_right_offset(self, offset, yaw):
+    async def move_right_offset(self, offset, yaw = 0):
         self.north_m, self.east_m, self.down_m = self.drone.telemetry.PositionNed()
         return await self.drone.offboard.PositionNedYaw(self.north_m, (self.east_m + offset), self.down_m, yaw)
 
-    async def move_down_offset(self, offset, yaw):
+    async def move_down_offset(self, offset, yaw = 0):
         self.north_m, self.east_m, self.down_m = self.drone.telemetry.PositionNed()
         return await self.drone.offboard.PositionNedYaw(self.north_m , self.east_m, (self.down_m + offset), yaw)
         
-    async def move_up_offset(self, offset, yaw):
+    async def move_up_offset(self, offset, yaw = 0):
         self.north_m, self.east_m, self.down_m = self.drone.telemetry.PositionNed()
         return await self.drone.offboard.PositionNedYaw(self.north_m, self.east_m, (self.down_m - offset), yaw)
     
+    async def move_forward(self, offset, yaw = 0):
+        self.north_m, self.east_m, self.down_m = self.drone.telemetry.PositionNed()
+        return await self.drone.offboard.PositionNedYaw(self.north_m , self.east_m, (self.north_m + offset), yaw)
+        
+    async def move_backward(self, offset, yaw = 0):
+        self.north_m, self.east_m, self.down_m = self.drone.telemetry.PositionNed()
+        return await self.drone.offboard.PositionNedYaw(self.north_m, self.east_m, (self.north_m - offset), yaw)
+
     async def evade(self):
         pass
         
     async def move_to_waypoint(self, dict, yaw = 0.0):
-        print("Loco motive")
         lat, lon, alt = dict.values()
-        print("Righty ho move")
         print(lat, lon, alt, yaw, self.mode)
         clat, clon, calt = await self.current_position()
         await self.drone.offboard.set_position_global(
@@ -188,7 +199,6 @@ class Drone():
             )
 
         async for position in self.drone.telemetry.position():
-            print('move')
             if (
                 (position.latitude_deg - 0.000001 < lat < position.latitude_deg + 0.000001
                 ) and (
@@ -197,7 +207,7 @@ class Drone():
                 position.relative_altitude_m - 0.5 < alt < position.relative_altitude_m + 0.5
                 )
             ):
-                print('drone has arrived to the checkpoint! checkpoint!')
+                print('-- Successfully reached waypoint')
                 break
         
         await self.drone.offboard.stop()
@@ -205,21 +215,8 @@ class Drone():
     async def return_to_home(self):
         await self.drone.action.return_to_launch()
 
+    async def land(self):
+        await self.drone.action.land()
+
     async def fetch_drone_instance(self):
         return self.drone
-
-async def main():
-    
-    droneclass = Drone()
-    mission = Mission("mission_waypoints.csv")
-    
-    await droneclass.preflight_preparation()
-    print('preflight success, running move')
-    await droneclass.move_to_waypoint(mission.get_current_waypoint())
-    mission.advance_next_waypoint()
-    await droneclass.move_to_waypoint(mission.get_current_waypoint())
-    await droneclass.return_to_home()
-    print('move executing complete')
-
-if __name__ == "__main__":
-    asyncio.run(main())
