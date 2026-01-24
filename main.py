@@ -1,8 +1,9 @@
 import csv
 import asyncio
 import click
+import math
 from mavsdk import System
-from mavsdk.offboard import PositionGlobalYaw, PositionNedYaw
+from mavsdk.offboard import PositionGlobalYaw, PositionNedYaw, VelocityNedYaw
 
 class Mission:
     def __init__(self, file):
@@ -95,11 +96,12 @@ class Mission:
         return self.waypoints
 
 class Drone():
-    def __init__(self, udpin = "udpin://0.0.0.0:14540", default_takeoff_altitude = 5):
+    def __init__(self, udpin = "udpin://0.0.0.0:14540", default_takeoff_altitude = 5, max_velocity=0.5):
         self.drone = System()
         self.takeoff_altitude = default_takeoff_altitude
         self.mode = PositionGlobalYaw.AltitudeType(0)
         self.udpin = udpin
+        self.max_velocity = max_velocity
 
     async def connect(self):
         await self.drone.connect(system_address=self.udpin)
@@ -165,88 +167,88 @@ class Drone():
             east_m = ned_object.east_m
             down_m = ned_object.down_m
             return north_m, east_m, down_m
-        
 
-    async def move_left_offset(self, offset, yaw=0):
+
+    async def move_left_offset(self, velocity, yaw=0):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_position_ned(
-            PositionNedYaw(north, east, down, 0)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
         )
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_position_ned( 
-            PositionNedYaw(north, east - float(offset), down, float(yaw))
-            )
-        
-        await asyncio.sleep(5)
-        await self.drone.offboard.stop()
-
-    async def move_right_offset(self, offset, yaw = 0):
-        north, east, down = await self.current_ned()
-        await self.drone.offboard.set_position_ned(
-            PositionNedYaw(north, east, down, 0)
+        await self.drone.offboard.set_velocity_ned( 
+            VelocityNedYaw(0.0, velocity * -1, 0.0, yaw)
         )
-        await self.drone.offboard.start()
-        await asyncio.sleep(1)
-        await self.drone.offboard.set_position_ned( 
-            PositionNedYaw(north, east + offset, down, float(yaw))
-            )
         
         await asyncio.sleep(5)
         await self.drone.offboard.stop()
 
-    async def move_down_offset(self, offset, yaw = 0):
+    async def move_right_offset(self, velocity, yaw = 0):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_position_ned(
-            PositionNedYaw(north, east, down, 0)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
         )
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_position_ned( 
-            PositionNedYaw(north, east, down + offset, float(yaw))
-            )
+        await self.drone.offboard.set_velocity_ned( 
+            VelocityNedYaw(0.0, velocity, 0.0, yaw)
+        )
         
         await asyncio.sleep(5)
         await self.drone.offboard.stop()
 
-    async def move_up_offset(self, offset, yaw = 0):
+    async def move_down_offset(self, velocity, yaw = 0):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_position_ned(
-            PositionNedYaw(north, east, down, 0)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
         )
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_position_ned( 
-            PositionNedYaw(north, east, down - offset, float(yaw))
-            )
+        await self.drone.offboard.set_velocity_ned( 
+            VelocityNedYaw(0.0, 0.0, velocity, yaw)
+        )
+        
+        await asyncio.sleep(5)
+        await self.drone.offboard.stop()
+
+    async def move_up_offset(self, velocity, yaw = 0):
+        north, east, down = await self.current_ned()
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
+        )
+        await self.drone.offboard.start()
+        await asyncio.sleep(1)
+        await self.drone.offboard.set_velocity_ned( 
+            VelocityNedYaw(0.0, 0.0, velocity * -1, yaw)
+        )
         
         await asyncio.sleep(5)
         await self.drone.offboard.stop()
     
-    async def move_forward_offset(self, offset, yaw = 0):
+    async def move_forward_offset(self, velocity, yaw = 0):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_position_ned(
-            PositionNedYaw(north, east, down, 0)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
         )
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_position_ned( 
-            PositionNedYaw(north + offset, east, down, float(yaw))
-            )
+        await self.drone.offboard.set_velocity_ned( 
+            VelocityNedYaw(velocity, 0.0, 0.0, yaw)
+        )
         
         await asyncio.sleep(5)
         await self.drone.offboard.stop()
         
-    async def move_backward_offset(self, offset, yaw = 0):
+    async def move_backward_offset(self, velocity, yaw = 0):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_position_ned(
-            PositionNedYaw(north, east, down, 0)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
         )
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_position_ned( 
-            PositionNedYaw(north - offset, east, down, float(yaw))
-            )
+        await self.drone.offboard.set_velocity_ned( 
+            VelocityNedYaw(velocity * -1, 0.0, 0.0, yaw)
+        )
         
         await asyncio.sleep(5)
         await self.drone.offboard.stop()
