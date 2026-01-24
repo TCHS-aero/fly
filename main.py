@@ -178,7 +178,7 @@ class Drone():
             PositionNedYaw(north, east - float(offset), down, float(yaw))
             )
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         await self.drone.offboard.stop()
 
     async def move_right_offset(self, offset, yaw = 0):
@@ -192,7 +192,7 @@ class Drone():
             PositionNedYaw(north, east + offset, down, float(yaw))
             )
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         await self.drone.offboard.stop()
 
     async def move_down_offset(self, offset, yaw = 0):
@@ -206,7 +206,7 @@ class Drone():
             PositionNedYaw(north, east, down + offset, float(yaw))
             )
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         await self.drone.offboard.stop()
 
     async def move_up_offset(self, offset, yaw = 0):
@@ -220,7 +220,7 @@ class Drone():
             PositionNedYaw(north, east, down - offset, float(yaw))
             )
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         await self.drone.offboard.stop()
     
     async def move_forward_offset(self, offset, yaw = 0):
@@ -234,7 +234,7 @@ class Drone():
             PositionNedYaw(north + offset, east, down, float(yaw))
             )
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         await self.drone.offboard.stop()
         
     async def move_backward_offset(self, offset, yaw = 0):
@@ -248,7 +248,7 @@ class Drone():
             PositionNedYaw(north - offset, east, down, float(yaw))
             )
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         await self.drone.offboard.stop()
 
     async def evade(self):

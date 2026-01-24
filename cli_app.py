@@ -173,7 +173,7 @@ async def move(right, left, up, down, forward, backward):
     if not drone:
         click.echo("-- Drone instance not available. Please connect and take off first.")
         return
-    
+
     directions = [("right", right), ("left", left), ("up", up), ("down", down), ("forward", forward), ("backward", backward)]
     active_movements = [(name, int(value)) for name, value in directions if value > 0]
 
@@ -197,7 +197,6 @@ async def move(right, left, up, down, forward, backward):
             await drone.move_forward_offset(offset, 0)
         elif direction == "backward":
             await drone.move_backward_offset(offset, 0)
-        click.echo(f"-- Drone successfully moved {offset} units {direction}.")
     except Exception as e:
         click.echo(f"-- Error moving the drone: {e}")
     
