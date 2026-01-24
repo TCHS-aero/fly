@@ -175,7 +175,7 @@ async def move(right, left, up, down, forward, backward):
         return
     
     directions = [("right", right), ("left", left), ("up", up), ("down", down), ("forward", forward), ("backward", backward)]
-    active_movements = [(name, value) for name, value in directions if value > 0]
+    active_movements = [(name, int(value)) for name, value in directions if value > 0]
 
     if len(active_movements) != 1:
         click.echo("Specify exactly one direction with a positive offset. Example: --right 5")
@@ -194,9 +194,9 @@ async def move(right, left, up, down, forward, backward):
         elif direction == "down":
             await drone.move_down_offset(offset, 0)
         elif direction == "forward":
-            await drone.move_forward(offset, 0)
+            await drone.move_forward_offset(offset, 0)
         elif direction == "backward":
-            await drone.move_backward(offset, 0)
+            await drone.move_backward_offset(offset, 0)
         click.echo(f"-- Drone successfully moved {offset} units {direction}.")
     except Exception as e:
         click.echo(f"-- Error moving the drone: {e}")

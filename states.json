@@ -1,1 +1,1 @@
-{"Mission File Path": "", "Drone Instance": ""}
+{"Mission File Path": "", "Drone Instance": {"takeoff_altitude": 5, "udpin": "udpin://0.0.0.0:14540"}}
