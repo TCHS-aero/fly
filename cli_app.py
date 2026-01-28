@@ -30,38 +30,29 @@ def pull_from_json():
         print(f"-- Error reading data from {settings}. Returning empty data.")
         return {}
 
+async def load_drone():
+    drone_data = pull_from_json().get(drone_instance_json)
+    if drone_data:
+        port = drone_data.get("port", None)
+        if not port:
+            print(f"-- Port has not yet been configured in {settings}. Are you sure you ran the connect command?")
+            return
+
+        drone = Drone(
+            port
+        )
+        return drone
+    return
+
+def load_mission():
+    mission_file = pull_from_json().get(mission_file_json)
+    return Mission(mission_file) if mission_file else None
+
 @click.group()
 def cli():
     pass
 
-@click.command()
-@click.option("--importfile", type=click.Path(exists=True), help="The file required to run a mission. Must be a CSV.")
-def upload_mission_file(importfile):
-    if not importfile:
-        print("Please specify a filepath with the --importfile flag.")
-        return
-
-    data = pull_from_json()
-    print("-- Found data to import") if data else None
-    print("-- Mission file already detected. Overwriting...") if data.get(mission_file_json) else None
-
-    if importfile.endswith(".csv"):
-        mission = Mission(importfile)
-        write_to_json({mission_file_json: importfile})
-        print(f"-- Mission loaded with {mission.total_waypoints} waypoints detected.")
-    else:
-        print(f"-- Filetype not supported. Please select a CSV file.\n")
-        print("""File format:
-        latitude,longitude,altitude
-        47.399075,8.545180,45
-        47.398814,8.546558,45
-        47.397786,8.544415,45
-        47.399195,8.546003,15
-        47.397593,8.544971,50
-
-These waypoints are mere examples, please update them with the relevant information.""")
-
-@click.command()
+@click.command(help="Update the port configuration; specify --port for a custom port.")
 @click.option("--port", help="A port to connect to the drone with. Can be a UDP, TCP, or Serial port.")
 async def connect(port):
 
@@ -83,72 +74,62 @@ async def connect(port):
             print("-- Invalid port format. Please specify a valid UDP, TCP, or Serial port.")
             return
 
-    print("-- Testing for a valid connection")
+    print("-- Testing for a stable connection")
     drone = Drone(port)
     if not await drone.connect():
-        print("-- Connection test failed; please try a different port.")
+        print("-- Connection test failed; consider trying a different port.")
         return 1
-        
+
     write_to_json({
         drone_instance_json: {
             "port": port,
         }
     })
 
-@click.command()
-async def takeoff():
-    drone = await load_drone()
-    if not drone:
-        print("Can't find drone connection. Are you sure you ran the connect command?")
+@click.command(help="Drone takeoff; specify --alt to choose departure height.")
+@click.option("--alt", help="An altitude, in meters, to takeoff from. Defaults to 5 meters.")
+async def takeoff(alt):
+
+    try:
+        alt = float(alt)
+        if alt < 0:
+            raise TypeError("Value below 0.")
+    except TypeError:
+        print(f"Please use a valid, positive, floating type integer. Pretty sure you can't fly {alt} meters up.")
         return
 
-    print("-- Initiating preflight preparation...")
-    await drone.connect()
-    await drone.preflight_preparation()
-    print("-- Drone has successfully taken off.")
-    save_drone(drone)
+    drone = await load_drone()
+    if not drone:
+        return
 
-@click.command()
+    if not alt:
+        print("-- Altitude not specified, defaulting to 5 meters.")
+        alt = 5
+
+    await drone.connect()
+
+    print("-- Preparing takeoff...")
+    await drone.takeoff(alt)
+
+@click.command(help="Land the drone!!")
 async def land():
     drone = await load_drone()
     if not drone:
-        print("Can't find drone connection. Are you sure you ran the connect command?")
         return
 
-    print("-- Initiating preflight preparation...")
     await drone.connect()
     await drone.land()
-    print("-- Landing...")
-    save_drone(drone)
+    print("-- Request to land sent")
 
-@click.command()
+@click.command(help="Land at launch position from any given location.")
 async def return_to_launch():
     drone = await load_drone()
     if not drone:
-        print("Can't find drone connection. Are you sure you ran the connect command?")
         return
 
-    print("-- Initiating preflight preparation...")
     await drone.connect()
     await drone.return_to_home()
-    print("-- Returning to launch...")
-    save_drone(drone)
-
-async def load_drone():
-    drone_data = pull_from_json().get(drone_instance_json)
-    if drone_data:
-        drone = Drone(
-            udpin=drone_data["udpin"],
-            default_takeoff_altitude=drone_data.get("takeoff_altitude", 5),
-            max_velocity=drone_data.get("max_velocity", 0.5)
-        )
-        await drone.connect()
-        return drone
-    return None
-
-def load_mission():
-    mission_file = pull_from_json().get(mission_file_json)
-    return Mission(mission_file) if mission_file else None
+    print("-- Request to land sent")
 
 @click.command()
 @click.option("--right", type=float, help="Move the drone to the right at 0.5 m/s for 5 secs with a specified yaw.")
@@ -184,6 +165,37 @@ async def move(right, left, up, down, forward, backward):
 
     save_drone(drone)
 
+@click.command()
+@click.option("--importfile", type=click.Path(exists=True), help="The file required to run a mission. Must be a CSV.")
+def upload_mission_file(importfile):
+    if not importfile:
+        print("Please specify a filepath with the --importfile flag.")
+        return
+
+    data = pull_from_json()
+    print("-- Found data to import") if data else None
+    print("-- Mission file already detected. Overwriting...") if data.get(mission_file_json) else None
+
+    if importfile.endswith(".csv"):
+        mission = Mission(importfile)
+        write_to_json({mission_file_json: importfile})
+        print(f"-- Mission loaded with {mission.total_waypoints} waypoints detected.")
+    else:
+        print(f"-- Filetype not supported. Please select a CSV file.\n")
+        print("""File format:
+        latitude,longitude,altitude
+        47.399075,8.545180,45
+        47.398814,8.546558,45
+        47.397786,8.544415,45
+        47.399195,8.546003,15
+        47.397593,8.544971,50
+
+These waypoints are mere examples, please update them with the relevant information.""")
+
+
 if __name__ == "__main__":
     cli.add_command(connect, name="connect")
+    cli.add_command(takeoff, name="takeoff")
+    cli.add_command(land, name="land")
+    cli.add_command(return_to_launch, name="return")
     cli()

@@ -95,11 +95,10 @@ class Mission:
         return self.waypoints
 
 class Drone():
-    def __init__(self, udpin, *, connection_timeout = 5, default_takeoff_altitude = 5, velocity=0.5):
+    def __init__(self, port, *, connection_timeout = 10, velocity = 0.5):
         self.drone = System()
-        self.takeoff_altitude = default_takeoff_altitude
         self.mode = PositionGlobalYaw.AltitudeType(0)
-        self.udpin = udpin
+        self.port = port
         self.velocity = velocity
         self.connection_timeout = connection_timeout
 
@@ -108,19 +107,18 @@ class Drone():
         connected = False
         try:
             async with asyncio.timeout(self.connection_timeout):
-                await self.drone.connect(system_address=self.udpin)
+                await self.drone.connect(system_address=self.port)
                 async for state in self.drone.core.connection_state():
                     if state.is_connected:
                         print("-- Found a stable connection to the drone!")
                         connected = True
                         break
         except asyncio.TimeoutError:
-            print(f"-- Failed to connect to the drone within {self.connection_timeout} seconds")
+            print(f"-- Failed to connect to the drone within {self.connection_timeout} seconds.")
 
         return connected
 
-    async def preflight_preparation(self):
-        
+    async def takeoff(self, alt):
         async for health_check in self.drone.telemetry.health():
             if health_check.is_global_position_ok and health_check.is_home_position_ok:
                 print("-- Health check completed") 
@@ -129,12 +127,11 @@ class Drone():
 
         await self.drone.action.arm()
         print('-- Armed')
-        await self.drone.action.set_takeoff_altitude(self.takeoff_altitude)
+        await self.drone.action.set_takeoff_altitude(alt)
         print("-- Setting home coordinates...")
 
         await self.drone.action.takeoff()
-
-        await asyncio.sleep(5)
+        print("-- Sent takeoff request!")
 
     async def current_position(self):
         async for telemetry in self.drone.telemetry.position():
