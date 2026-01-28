@@ -94,13 +94,14 @@ async def connect(port):
 @click.option("--alt", help="An altitude, in meters, to takeoff from. Defaults to 5 meters.")
 async def takeoff(alt):
 
-    try:
-        alt = float(alt)
-        if alt < 0:
-            raise TypeError("Value below 0.")
-    except TypeError:
-        print(f"Please use a valid, positive, floating type integer. Pretty sure you can't fly {alt} meters up.")
-        return
+    if alt is not None:
+        try:
+            alt = float(alt)
+            if alt < 0:
+                raise TypeError("Value below 0.")
+        except TypeError:
+            print(f"Please use a valid, positive, floating type integer. Pretty sure you can't fly {alt} meters up.")
+            return
 
     drone = await load_drone()
     if not drone:

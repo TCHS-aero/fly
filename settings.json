@@ -1,6 +1,6 @@
 {
-    "Mission File Path": "mission_waypoints copy.csv",
+    "Mission File Path": "",
     "Drone": {
-        "port": "udpin://0.0.0.0:14540"
+        "port": ""
     }
 }
