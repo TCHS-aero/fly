@@ -1,13 +1,12 @@
 import asyncclick as click
 import re
 import json
-from csv import DictReader
-import asyncio
 from main import Mission, Drone
 
 settings = "./settings.json"
 mission_file_json = "Mission File Path"
 drone_instance_json = "Drone"
+
 
 def write_to_json(data):
     existing_data = pull_from_json() or {}
@@ -22,6 +21,7 @@ def write_to_json(data):
         json.dump(existing_data, write_file, ensure_ascii=False, indent=4)
         print("-- Writing finished")
 
+
 def pull_from_json():
     try:
         with open(settings, "r") as read_file:
@@ -30,36 +30,72 @@ def pull_from_json():
         print(f"-- Error reading data from {settings}. Returning empty data.")
         return {}
 
+
 async def load_drone():
     drone_data = pull_from_json().get(drone_instance_json)
     if drone_data:
         port = drone_data.get("port", None)
         if not port:
-            print(f"-- Port has not yet been configured in {settings}. Are you sure you ran the connect command?")
+            print(
+                f"-- Port has not yet been configured in {settings}. Are you sure you ran the connect command?"
+            )
             return
 
-        drone = Drone(
-            port
-        )
+        drone = Drone(port)
         return drone
     return
+
 
 def load_mission():
     mission_file = pull_from_json().get(mission_file_json)
     return Mission(mission_file) if mission_file else None
 
+
 @click.group()
 def cli():
     pass
 
-@click.group(help="Manage drone mission operations.")
+
+@click.group(help="Manage all drone missions, including importing a mission and starting/stopping it.")
 def mission():
     pass
 
-@click.command(help="Update the port configuration; specify --port for a custom port.")
-@click.option("--port", help="A port to connect to the drone with. Can be a UDP, TCP, or Serial port.")
-async def connect(port):
 
+@click.group(help="Control the drone's movement in the North-East-Down (NED) coordinate system.")
+def move():
+    pass
+
+
+@click.command(help="Clear all current configuration and reset all settings saved in the system.")
+def wipe_config():
+    confirm = True
+    while confirm:
+        ans = (
+            input(f"Are you sure you want to wipe all information in {settings}? y/n: ")
+            .lower()
+            .strip()
+        )
+        if ans == "y":
+            confirm = False
+            break
+        if ans == "n":
+            return
+
+        print("\nPlease type either y or n to signify yes or no.")
+
+    if ans == "n":
+        return
+
+    write_to_json({mission_file_json: "", drone_instance_json: {"port": None}})
+    print("-- Data wiped! This is irreversible.")
+
+
+@click.command(help="Connect to a drone using the specified port (UDP, TCP, or Serial). Default is udpin://0.0.0.0:14540.")
+@click.option(
+    "--port",
+    help="A port to connect to the drone. Valid formats include UDP (e.g., udpin://0.0.0.0:14540), TCP, or Serial.",
+)
+async def connect(port):
     if not port:
         print("-- Port not specified, defaulting to udpin://0.0.0.0:14540")
         port = "udpin://0.0.0.0:14540"
@@ -75,7 +111,9 @@ async def connect(port):
         elif re.match(serial_pattern, port):
             print("-- Valid Serial port detected.")
         else:
-            print("-- Invalid port format. Please specify a valid UDP, TCP, or Serial port.")
+            print(
+                "-- Invalid port format. Please specify a valid UDP, TCP, or Serial port."
+            )
             return
 
     print("-- Testing for a stable connection")
@@ -84,23 +122,29 @@ async def connect(port):
         print("-- Connection test failed; consider trying a different port.")
         return 1
 
-    write_to_json({
-        drone_instance_json: {
-            "port": port,
+    write_to_json(
+        {
+            drone_instance_json: {
+                "port": port,
+            }
         }
-    })
+    )
 
-@click.command(help="Drone takeoff; specify --alt to choose departure height.")
-@click.option("--alt", help="An altitude, in meters, to takeoff from. Defaults to 5 meters.")
+
+@click.command(help="Command the drone to take off to a specified altitude.")
+@click.option(
+    "--alt", help="The altitude to take off to, in meters. Defaults to 5 meters."
+)
 async def takeoff(alt):
-
     if alt is not None:
         try:
             alt = float(alt)
             if alt < 0:
                 raise TypeError("Value below 0.")
         except TypeError:
-            print(f"Please use a valid, positive, floating type integer. Pretty sure you can't fly {alt} meters up.")
+            print(
+                "Please use a valid, positive floating-point value (e.g., 5.0). Altitude values below 0 are not allowed."
+            )
             return
 
     drone = await load_drone()
@@ -113,10 +157,11 @@ async def takeoff(alt):
 
     await drone.connect()
 
-    print("-- Preparing takeoff...")
+    print("-- Preparing for takeoff...")
     await drone.takeoff(alt)
 
-@click.command(help="Land the drone!!")
+
+@click.command(help="Land the drone at its current position.")
 async def land():
     drone = await load_drone()
     if not drone:
@@ -124,9 +169,10 @@ async def land():
 
     await drone.connect()
     await drone.land()
-    print("-- Request to land sent")
+    print("-- Drone landing initiated.")
 
-@click.command(help="Land at launch position from any given location.")
+
+@click.command(help="Land the drone at its return-to-launch (RTL) position.")
 async def return_to_launch():
     drone = await load_drone()
     if not drone:
@@ -134,44 +180,119 @@ async def return_to_launch():
 
     await drone.connect()
     await drone.return_to_home()
-    print("-- Request to land sent")
+    print("-- Drone returning to launch position.")
 
-@click.command()
-@click.option("--right", type=float, help="Move the drone to the right at 0.5 m/s for 5 secs with a specified yaw.")
-@click.option("--left", type=float, help="Move the drone to the left at 0.5 m/s for 5 secs with a specified yaw.")
-@click.option("--up", type=float, help="Move the drone up at 0.5 m/s for 5 secs with a specified yaw.")
-@click.option("--down", type=float, help="Move the drone down at 0.5 m/s for 5 secs with a specified yaw.")
-@click.option("--forward", type=float, help="Move the drone forward at 0.5 m/s for 5 secs with a specified yaw.")
-@click.option("--backward", type=float, help="Move the drone backward at 0.5 m/s for 5 secs with a specified yaw.")
-async def move(right, left, up, down, forward, backward):
+
+@move.command(name="left", help="Move the drone left (negative East) in the NED frame.")
+@click.option(
+    "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
+)
+@click.option(
+    "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
+)
+@click.option(
+    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+)
+async def left(velocity, yaw, time):
+    await execute_movement("left", velocity, yaw, time)
+
+
+@move.command(name="right", help="Move the drone right (positive East) in the NED frame.")
+@click.option(
+    "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
+)
+@click.option(
+    "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
+)
+@click.option(
+    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+)
+async def right(velocity, yaw, time):
+    await execute_movement("right", velocity, yaw, time)
+
+
+@move.command(name="up", help="Move the drone up (negative Down) in the NED frame.")
+@click.option(
+    "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
+)
+@click.option(
+    "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
+)
+@click.option(
+    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+)
+async def up(velocity, yaw, time):
+    await execute_movement("up", velocity, yaw, time)
+
+
+@move.command(name="down", help="Move the drone down (positive Down) in the NED frame.")
+@click.option(
+    "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
+)
+@click.option(
+    "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
+)
+@click.option(
+    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+)
+async def down(velocity, yaw, time):
+    await execute_movement("down", velocity, yaw, time)
+
+
+@move.command(name="forward", help="Move the drone forward (positive North) in the NED frame.")
+@click.option(
+    "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
+)
+@click.option(
+    "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
+)
+@click.option(
+    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+)
+async def forward(velocity, yaw, time):
+    await execute_movement("forward", velocity, yaw, time)
+
+
+@move.command(name="backward", help="Move the drone backward (negative North) in the NED frame.")
+@click.option(
+    "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
+)
+@click.option(
+    "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
+)
+@click.option(
+    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+)
+async def backward(velocity, yaw, time):
+    await execute_movement("backward", velocity, yaw, time)
+
+
+async def execute_movement(direction, velocity, yaw, seconds):
+    print(
+        f"-- Preparing to move the drone {direction} at {velocity} m/s with a yaw of {yaw} degrees..."
+    )
     drone = await load_drone()
     if not drone:
-        print("-- Drone instance not available. Please connect and take off first.")
         return
 
-    velocity = pull_from_json().get(drone_instance_json, {}).get("max_velocity", 0.5)
-    directions = {
-        "right": right, "left": left, "up": up, "down": down, "forward": forward, "backward": backward
-    }
-    active_directions = {name: value for name, value in directions.items() if value or value == 0}
+    await drone.connect()
 
-    if len(active_directions) != 1:
-        print("Specify exactly one direction with the yaw as a whole number. Example: --right 90")
-        return
-
-    direction, yaw = next(iter(active_directions.items()))
-    print(f"-- Moving drone {velocity} m/s {direction}...")
     try:
         move_method = getattr(drone, f"move_{direction}_offset", None)
         if move_method:
-            await move_method(velocity, yaw)
+            await move_method(velocity, yaw=yaw, seconds=seconds)
+        else:
+            print("-- Movement function not found.")
     except Exception as e:
-        print(f"-- Error moving the drone: {e}")
+        print(f"-- Error moving the drone {direction}: {e}")
 
-    save_drone(drone)
 
-@mission.command(name="import", help="Upload a CSV file to run a mission from.")
-@click.option("--file", type=click.Path(exists=True), help="The file required to run a mission. Must be a CSV.")
+@mission.command(name="import", help="Upload a mission file in CSV format. Valid columns: latitude, longitude, altitude.")
+@click.option(
+    "--file",
+    type=click.Path(exists=True),
+    help="The CSV file defining the mission waypoints.",
+)
 def upload_mission_file(file):
     if not file:
         print("Please specify a filepath with the --file flag.")
@@ -207,13 +328,15 @@ These waypoints are mere examples, please update them with the relevant informat
         try:
             mission = Mission(file)
             write_to_json({mission_file_json: file})
-            print(f"-- Mission loaded with {mission.total_waypoints} waypoints detected.")
+            print(
+                f"-- Mission loaded with {mission.total_waypoints} waypoints detected."
+            )
         except Exception as e:
             print(f"-- Failed to load mission: {e}")
             return
 
     else:
-        print(f"-- Filetype not supported. Please select a CSV file.\n")
+        print("-- Filetype not supported. Please select a CSV file.\n")
         print("""File format:
         latitude,longitude,altitude
         47.399075,8.545180,45
@@ -231,5 +354,7 @@ if __name__ == "__main__":
     cli.add_command(land, name="land")
     cli.add_command(return_to_launch, name="return")
     cli.add_command(mission_file_json, name="mission")
+    cli.add_command(wipe_config, name="wipe_config")
     cli.add_command(mission)
+    cli.add_command(move)
     cli()

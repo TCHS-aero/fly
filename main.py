@@ -1,8 +1,9 @@
-import csv
 import asyncio
-import math
+import csv
+
 from mavsdk import System
-from mavsdk.offboard import PositionGlobalYaw, PositionNedYaw, VelocityNedYaw
+from mavsdk.offboard import PositionGlobalYaw, VelocityNedYaw
+
 
 class Mission:
     def __init__(self, file):
@@ -25,13 +26,13 @@ class Mission:
                             row[key] = float(value)
                         elif value.isdigit():
                             row[key] = int(value)
-                    except:
-                        print(f"WARNING! {key} is empty.")
+                    except Exception:
+                        pass
+
                 self.waypoints.append(row)
                 self.total_waypoints = len(self.waypoints)
-            
-        print(f"-- Success!")
 
+        print("-- Success!")
 
     def get_current_waypoint(self):
         return self.waypoints[self.current_index]
@@ -39,7 +40,7 @@ class Mission:
     def get_waypoint(self, index):
         try:
             return self.waypoints[index]
-        except:
+        except Exception:
             print("-- Invalid index, try again.")
             return None
 
@@ -94,14 +95,14 @@ class Mission:
         self.waypoints.append(self.create_new_waypoint(lat, lon, alt))
         return self.waypoints
 
-class Drone():
-    def __init__(self, port, *, connection_timeout = 10, velocity = 0.5):
+
+class Drone:
+    def __init__(self, port, *, connection_timeout=10, velocity=0.5):
         self.drone = System()
         self.mode = PositionGlobalYaw.AltitudeType(0)
         self.port = port
         self.velocity = velocity
         self.connection_timeout = connection_timeout
-
 
     async def connect(self):
         connected = False
@@ -114,19 +115,21 @@ class Drone():
                         connected = True
                         break
         except asyncio.TimeoutError:
-            print(f"-- Failed to connect to the drone within {self.connection_timeout} seconds.")
+            print(
+                f"-- Failed to connect to the drone within {self.connection_timeout} seconds."
+            )
 
         return connected
 
     async def takeoff(self, alt):
         async for health_check in self.drone.telemetry.health():
             if health_check.is_global_position_ok and health_check.is_home_position_ok:
-                print("-- Health check completed") 
+                print("-- Health check completed")
                 break
             print("-- Health checks failed, retrying...")
 
         await self.drone.action.arm()
-        print('-- Armed')
+        print("-- Armed")
         await self.drone.action.set_takeoff_altitude(alt)
         print("-- Setting home coordinates...")
 
@@ -137,8 +140,8 @@ class Drone():
         async for telemetry in self.drone.telemetry.position():
             lat_deg = telemetry.latitude_deg
             lon_deg = telemetry.longitude_deg
-            rel_altitude_m= telemetry.relative_altitude_m
-            return lat_deg, lon_deg, rel_altitude_m   
+            rel_altitude_m = telemetry.relative_altitude_m
+            return lat_deg, lon_deg, rel_altitude_m
 
     async def move_to_location(self, lat, lon, alt, yaw):
         clat, clon, calt = await self.current_position()
@@ -149,18 +152,27 @@ class Drone():
 
         await self.drone.offboard.set_position_global(
             PositionGlobalYaw(lat, lon, alt, yaw, self.mode)
-            )
-            
+        )
+
         async for position in self.drone.telemetry.position():
             if (
-                (position.latitude_deg - 0.000001 < lat < position.latitude_deg + 0.000001
-                ) and (
-                position.longitude_deg - 0.000001 < lon < position.longitude_deg + 0.000001                
-                ) and (
-                position.relative_altitude_m - 0.5 < alt < position.relative_altitude_m + 0.5
+                (
+                    position.latitude_deg - 0.000001
+                    < lat
+                    < position.latitude_deg + 0.000001
+                )
+                and (
+                    position.longitude_deg - 0.000001
+                    < lon
+                    < position.longitude_deg + 0.000001
+                )
+                and (
+                    position.relative_altitude_m - 0.5
+                    < alt
+                    < position.relative_altitude_m + 0.5
                 )
             ):
-                print('-- Successfully reached checkpoint')
+                print("-- Successfully reached checkpoint")
                 break
 
         await self.drone.offboard.stop()
@@ -173,94 +185,78 @@ class Drone():
             down_m = ned_object.down_m
             return north_m, east_m, down_m
 
-
-    async def move_left_offset(self, velocity, yaw=0):
+    async def move_left_offset(self, velocity, *, yaw = 0, seconds = 5):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_velocity_ned(
-            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
-        )
+        await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_velocity_ned( 
+        await self.drone.offboard.set_velocity_ned(
             VelocityNedYaw(0.0, velocity * -1, 0.0, yaw)
         )
-        
-        await asyncio.sleep(5)
+
+        await asyncio.sleep(seconds)
         await self.drone.offboard.stop()
 
-    async def move_right_offset(self, velocity, yaw = 0):
+    async def move_right_offset(self, velocity, *, yaw = 0, seconds = 5):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_velocity_ned(
-            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
-        )
+        await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_velocity_ned( 
+        await self.drone.offboard.set_velocity_ned(
             VelocityNedYaw(0.0, velocity, 0.0, yaw)
         )
-        
-        await asyncio.sleep(5)
+
+        await asyncio.sleep(seconds)
         await self.drone.offboard.stop()
 
-    async def move_down_offset(self, velocity, yaw = 0):
+    async def move_down_offset(self, velocity, *, yaw = 0, seconds = 5):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_velocity_ned(
-            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
-        )
+        await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_velocity_ned( 
+        await self.drone.offboard.set_velocity_ned(
             VelocityNedYaw(0.0, 0.0, velocity, yaw)
         )
-        
-        await asyncio.sleep(5)
+
+        await asyncio.sleep(seconds)
         await self.drone.offboard.stop()
 
-    async def move_up_offset(self, velocity, yaw = 0):
+    async def move_up_offset(self, velocity, *, yaw = 0, seconds = 5):
         north, east, down = await self.current_ned()
-        await self.drone.offboard.set_velocity_ned(
-            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
-        )
+        await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
         await self.drone.offboard.start()
         await asyncio.sleep(1)
-        await self.drone.offboard.set_velocity_ned( 
+        await self.drone.offboard.set_velocity_ned(
             VelocityNedYaw(0.0, 0.0, velocity * -1, yaw)
         )
-        
-        await asyncio.sleep(5)
-        await self.drone.offboard.stop()
-    
-    async def move_forward_offset(self, velocity, yaw = 0):
-        north, east, down = await self.current_ned()
-        await self.drone.offboard.set_velocity_ned(
-            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
-        )
-        await self.drone.offboard.start()
-        await asyncio.sleep(1)
-        await self.drone.offboard.set_velocity_ned( 
-            VelocityNedYaw(velocity, 0.0, 0.0, yaw)
-        )
-        
-        await asyncio.sleep(5)
-        await self.drone.offboard.stop()
-        
-    async def move_backward_offset(self, velocity, yaw = 0):
-        north, east, down = await self.current_ned()
-        await self.drone.offboard.set_velocity_ned(
-            VelocityNedYaw(0.0, 0.0, 0.0, 0.0)
-        )
-        await self.drone.offboard.start()
-        await asyncio.sleep(1)
-        await self.drone.offboard.set_velocity_ned( 
-            VelocityNedYaw(velocity * -1, 0.0, 0.0, yaw)
-        )
-        
-        await asyncio.sleep(5)
+
+        await asyncio.sleep(seconds)
         await self.drone.offboard.stop()
 
-    async def evade(self):
-        pass
-        
+    async def move_forward_offset(self, velocity, *, yaw = 0, seconds = 5):
+        north, east, down = await self.current_ned()
+        await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
+        await self.drone.offboard.start()
+        await asyncio.sleep(1)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(velocity, 0.0, 0.0, yaw)
+        )
+
+        await asyncio.sleep(seconds)
+        await self.drone.offboard.stop()
+
+    async def move_backward_offset(self, velocity, *, yaw = 0, seconds = 5):
+        north, east, down = await self.current_ned()
+        await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
+        await self.drone.offboard.start()
+        await asyncio.sleep(1)
+        await self.drone.offboard.set_velocity_ned(
+            VelocityNedYaw(velocity * -1, 0.0, 0.0, yaw)
+        )
+
+        await asyncio.sleep(seconds)
+        await self.drone.offboard.stop()
+
     async def move_to_waypoint(self, dict, yaw = 0.0):
         lat, lon, alt = dict.values()
         print(lat, lon, alt, yaw, self.mode)
@@ -269,23 +265,32 @@ class Drone():
             PositionGlobalYaw(clat, clon, calt, 0, self.mode)
         )
         await self.drone.offboard.start()
-        
+
         await self.drone.offboard.set_position_global(
             PositionGlobalYaw(lat, lon, alt, yaw, self.mode)
-            )
+        )
 
         async for position in self.drone.telemetry.position():
             if (
-                (position.latitude_deg - 0.000001 < lat < position.latitude_deg + 0.000001
-                ) and (
-                position.longitude_deg - 0.000001 < lon < position.longitude_deg + 0.000001                
-                ) and (
-                position.relative_altitude_m - 0.5 < alt < position.relative_altitude_m + 0.5
+                (
+                    position.latitude_deg - 0.000001
+                    < lat
+                    < position.latitude_deg + 0.000001
+                )
+                and (
+                    position.longitude_deg - 0.000001
+                    < lon
+                    < position.longitude_deg + 0.000001
+                )
+                and (
+                    position.relative_altitude_m - 0.5
+                    < alt
+                    < position.relative_altitude_m + 0.5
                 )
             ):
-                print('-- Successfully reached waypoint')
+                print("-- Successfully reached waypoint")
                 break
-        
+
         await self.drone.offboard.stop()
 
     async def return_to_home(self):

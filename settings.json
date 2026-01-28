@@ -1,6 +1,6 @@
 {
     "Mission File Path": "",
     "Drone": {
-        "port": ""
+        "port": null
     }
 }
