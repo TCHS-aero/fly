@@ -1,6 +1,5 @@
 import csv
 import asyncio
-import click
 import math
 from mavsdk import System
 from mavsdk.offboard import PositionGlobalYaw, PositionNedYaw, VelocityNedYaw
@@ -96,20 +95,29 @@ class Mission:
         return self.waypoints
 
 class Drone():
-    def __init__(self, udpin = "udpin://0.0.0.0:14540", default_takeoff_altitude = 5, max_velocity=0.5):
+    def __init__(self, udpin, *, connection_timeout = 5, default_takeoff_altitude = 5, velocity=0.5):
         self.drone = System()
         self.takeoff_altitude = default_takeoff_altitude
         self.mode = PositionGlobalYaw.AltitudeType(0)
         self.udpin = udpin
-        self.max_velocity = max_velocity
+        self.velocity = velocity
+        self.connection_timeout = connection_timeout
+
 
     async def connect(self):
-        await self.drone.connect(system_address=self.udpin)
-        async for state in self.drone.core.connection_state():
-            if state.is_connected:
-                print("-- Found stable connecton")
-                break
-            print("-- Stable connection not found, retrying...")
+        connected = False
+        try:
+            async with asyncio.timeout(self.connection_timeout):
+                await self.drone.connect(system_address=self.udpin)
+                async for state in self.drone.core.connection_state():
+                    if state.is_connected:
+                        print("-- Found a stable connection to the drone!")
+                        connected = True
+                        break
+        except asyncio.TimeoutError:
+            print(f"-- Failed to connect to the drone within {self.connection_timeout} seconds")
+
+        return connected
 
     async def preflight_preparation(self):
         
