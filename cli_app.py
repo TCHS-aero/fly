@@ -52,6 +52,10 @@ def load_mission():
 def cli():
     pass
 
+@click.group(help="Manage drone mission operations.")
+def mission():
+    pass
+
 @click.command(help="Update the port configuration; specify --port for a custom port.")
 @click.option("--port", help="A port to connect to the drone with. Can be a UDP, TCP, or Serial port.")
 async def connect(port):
@@ -165,21 +169,48 @@ async def move(right, left, up, down, forward, backward):
 
     save_drone(drone)
 
-@click.command()
-@click.option("--importfile", type=click.Path(exists=True), help="The file required to run a mission. Must be a CSV.")
-def upload_mission_file(importfile):
-    if not importfile:
-        print("Please specify a filepath with the --importfile flag.")
+@mission.command(name="import", help="Upload a CSV file to run a mission from.")
+@click.option("--file", type=click.Path(exists=True), help="The file required to run a mission. Must be a CSV.")
+def upload_mission_file(file):
+    if not file:
+        print("Please specify a filepath with the --file flag.")
         return
 
     data = pull_from_json()
-    print("-- Found data to import") if data else None
-    print("-- Mission file already detected. Overwriting...") if data.get(mission_file_json) else None
+    if data:
+        if data.get("mission_file_json"):
+            print("-- Mission file already detected. Overwriting...")
 
-    if importfile.endswith(".csv"):
-        mission = Mission(importfile)
-        write_to_json({mission_file_json: importfile})
-        print(f"-- Mission loaded with {mission.total_waypoints} waypoints detected.")
+    if file.endswith(".csv"):
+        with open(file, "r") as csvfile:
+            header = csvfile.readline().strip() or "null"
+
+            pattern = r"^\s*latitude\s*,\s*longitude\s*,\s*altitude\s*$"
+
+            if not re.match(pattern, header, re.IGNORECASE):
+                print(f"-- Invalid CSV header: {header}")
+                print("""Please ensure your CSV file contains the following columns:
+                latitude,longitude,altitude
+
+                Example:
+                latitude,longitude,altitude
+                47.399075,8.545180,45
+                47.398814,8.546558,45
+                47.397786,8.544415,45
+                47.399195,8.546003,15
+                47.397593,8.544971,50
+
+These waypoints are mere examples, please update them with the relevant information.""")
+                return
+
+        try:
+            mission = Mission(file)
+            write_to_json({mission_file_json: file})
+            print(f"-- Mission loaded with {mission.total_waypoints} waypoints detected.")
+        except Exception as e:
+            print(f"-- Failed to load mission: {e}")
+            return
+
     else:
         print(f"-- Filetype not supported. Please select a CSV file.\n")
         print("""File format:
@@ -198,4 +229,6 @@ if __name__ == "__main__":
     cli.add_command(takeoff, name="takeoff")
     cli.add_command(land, name="land")
     cli.add_command(return_to_launch, name="return")
+    cli.add_command(mission_file_json, name="mission")
+    cli.add_command(mission)
     cli()

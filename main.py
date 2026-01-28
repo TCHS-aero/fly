@@ -26,7 +26,7 @@ class Mission:
                         elif value.isdigit():
                             row[key] = int(value)
                     except:
-                        pass
+                        print(f"WARNING! {key} is empty.")
                 self.waypoints.append(row)
                 self.total_waypoints = len(self.waypoints)
             
