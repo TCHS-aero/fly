@@ -7,7 +7,8 @@ Welcome to the TCHS Aero's main drone team repository! This project contains the
 | Categories    | What's shown?|
 | ------------- |:-------------:|
 | [Setup](#quickstart) | Setup/Installation instructions. |
-| [How does SITL work?](#howdoesitwork) | Explains how the PX4 Software In The Loop Works |
+| [How does SITL work?](#howdoesitwork) | Explains how the PX4 Software In The Loop Works. |
+| [Usage](#usage) | How to use this repository. |
 | [Used Packages](#pkgs) | All packages used in this repo. |
 
 <a name="quickstart">
@@ -62,12 +63,12 @@ Setting up the individual scripts is simple.
 
 2. Clone this repository.
     ```bash
-    git clone https://github.com/TCHS-aero/fly/; cd fly
+    git clone https://github.com/TCHS-aero/fly/ fly; cd fly
     ```
 
-3. Install mavsdk using pip.
+3. Install all dependencies.
     ```bash
-    python -m pip install mavsdk
+    python -m pip install -r requirements.txt
     ```
 
 > [!CAUTION]
@@ -126,6 +127,57 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
     make px4_sitl jmavsim
     ```
 You may also want to use your simulation alongside an application such as QGroundControl. All you have to do is run it, and it will automatically connect.
+
+<a name="usage">
+
+### Usage
+
+As of now, we only have a limited CLI to interface with the drone with. This is scheduled to change soon.
+The CLI is compatible with the simulation by default, but some additional setup is requried for real flights.
+
+**Simulation**
+
+Simply running SITL will forward two ports, udp://0.0.0.0:14540 and udp://0.0.0.0:14550. All you need to do is connect to one of these ports.
+
+```bash
+# The "--port" flag is an optional setting, and is mainly used for actual drones. Ignoring it defaults the connectiong to 14540.
+python cli_app.py connect --port udpin://0.0.0.0:14540
+```
+
+> [!NOTE]
+> Port 14550 can be used to talk to the drone, however it is recommended to use 14540 instead, as 14550 is the default port that QGC listens to.
+
+**Actual Flight**
+
+On the actual flight, it is not as simpple as connecting to 14540. You must find the port specifically connected to your PixHawk configuration on your flight device.
+This varies depending on what telemtry radio you are using.
+
+<details open=true>
+<summary>Unix Filesystems</summary>
+
+You can find plugged USB's with the command `lsusb -t`.
+    
+```bash
+# Replace "ttyUSB0" with whatever USB port your telemetry radio is plugged in.
+# If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
+python cli_app.py connect --port serial:///dev/ttyUSB0:921600
+```
+
+</details>
+
+<details open=true>
+<summary>Windows</summary>
+    
+```bash
+# Replace "COM3" with whatever USB port your telemetry radio is plugged in. You can find your COM port via Device Manager.
+# If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
+python cli_app.py connect --port serial://COM3:921600
+```
+
+</details>
+
+> [!NOTE]
+> Typically you'd use 921600 BAUD for offboard control, and 57600 BAUD for Ground Control.
 
 <a name="howdoesitwork">
 
