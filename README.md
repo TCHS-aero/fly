@@ -193,3 +193,6 @@ PX4 SITL is a way to run the PX4 flight-control software on your computer instea
 * [Gazebo](https://gazebosim.org/home)
 * [Python](https://www.python.org/)
 * [MAVSDK-python](https://github.com/mavlink/MAVSDK-Python)
+* [PyQt6](https://pypi.org/project/PyQt6/)
+* [qasync](https://github.com/CabbageDevelopment/qasync)
+* [asyncclick](https://pypi.org/project/asyncclick/)
