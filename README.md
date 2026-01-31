@@ -140,7 +140,7 @@ The CLI is compatible with the simulation by default, but some additional setup 
 Simply running SITL will forward two ports, udp://0.0.0.0:14540 and udp://0.0.0.0:14550. All you need to do is connect to one of these ports.
 
 ```bash
-# The "--port" flag is an optional setting, and is mainly used for actual drones. Ignoring it defaults the connectiong to 14540.
+# The "--port" flag is an optional setting, and is mainly used for actual drones. Ignoring it defaults the connection to 14540.
 python cli_app.py connect --port udpin://0.0.0.0:14540
 ```
 
