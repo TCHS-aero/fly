@@ -141,7 +141,7 @@ Simply running SITL will forward two ports, udp://0.0.0.0:14540 and udp://0.0.0.
 
 ```bash
 # The "--port" flag is an optional setting, and is mainly used for actual drones. Ignoring it defaults the connection to 14540.
-python cli_app.py connect --port udpin://0.0.0.0:14540
+PYTHONPATH=src python -m fly.interface.cli connect --port udpin://0.0.0.0:14540
 ```
 
 > [!NOTE]
@@ -160,7 +160,7 @@ You can find plugged USB's with the command `lsusb -t`.
 ```bash
 # Replace "ttyUSB0" with whatever USB port your telemetry radio is plugged in.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-python cli_app.py connect --port serial:///dev/ttyUSB0:921600
+PYTHONPATH=src python -m fly.interface.cli connect --port serial:///dev/ttyUSB0:921600
 ```
 
 </details>
@@ -171,7 +171,7 @@ python cli_app.py connect --port serial:///dev/ttyUSB0:921600
 ```bash
 # Replace "COM3" with whatever USB port your telemetry radio is plugged in. You can find your COM port via Device Manager.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-python cli_app.py connect --port serial://COM3:921600
+PYTHONPATH=src python -m fly.interface.cli connect --port serial://COM3:921600
 ```
 
 </details>
