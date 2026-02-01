@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fly"
+version = "0.1.0"
+description = "Drone CLI from Aero workspace"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+  "mavsdk",
+  "PyQt6",
+  "qasync",
+  "asyncclick",
+]
+
+[project.scripts]
+fly = "fly.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,10 +1,12 @@
 import asyncclick as click
+from importlib.resources import files
 import re
 import json
-from main import Mission, Drone
+from fly.core.drone import Drone
+from fly.core.mission import Mission
 
-settings = "./settings.json"
-mission_file_json = "Mission File Path"
+settings = files("fly.config").joinpath("settings.json")
+mission_file_json = "Mission"
 drone_instance_json = "Drone"
 
 
@@ -46,9 +48,34 @@ async def load_drone():
     return
 
 
-def load_mission():
-    mission_file = pull_from_json().get(mission_file_json)
-    return Mission(mission_file) if mission_file else None
+async def load_mission():
+    mission = pull_from_json().get(mission_file_json)
+    if mission:
+        file_path = mission.get("file_path", None)
+        if not file_path:
+            print(
+                "-- No mission file found. Are you sure you ran mission import --file?"
+            )
+            return
+
+        current_index = mission.get("current_index", 0)
+
+        mission = Mission(file_path, current_index=current_index)
+        return mission
+    return
+
+
+async def save_mission(mission):
+    print("-- Updating Mission Data...")
+    write_to_json(
+        {
+            mission_file_json: {
+                "file_path": mission.file,
+                "current_index": mission.current_index,
+            }
+        }
+    )
+    return
 
 
 @click.group()
@@ -56,17 +83,23 @@ def cli():
     pass
 
 
-@click.group(help="Manage all drone missions, including importing a mission and starting/stopping it.")
+@click.group(
+    help="Manage all drone missions, including importing a mission and starting/stopping it."
+)
 def mission():
     pass
 
 
-@click.group(help="Control the drone's movement in the North-East-Down (NED) coordinate system.")
+@click.group(
+    help="Control the drone's movement in the North-East-Down (NED) coordinate system."
+)
 def move():
     pass
 
 
-@click.command(help="Clear all current configuration and reset all settings saved in the system.")
+@click.command(
+    help="Clear all current configuration and reset all settings saved in the system."
+)
 def wipe_config():
     confirm = True
     while confirm:
@@ -86,11 +119,13 @@ def wipe_config():
     if ans == "n":
         return
 
-    write_to_json({mission_file_json: "", drone_instance_json: {"port": None}})
+    write_to_json({mission_file_json: {}, drone_instance_json: {"port": None}})
     print("-- Data wiped! This is irreversible.")
 
 
-@click.command(help="Connect to a drone using the specified port (UDP, TCP, or Serial). Default is udpin://0.0.0.0:14540.")
+@click.command(
+    help="Connect to a drone using the specified port (UDP, TCP, or Serial). Default is udpin://0.0.0.0:14540."
+)
 @click.option(
     "--port",
     help="A port to connect to the drone. Valid formats include UDP (e.g., udpin://0.0.0.0:14540), TCP, or Serial.",
@@ -191,13 +226,18 @@ async def return_to_launch():
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+    "--time",
+    type=float,
+    default=1,
+    help="Duration of movement in seconds (default: 1).",
 )
 async def left(velocity, yaw, time):
     await execute_movement("left", velocity, yaw, time)
 
 
-@move.command(name="right", help="Move the drone right (positive East) in the NED frame.")
+@move.command(
+    name="right", help="Move the drone right (positive East) in the NED frame."
+)
 @click.option(
     "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
 )
@@ -205,7 +245,10 @@ async def left(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+    "--time",
+    type=float,
+    default=1,
+    help="Duration of movement in seconds (default: 1).",
 )
 async def right(velocity, yaw, time):
     await execute_movement("right", velocity, yaw, time)
@@ -219,7 +262,10 @@ async def right(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+    "--time",
+    type=float,
+    default=1,
+    help="Duration of movement in seconds (default: 1).",
 )
 async def up(velocity, yaw, time):
     await execute_movement("up", velocity, yaw, time)
@@ -233,13 +279,18 @@ async def up(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+    "--time",
+    type=float,
+    default=1,
+    help="Duration of movement in seconds (default: 1).",
 )
 async def down(velocity, yaw, time):
     await execute_movement("down", velocity, yaw, time)
 
 
-@move.command(name="forward", help="Move the drone forward (positive North) in the NED frame.")
+@move.command(
+    name="forward", help="Move the drone forward (positive North) in the NED frame."
+)
 @click.option(
     "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
 )
@@ -247,13 +298,18 @@ async def down(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+    "--time",
+    type=float,
+    default=1,
+    help="Duration of movement in seconds (default: 1).",
 )
 async def forward(velocity, yaw, time):
     await execute_movement("forward", velocity, yaw, time)
 
 
-@move.command(name="backward", help="Move the drone backward (negative North) in the NED frame.")
+@move.command(
+    name="backward", help="Move the drone backward (negative North) in the NED frame."
+)
 @click.option(
     "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
 )
@@ -261,11 +317,22 @@ async def forward(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time", type=float, default=1, help="Duration of movement in seconds (default: 1)."
+    "--time",
+    type=float,
+    default=1,
+    help="Duration of movement in seconds (default: 1).",
 )
 async def backward(velocity, yaw, time):
     await execute_movement("backward", velocity, yaw, time)
 
+@move.command(name="stop", help="Stop current movement of the drone if the movement method is offboard.")
+async def stop():
+    drone = await load_drone()
+    if not drone:
+        return
+
+    await drone.connect()
+    await drone.stop_movement()
 
 async def execute_movement(direction, velocity, yaw, seconds):
     print(
@@ -287,7 +354,10 @@ async def execute_movement(direction, velocity, yaw, seconds):
         print(f"-- Error moving the drone {direction}: {e}")
 
 
-@mission.command(name="import", help="Upload a mission file in CSV format. Valid columns: latitude, longitude, altitude.")
+@mission.command(
+    name="import",
+    help="Upload a mission file in CSV format. Valid columns: latitude, longitude, altitude.",
+)
 @click.option(
     "--file",
     type=click.Path(exists=True),
@@ -327,7 +397,7 @@ These waypoints are mere examples, please update them with the relevant informat
 
         try:
             mission = Mission(file)
-            write_to_json({mission_file_json: file})
+            write_to_json({mission_file_json: {"file_path": file}})
             print(
                 f"-- Mission loaded with {mission.total_waypoints} waypoints detected."
             )
