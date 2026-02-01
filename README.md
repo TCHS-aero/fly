@@ -149,7 +149,7 @@ PYTHONPATH=src python -m fly.interface.cli connect --port udpin://0.0.0.0:14540
 
 **Actual Flight**
 
-On the actual flight, it is not as simpple as connecting to 14540. You must find the port specifically connected to your PixHawk configuration on your flight device.
+On the actual flight, it is not as simple as connecting to 14540. You must find the port specifically connected to your PixHawk configuration on your flight device.
 This varies depending on what telemtry radio you are using.
 
 <details open=true>
