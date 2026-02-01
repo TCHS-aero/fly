@@ -1,6 +1,6 @@
 {
     "Drone": {
-        "port": ""
+        "port": null
     },
     "Mission": {}
 }
