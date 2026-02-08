@@ -2,3 +2,13 @@ mavsdk
 PyQt6
 qasync
 asyncclick
+
+# Core dependences for rfdetr, listed for clarity
+torch
+torchvision
+numpy
+# Utilities
+supervision>=0.18.0
+Pillow
+# Model
+rfdetr
