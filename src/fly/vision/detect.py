@@ -149,7 +149,8 @@ Examples:
     
     # Run detection
     print(f"\nRunning detection (threshold: {args.confidence})...")
-    detections, raw_detections = detector.detect(image)
+    detections, raw_detections, duration = detector.detect(image)
+    print(f"Inference took: {duration:.4f} seconds, {1000*duration:.1f} ms, {1/duration:.2f} FPS")
     print(f"Found {len(detections)} detections")
     
     # Print results

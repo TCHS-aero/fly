@@ -8,6 +8,7 @@ import numpy as np
 from rfdetr import RFDETRNano
 from rfdetr.util.coco_classes import COCO_CLASSES
 import supervision as sv
+import time
 
 
 class NanoDetector:
@@ -66,10 +67,14 @@ class NanoDetector:
         """
         if self.model is None:
             self.load_model()
-        
+        # Start timer
+        start_time = time.perf_counter()
         # Run inference
         detections = self.model.predict(image, threshold=self.confidence_threshold)
-        
+        # End timer
+        end_time = time.perf_counter()
+        inference_time = end_time - start_time
+
         # Extract information
         results = []
         for i in range(len(detections)):
@@ -106,7 +111,7 @@ class NanoDetector:
             }
             results.append(result)
         
-        return results, detections
+        return results, detections, inference_time
     
     def visualize(self, image, detections, output_path=None):
         """
