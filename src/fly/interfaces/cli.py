@@ -1,4 +1,5 @@
 import asyncclick as click
+import json
 import re
 from fly.core.drone import Drone
 from fly.core.mission import Mission
@@ -276,12 +277,12 @@ async def execute_movement(direction, velocity, yaw, seconds):
 
 @mission.command(
     name="import",
-    help="Upload a mission file in CSV format. Valid columns: latitude, longitude, altitude.",
+    help="Upload a mission file in JSON format.",
 )
 @click.option(
     "--file",
     type=click.Path(exists=True),
-    help="The CSV file defining the mission waypoints.",
+    help="The JSON file defining the mission waypoints.",
 )
 def upload_mission_file(file):
     if not file:
@@ -293,24 +294,31 @@ def upload_mission_file(file):
         if data.get("mission_file_json"):
             print("-- Mission file already detected. Overwriting...")
 
-    if file.endswith(".csv"):
-        with open(file, "r") as csvfile:
-            header = csvfile.readline().strip() or "null"
+    if file.endswith(".json"):
+        with open(file, 'r') as json_file:
+            data = json.load(json_file)
+            
+            if not data: 
+                print("The file is valid but contains an empty list or dictionary.")
+                return
 
-            pattern = r"^\s*latitude\s*,\s*longitude\s*,\s*altitude\s*$"
-
-            if not re.match(pattern, header, re.IGNORECASE):
-                print(f"-- Invalid CSV header: {header}")
-                print("""Please ensure your CSV file contains the following columns:
-                latitude,longitude,altitude
-
-                Example:
-                latitude,longitude,altitude
-                47.399075,8.545180,45
-                47.398814,8.546558,45
-                47.397786,8.544415,45
-                47.399195,8.546003,15
-                47.397593,8.544971,50
+            keys = {"latitude", "longitude", "altitude"}
+            if not all(set(item) == keys for item in data):
+                print("-- Invalid JSON keys.")
+                print("""Please ensure your JSON file contains the following:
+        Example:
+        [
+            {
+                "latitude": 47.399075,
+                "longitude": 8.545180,
+                "altitude": 45
+            },
+            {
+                "latitude": 47.398814,
+                "longitude": 8.546558,
+                "altitude": 45
+            }
+        ]
 
 These waypoints are mere examples, please update them with the relevant information.""")
                 return
@@ -326,14 +334,20 @@ These waypoints are mere examples, please update them with the relevant informat
             return
 
     else:
-        print("-- Filetype not supported. Please select a CSV file.\n")
+        print("-- Filetype not supported. Please select a JSON file.\n")
         print("""File format:
-        latitude,longitude,altitude
-        47.399075,8.545180,45
-        47.398814,8.546558,45
-        47.397786,8.544415,45
-        47.399195,8.546003,15
-        47.397593,8.544971,50
+        [
+            {
+                "latitude": 47.399075,
+                "longitude": 8.545180,
+                "altitude": 45
+            },
+            {
+                "latitude": 47.398814,
+                "longitude": 8.546558,
+                "altitude": 45
+            }
+        ]
 
 These waypoints are mere examples, please update them with the relevant information.""")
 
