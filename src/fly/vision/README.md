@@ -23,3 +23,5 @@ conda activate ai
 ```bash
 conda deactivate
 ```
+
+Then you can run the default installation requirements in the fly directory to use the (ai) venv for all programs.
