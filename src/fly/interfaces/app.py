@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.error.setGeometry(200,50,600,50)
         self.error.hide()
 
-        self.upload_mission = QPushButton("upload preset mission\n (MUST BE CSV FILE)",self)
+        self.upload_mission = QPushButton("upload preset mission\n (MUST BE .json FILE)",self)
         self.upload_mission.setGeometry(900,400,200,200)
         self.upload_mission.setStyleSheet("background-color: grey")
         self.upload_mission.clicked.connect(self.file_upload)
@@ -56,10 +56,17 @@ class MainWindow(QMainWindow):
         self.return_to_launch = QPushButton("Return to lauch position", self)
         self.return_to_launch.setStyleSheet("background-color: grey")
         self.return_to_launch.setGeometry(900,220,200,50)
-
+        
+        self.start_mission = QPushButton("Start the mission",self)
+        self.start_mission.setStyleSheet("background-color: red")
+        self.start_mission.setGeometry(675, 280, 200, 50)
+        self.start_mission.clicked.connect(self.start_the_mission)
+   
         self.land_drone = QPushButton("Land drone", self)
         self.land_drone.setStyleSheet("background-color: grey")
         self.land_drone.setGeometry(900,280,200, 50)
+        self.land_drone.clicked.connect(self.land_drone_function)
+        
 
         '''image = QLabel(self)
         pixmap = QPixmap("pyqt6/teto.jpg")
@@ -89,13 +96,32 @@ class MainWindow(QMainWindow):
 
 
 
-            
-        '''async def connect_to_drone_function(self):
-        self.drone = Drone(port = "udpin://0.0.0.0:14540")
-        connect = await self.drone.connect()
-        if connect:
-            self.connect_to_drone.setText("drone has been connected")
-            self.connect_to_drone.setStyleSheet("background-color: green")'''
+    @asyncSlot()
+    async def start_the_mission(self):
+        try:
+            print("teto")
+            for waypoint in range(len(self.mission.waypoints)):
+                print('diabeto')
+                i = self.mission.get_waypoint(waypoint)
+                await self.drone.move_to_waypoint(self.mission.advance_next_waypoint())
+        except Exception as e:
+            print(e)
+
+
+
+
+        
+
+    @asyncSlot()
+    async def land_drone_function(self):
+
+        try:
+            await self.drone.land()
+
+        except Exception as e:
+            print(e)
+
+
 
     @asyncSlot()
     async def takeoff_function(self):
@@ -103,8 +129,9 @@ class MainWindow(QMainWindow):
 
     
     def file_upload(self):
+
         dialog = QFileDialog()
-        dialog.setNameFilter("*.csv")
+        dialog.setNameFilter("*.json")
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         dialogSuccess = dialog.exec()
 
@@ -128,7 +155,7 @@ class MainWindow(QMainWindow):
         
             self.waypoint_counter+=1
             self.waypoint_coord = QLabel(self)
-            self.x_label = QPushButton(icon = QIcon(settings = files("fly.config").joinpath("settings.json")),text="" ,parent=self)
+            self.x_label = QPushButton(icon = QIcon("~arrow/fly/src/fly/config/x.jpg"),text="" ,parent=self)
             self.x_label.setCheckable(True)
            
             
