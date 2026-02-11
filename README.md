@@ -135,7 +135,7 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
 You may also want to use your simulation alongside an application such as QGroundControl. All you have to do is run it, and it will automatically connect.
 
 > [!IMPORTANT]
-> If you previously ran the make command on ubuntu before installing dependencies, make sure to run ```make distclean``` to revert the build before running again. Otherwise, you may encounter a "target not found" error.
+> If you previously ran the make command before installing dependencies, make sure to run ```make distclean``` to revert the build before running again. Otherwise, you may encounter a "target not found" error.
 
 <a name="usage">
 
