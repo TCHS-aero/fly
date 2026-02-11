@@ -1,4 +1,4 @@
-import csv
+import json
 
 class Mission:
     def __init__(self, file, *, current_index = 0):
@@ -11,21 +11,10 @@ class Mission:
 
     def parse_file(self):
         print(f"-- Parsing {self.file}")
-        with open(self.file) as csvfile:
-            reader = csv.DictReader(csvfile)
 
-            for row in reader:
-                for key, value in row.items():
-                    try:
-                        if "." in value:
-                            row[key] = float(value)
-                        elif value.isdigit():
-                            row[key] = int(value)
-                    except Exception:
-                        pass
-
-                self.waypoints.append(row)
-                self.total_waypoints = len(self.waypoints)
+        with open(self.file, "r") as read_file:
+            self.waypoints = json.load(read_file)
+            self.total_waypoints = len(self.waypoints)
 
             
             print("-- Success!")
