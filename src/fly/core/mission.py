@@ -27,13 +27,17 @@ class Mission:
                 self.waypoints.append(row)
                 self.total_waypoints = len(self.waypoints)
 
-        print("-- Success!")
+            
+            print("-- Success!")
+            return self.waypoints
+         
 
     def get_current_waypoint(self):
         return self.waypoints[self.current_index]
 
     def get_waypoint(self, index):
         try:
+            print("-- waypoint successfully retrived")
             return self.waypoints[index]
         except Exception:
             print("-- Invalid index, try again.")
