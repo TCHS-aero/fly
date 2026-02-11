@@ -141,6 +141,35 @@ You may also want to use your simulation alongside an application such as QGroun
 
 ### Usage
 
+To use this script, it is recommended for development to install this repository as an editable python module.
+
+```bash
+pip install -e .
+```
+
+Uninstalling it as simple as removing the `fly` module.
+
+```bash
+pip uninstall fly
+```
+
+Now, you can run any script/interface by running it's module name.
+
+```bash
+# Here is an example of running the CLI as a module.
+python -m fly.interfaces.cli
+```
+
+Alternatively, you can run it directly by altering the python path.
+
+```bash
+PYTHONPATH=src python -m fly.interface.cli
+```
+
+For the sake of simplicity, the rest of the examples will be using the former method.
+
+---
+
 As of now, we only have a limited CLI to interface with the drone with. This is scheduled to change soon.
 The CLI is compatible with the simulation by default, but some additional setup is requried for real flights.
 
@@ -150,7 +179,7 @@ Simply running SITL will forward two ports, udp://0.0.0.0:14540 and udp://0.0.0.
 
 ```bash
 # The "--port" flag is an optional setting, and is mainly used for actual drones. Ignoring it defaults the connection to 14540.
-PYTHONPATH=src python -m fly.interface.cli connect --port udpin://0.0.0.0:14540
+python -m fly.interface.cli connect --port udpin://0.0.0.0:14540
 ```
 
 > [!NOTE]
@@ -169,7 +198,7 @@ You can find plugged USB's with the command `lsusb -t`.
 ```bash
 # Replace "ttyUSB0" with whatever USB port your telemetry radio is plugged in.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-PYTHONPATH=src python -m fly.interface.cli connect --port serial:///dev/ttyUSB0:921600
+python -m fly.interface.cli connect --port serial:///dev/ttyUSB0:921600
 ```
 
 </details>
@@ -180,7 +209,7 @@ PYTHONPATH=src python -m fly.interface.cli connect --port serial:///dev/ttyUSB0:
 ```bash
 # Replace "COM3" with whatever USB port your telemetry radio is plugged in. You can find your COM port via Device Manager.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-PYTHONPATH=src python -m fly.interface.cli connect --port serial://COM3:921600
+python -m fly.interface.cli connect --port serial://COM3:921600
 ```
 
 </details>
