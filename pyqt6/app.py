@@ -2,9 +2,12 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QWid
 from PyQt6.QtGui import QIcon, QFont, QPixmap
 from PyQt6.QtCore import Qt, QUrl, QSize, QTimer
 from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
+import asyncio
+from qasync import QEventLoop,asyncSlot
 import sys
 import os
 from fly.core.mission import Mission
+from fly.core.drone import Drone
 from random import randint
 import logging
 
@@ -43,10 +46,12 @@ class MainWindow(QMainWindow):
         self.connect_to_drone = QPushButton('connect to drone', self)
         self.connect_to_drone.setStyleSheet("background-color: grey")
         self.connect_to_drone.setGeometry(900,100,200,50)
+        self.connect_to_drone.clicked.connect(self.connect_to_drone_function)
 
         self.takeoff = QPushButton("Takeoff", self)
         self.takeoff.setStyleSheet("background-color: grey")
         self.takeoff.setGeometry(900,160,200,50)
+        self.takeoff.clicked.connect(self.takeoff_function)
 
         self.return_to_launch = QPushButton("Return to lauch position", self)
         self.return_to_launch.setStyleSheet("background-color: grey")
@@ -66,8 +71,37 @@ class MainWindow(QMainWindow):
         self.biang = QLabel("𰻞", self)
         self.biang.resize(100,100)
 
+    @asyncSlot()
+    async def connect_to_drone_function(self):
+        try:
+            self.drone = Drone(port="udpin://0.0.0.0:14540")
+            connected = await self.drone.connect()
+            if connected:
+                print('connected')
+                self.statusBar().showMessage("Connected to drone!")
+                self.connect_to_drone.setStyleSheet("background-color: green")
+            else:
+                self.statusBar().showMessage("Failed to connect to drone")
+                self.connect_to_drone.setStyleSheet("background-color: red")
+        except Exception as e:
+            print(f"Connection error: {e}")
+            self.statusBar().showMessage(f"Connection error: {str(e)}")
 
 
+
+            
+        '''async def connect_to_drone_function(self):
+        self.drone = Drone(port = "udpin://0.0.0.0:14540")
+        connect = await self.drone.connect()
+        if connect:
+            self.connect_to_drone.setText("drone has been connected")
+            self.connect_to_drone.setStyleSheet("background-color: green")'''
+
+    @asyncSlot()
+    async def takeoff_function(self):
+        await self.drone.takeoff(10.0)
+
+    
     def file_upload(self):
         dialog = QFileDialog()
         dialog.setNameFilter("*.csv")
@@ -188,11 +222,22 @@ class MainWindow(QMainWindow):
         self.waypoint_counter -=1
 def main():
     app = QApplication(sys.argv)
+
+
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+
+
     window = MainWindow()
     window.statusBar().showMessage("no diabeto roll back to kitchen")
+
     
     window.show()
-    sys.exit(app.exec()) #without this the window default closes. with this the window waits until closure to...close...
+    #sys.exit(app.exec()) #without this the window default closes. with this the window waits until closure to...close...
+
+    with loop:
+        loop.run_forever()
+
 
 if __name__ == "__main__":
     main()
