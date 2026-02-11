@@ -99,11 +99,17 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
     <details>
       <summary>Debain/Ubuntu Linux</summary>
       
-      1. This script installs applications through apt, meaning you need **sudo** privilages.
+      1. Install dependencies.
+            ```bash
+            sudo apt-get install ant
+            ```
+      3. This script installs applications through apt, meaning you need **sudo** privilages.
 
             ```bash
             bash Tools/setup/ubuntu.sh
             ```
+    > The Ubuntu setup script sometimes skips over the ant install silently, so make sure you have both ant and atleast openjdk-17-jdk installed.
+
 
     </details>
     
@@ -127,6 +133,9 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
     make px4_sitl jmavsim
     ```
 You may also want to use your simulation alongside an application such as QGroundControl. All you have to do is run it, and it will automatically connect.
+
+> [!IMPORTANT]
+> If you previously ran the make command on ubuntu before installing dependencies, make sure to run ```make distclean``` to revert the build before running again. Otherwise, you may encounter a "target not found" error.
 
 <a name="usage">
 
