@@ -2,10 +2,10 @@ import sys
 import asyncio
 import re
 
-from src.fly.core.drone import Drone
+from fly.core.drone import Drone
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QLabel, QHBoxLayout,
-    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QGridLayout, QDoubleSpinBox, QTabWidget
+    QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox,
+    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget
 )
 from qasync import asyncSlot, QEventLoop
 
@@ -27,7 +27,6 @@ class TC_Drone_App(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Drone Controls")
-        self.setGeometry(100, 100, 400, 400)
 
         self.drone = None
     
@@ -46,6 +45,12 @@ class TC_Drone_App(QMainWindow):
         self.button_connect = QPushButton("1. Connect to the drone")
         self.button_connect.setCheckable(True)
         self.button_connect.clicked.connect(self.on_connect)
+        self.button_connect.setStyleSheet("""
+    QPushButton:checked {
+        background-color: green;
+        color: white;
+    }
+""")
 
 
         self.button_takeoff = QPushButton("2. Takeoff (10m)")
@@ -65,31 +70,39 @@ class TC_Drone_App(QMainWindow):
         background-color: red;
         color: white;
     }
-    QPushButton:checked {
-        background-color: orange;
-        color: white;
-    }
     QPushButton:pressed {
         background-color: darkorange;
         color: white;
     }
 """)
         
+        self.button_up = QPushButton("4. Move Up")
+        self.button_takeoff.setEnabled(True)
+        self.button_up.clicked.connect(self.move_up)
+        
+        self.velocity_text = QLabel("Velocity")
+        self.velocity = QDoubleSpinBox()
+
+        self.yaw_text = QLabel("Yaw")
+        self.yaw = QDoubleSpinBox()
+
         self.status = QLabel("Status: Disconnected")
         basic_layout.addWidget(self.status)
         self.console = QTextEdit()
         self.console.setReadOnly(True)
         basic_layout.addWidget(self.console)
 
-        
-        self.status = QLabel("Status: Disconnected")
-        self.console = QTextEdit()
         self.console.setReadOnly(True)
         
         layout.addWidget(self.port_edit)
         layout.addWidget(self.button_connect)
         layout.addWidget(self.button_takeoff)
         layout.addWidget(self.button_land)
+        layout.addWidget(self.button_up)
+        layout.addWidget(self.velocity_text)        
+        layout.addWidget(self.velocity)
+        layout.addWidget(self.yaw_text)
+        layout.addWidget(self.yaw)
         layout.addWidget(self.status)
         layout.addWidget(self.console)
         central.setLayout(layout)
@@ -166,11 +179,25 @@ class TC_Drone_App(QMainWindow):
             self.button_takeoff.setEnabled(True)
 
         except Exception as e:
-            self.log(f"Landing Error Error: {e}")
+            self.log(f"Landing Error: {e}")
             self.button_takeoff.setEnabled(True)
 
+    @asyncSlot()
+    async def move_up(self):
+        self.log("Starting Moving Sequence...")
+        self.velocity_flt = self.velocity.value()
+        self.yaw_flt = self.yaw.value()
+        print(self.velocity_flt, self.yaw_flt)
 
 
+
+        try:
+            await self.drone.move_up_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
+            self.log("Moving Up...")
+            self.status.setText("Status: Moving Up")
+
+        except Exception as e:
+            self.log(f"Moving Up Error: {e}")
 
 
 if __name__ == "__main__":
