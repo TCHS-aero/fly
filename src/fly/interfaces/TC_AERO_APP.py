@@ -5,7 +5,7 @@ import re
 from fly.core.drone import Drone
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox,
-    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget
+    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout
 )
 from qasync import asyncSlot, QEventLoop
 
@@ -27,89 +27,121 @@ class TC_Drone_App(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Drone Controls")
-
         self.drone = None
     
         central = QWidget()
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
-        # Create tab widget
+        # === CREATE TABS ===
         self.tabs = QTabWidget()
         
-        # Tab 1: Basic Controls (your existing)
-        basic_layout = QVBoxLayout()
+        # TAB 1: GENERAL CONTROLS + CONSOLE
+        general_widget = QWidget()
+        general_layout = QVBoxLayout()
         
         self.port_edit = QLineEdit()
         self.port_edit.setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
-
+        
         self.button_connect = QPushButton("1. Connect to the drone")
         self.button_connect.setCheckable(True)
         self.button_connect.clicked.connect(self.on_connect)
         self.button_connect.setStyleSheet("""
-    QPushButton:checked {
-        background-color: green;
-        color: white;
-    }
-""")
-
+            QPushButton:checked { background-color: green; color: white; }
+        """)
 
         self.button_takeoff = QPushButton("2. Takeoff (10m)")
         self.button_takeoff.setEnabled(False)
         self.button_takeoff.clicked.connect(self.on_takeoff)
 
         self.button_land = QPushButton("3. Land The Drone")
-        self.button_land.setCheckable(True)  # Enable toggle
-        self.button_land.setEnabled(False)   # Disable initially
+        self.button_land.setCheckable(True)
+        self.button_land.setEnabled(False)
         self.button_land.clicked.connect(self.on_land)
         self.button_land.setStyleSheet("""
-    QPushButton:disabled {
-        background-color: lightcoral;
-        color: white;
-    }
-    QPushButton:!checked {
-        background-color: red;
-        color: white;
-    }
-    QPushButton:pressed {
-        background-color: darkorange;
-        color: white;
-    }
-""")
+            QPushButton:disabled { background-color: lightcoral; color: white; }
+            QPushButton:!checked { background-color: red; color: white; }
+            QPushButton:pressed { background-color: darkorange; color: white; }
+        """)
+
+        self.status = QLabel("Status: Disconnected")
         
-        self.button_up = QPushButton("4. Move Up")
-        self.button_takeoff.setEnabled(True)
+        # CONSOLE 1 - General tab
+        self.general_console = QTextEdit()
+        self.general_console.setReadOnly(True)
+        
+        general_layout.addWidget(self.port_edit)
+        general_layout.addWidget(self.button_connect)
+        general_layout.addWidget(self.button_takeoff)
+        general_layout.addWidget(self.button_land)
+        general_layout.addWidget(self.status)
+        general_layout.addWidget(self.general_console)
+        general_widget.setLayout(general_layout)
+        self.tabs.addTab(general_widget, "General")
+
+        # TAB 2: MOVEMENT CONTROLS + CONSOLE
+        movement_widget = QWidget()
+        movement_layout = QVBoxLayout()
+        
+        self.movement_controls_text = QLabel("Movement Controls")
+        
+        # FIXED GRID
+        grid = QGridLayout()  # ← () creates instance!
+        
+        self.button_up = QPushButton("Move Up")
         self.button_up.clicked.connect(self.move_up)
+        self.button_down = QPushButton("Move Down")
+        self.button_down.clicked.connect(self.move_down)
+        self.button_left = QPushButton("Move Left")
+        self.button_left.clicked.connect(self.move_left)
+        self.button_right = QPushButton("Move Right")
+        self.button_right.clicked.connect(self.move_right)
+        self.button_forward = QPushButton("Move Forward")
+        self.button_forward.clicked.connect(self.move_forward)
+        self.button_backward = QPushButton("Move Backward")
+        self.button_backward.clicked.connect(self.move_backward)
+        self.button_stop_movement = QPushButton("Stop Movement")
+        self.button_stop_movement.clicked.connect(self.stoping_movement)
+        self.button_rth = QPushButton("Return to Home")
+        self.button_rth.clicked.connect(self.return_to_launch)
+
+        # Your exact grid layout
+        grid.addWidget(self.button_up, 0, 0)
+        grid.addWidget(self.button_down, 0, 2)
+        grid.addWidget(self.button_forward, 0, 1)
+        grid.addWidget(self.button_backward, 2, 1)
+        grid.addWidget(self.button_left, 1, 0)
+        grid.addWidget(self.button_right, 1, 2)
+        grid.addWidget(self.button_stop_movement, 1, 1)
+        grid.addWidget(self.button_rth, 2, 2)
         
         self.velocity_text = QLabel("Velocity")
         self.velocity = QDoubleSpinBox()
-
         self.yaw_text = QLabel("Yaw")
         self.yaw = QDoubleSpinBox()
 
-        self.status = QLabel("Status: Disconnected")
-        basic_layout.addWidget(self.status)
-        self.console = QTextEdit()
-        self.console.setReadOnly(True)
-        basic_layout.addWidget(self.console)
+        # CONSOLE 2 - Movement tab  
+        self.movement_console = QTextEdit()
+        self.movement_console.setReadOnly(True)
 
-        self.console.setReadOnly(True)
-        
-        layout.addWidget(self.port_edit)
-        layout.addWidget(self.button_connect)
-        layout.addWidget(self.button_takeoff)
-        layout.addWidget(self.button_land)
-        layout.addWidget(self.button_up)
-        layout.addWidget(self.velocity_text)        
-        layout.addWidget(self.velocity)
-        layout.addWidget(self.yaw_text)
-        layout.addWidget(self.yaw)
-        layout.addWidget(self.status)
-        layout.addWidget(self.console)
-        central.setLayout(layout)
+        # Movement tab layout
+        movement_layout.addWidget(self.movement_controls_text)
+        movement_layout.addLayout(grid)
+        movement_layout.addWidget(self.velocity_text)
+        movement_layout.addWidget(self.velocity)
+        movement_layout.addWidget(self.yaw_text)
+        movement_layout.addWidget(self.yaw)
+        movement_layout.addWidget(self.movement_console)
+        movement_widget.setLayout(movement_layout)
+        self.tabs.addTab(movement_widget, "Movement")
+
+        main_layout.addWidget(self.tabs)
+        central.setLayout(main_layout)
         self.setCentralWidget(central)
 
     def log(self, msg):
-        self.console.append(msg)
+        # Write to BOTH consoles
+        self.general_console.append(msg)
+        self.movement_console.append(msg)
         print(msg)
 
     @asyncSlot()
@@ -184,13 +216,10 @@ class TC_Drone_App(QMainWindow):
 
     @asyncSlot()
     async def move_up(self):
-        self.log("Starting Moving Sequence...")
+        self.log("Starting Moving Up Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
         print(self.velocity_flt, self.yaw_flt)
-
-
-
         try:
             await self.drone.move_up_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Up...")
@@ -198,6 +227,101 @@ class TC_Drone_App(QMainWindow):
 
         except Exception as e:
             self.log(f"Moving Up Error: {e}")
+
+    @asyncSlot()
+    async def move_down(self):
+        self.log("Starting Moving Down Sequence...")
+        self.velocity_flt = self.velocity.value()
+        self.yaw_flt = self.yaw.value()
+        print(self.velocity_flt, self.yaw_flt)
+        try:
+            await self.drone.move_down_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
+            self.log("Moving Down...")
+            self.status.setText("Status: Moving Down")
+
+        except Exception as e:
+            self.log(f"Moving Down Error: {e}")
+
+    @asyncSlot()
+    async def move_left(self):
+        self.log("Starting Moving Left Sequence...")
+        self.velocity_flt = self.velocity.value()
+        self.yaw_flt = self.yaw.value()
+        print(self.velocity_flt, self.yaw_flt)
+        try:
+            await self.drone.move_left_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
+            self.log("Moving Left...")
+            self.status.setText("Status: Moving Left")
+
+        except Exception as e:
+            self.log(f"Moving Left Error: {e}")
+
+    @asyncSlot()
+    async def move_right(self):
+        self.log("Starting Moving Right Sequence...")
+        self.velocity_flt = self.velocity.value()
+        self.yaw_flt = self.yaw.value()
+        print(self.velocity_flt, self.yaw_flt)
+        try:
+            await self.drone.move_right_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
+            self.log("Moving Right...")
+            self.status.setText("Status: Moving Right")
+
+        except Exception as e:
+            self.log(f"Moving Right Error: {e}")
+
+    @asyncSlot()
+    async def move_forward(self):
+        self.log("Starting Moving Forward Sequence...")
+        self.velocity_flt = self.velocity.value()
+        self.yaw_flt = self.yaw.value()
+        print(self.velocity_flt, self.yaw_flt)
+        try:
+            await self.drone.move_forward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
+            self.log("Moving Forward...")
+            self.status.setText("Status: Moving Forward")
+
+        except Exception as e:
+            self.log(f"Moving Forward Error: {e}")
+
+    @asyncSlot()
+    async def move_backward(self):
+        self.log("Starting Moving Backward Sequence...")
+        self.velocity_flt = self.velocity.value()
+        self.yaw_flt = self.yaw.value()
+        print(self.velocity_flt, self.yaw_flt)
+        try:
+            await self.drone.move_backward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
+            self.log("Moving Backward...")
+            self.status.setText("Status: Moving Backward")
+
+        except Exception as e:
+            self.log(f"Moving Backward Error: {e}")
+
+    @asyncSlot()
+    async def stoping_movement(self):
+        self.log("Stoping Movement...")
+        try:
+            await self.drone.stop_movement()
+            self.log("Stoping Movement...")
+            self.status.setText("Status: Stoping Movement")
+
+        except Exception as e:
+            self.log(f"Stoping Movement Error: {e}")
+
+    @asyncSlot()
+    async def return_to_launch(self):
+        self.log("Starting to Return to Launch...")
+        try:
+            await self.drone.return_to_home()
+            self.log("Returning to Launch...")
+            self.status.setText("Status: Return to Launch")
+
+        except Exception as e:
+            self.log(f"Return to Launch Error: {e}")
+    
+
+
 
 
 if __name__ == "__main__":
