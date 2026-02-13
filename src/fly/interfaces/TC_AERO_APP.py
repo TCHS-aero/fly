@@ -32,21 +32,28 @@ class TC_Drone_App(QMainWindow):
         central = QWidget()
         main_layout = QVBoxLayout()
 
-        # === CREATE TABS ===
+        
         self.tabs = QTabWidget()
         
-        # TAB 1: GENERAL CONTROLS + CONSOLE
+       
         general_widget = QWidget()
         general_layout = QVBoxLayout()
         
         self.port_edit = QLineEdit()
         self.port_edit.setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
-        
+
+
+        self.status = QLabel("Status: Disconnected")
+        self.console = QTextEdit()
+        self.console.setReadOnly(True)
+
         self.button_connect = QPushButton("1. Connect to the drone")
         self.button_connect.setCheckable(True)
         self.button_connect.clicked.connect(self.on_connect)
         self.button_connect.setStyleSheet("""
+            QPushButton {background-color: gray}
             QPushButton:checked { background-color: green; color: white; }
+            QPushButton {border-radius: 4px}
         """)
 
         self.button_takeoff = QPushButton("2. Takeoff (10m)")
@@ -61,87 +68,84 @@ class TC_Drone_App(QMainWindow):
             QPushButton:disabled { background-color: lightcoral; color: white; }
             QPushButton:!checked { background-color: red; color: white; }
             QPushButton:pressed { background-color: darkorange; color: white; }
+            QPushButton {border-radius: 4px}
         """)
 
-        self.status = QLabel("Status: Disconnected")
-        
-        # CONSOLE 1 - General tab
-        self.general_console = QTextEdit()
-        self.general_console.setReadOnly(True)
-        
         general_layout.addWidget(self.port_edit)
         general_layout.addWidget(self.button_connect)
         general_layout.addWidget(self.button_takeoff)
         general_layout.addWidget(self.button_land)
-        general_layout.addWidget(self.status)
-        general_layout.addWidget(self.general_console)
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
 
-        # TAB 2: MOVEMENT CONTROLS + CONSOLE
+
         movement_widget = QWidget()
         movement_layout = QVBoxLayout()
         
         self.movement_controls_text = QLabel("Movement Controls")
         
-        # FIXED GRID
-        grid = QGridLayout()  # ← () creates instance!
-        
-        self.button_up = QPushButton("Move Up")
-        self.button_up.clicked.connect(self.move_up)
-        self.button_down = QPushButton("Move Down")
-        self.button_down.clicked.connect(self.move_down)
-        self.button_left = QPushButton("Move Left")
-        self.button_left.clicked.connect(self.move_left)
-        self.button_right = QPushButton("Move Right")
-        self.button_right.clicked.connect(self.move_right)
-        self.button_forward = QPushButton("Move Forward")
-        self.button_forward.clicked.connect(self.move_forward)
-        self.button_backward = QPushButton("Move Backward")
-        self.button_backward.clicked.connect(self.move_backward)
-        self.button_stop_movement = QPushButton("Stop Movement")
-        self.button_stop_movement.clicked.connect(self.stoping_movement)
-        self.button_rth = QPushButton("Return to Home")
-        self.button_rth.clicked.connect(self.return_to_launch)
 
-        # Your exact grid layout
-        grid.addWidget(self.button_up, 0, 0)
-        grid.addWidget(self.button_down, 0, 2)
+        grid = QGridLayout()
+        
+        self.button_up = QPushButton("Up")
+        self.button_up.clicked.connect(self.move_up)
+        self.button_down = QPushButton("Down")
+        self.button_down.clicked.connect(self.move_down)
+        self.button_left = QPushButton("⬅︎")
+        self.button_left.clicked.connect(self.move_left)
+        self.button_right = QPushButton("➡︎")
+        self.button_right.clicked.connect(self.move_right)
+        self.button_forward = QPushButton("⬆︎")
+        self.button_forward.clicked.connect(self.move_forward)
+        self.button_backward = QPushButton("⬇︎")
+        self.button_backward.clicked.connect(self.move_backward)
+        self.button_stop_movement = QPushButton("🛑")
+        self.button_stop_movement.clicked.connect(self.stoping_movement)
+        self.button_stop_movement.setStyleSheet("""
+            QPushButton {border-radius: 4px}
+            QPushButton:!checked { background-color: red; color: white; }
+            QPushButton:pressed { background-color: darkorange; color: white; }
+        """)
+        self.button_rth = QPushButton("Return to\nHome")
+        self.button_rth.clicked.connect(self.return_to_launch)
+        self.button_rth.setStyleSheet("""
+            QPushButton {border-radius: 4px}
+            QPushButton:!checked { background-color: darkgreen; color: white; }
+        """)
+
+
+        grid.addWidget(self.button_up, 0, 4)
+        grid.addWidget(self.button_down, 2, 4)
         grid.addWidget(self.button_forward, 0, 1)
         grid.addWidget(self.button_backward, 2, 1)
         grid.addWidget(self.button_left, 1, 0)
         grid.addWidget(self.button_right, 1, 2)
         grid.addWidget(self.button_stop_movement, 1, 1)
-        grid.addWidget(self.button_rth, 2, 2)
+        grid.addWidget(self.button_rth, 1, 4)
         
         self.velocity_text = QLabel("Velocity")
         self.velocity = QDoubleSpinBox()
         self.yaw_text = QLabel("Yaw")
         self.yaw = QDoubleSpinBox()
 
-        # CONSOLE 2 - Movement tab  
-        self.movement_console = QTextEdit()
-        self.movement_console.setReadOnly(True)
-
-        # Movement tab layout
         movement_layout.addWidget(self.movement_controls_text)
         movement_layout.addLayout(grid)
+
         movement_layout.addWidget(self.velocity_text)
         movement_layout.addWidget(self.velocity)
         movement_layout.addWidget(self.yaw_text)
         movement_layout.addWidget(self.yaw)
-        movement_layout.addWidget(self.movement_console)
         movement_widget.setLayout(movement_layout)
         self.tabs.addTab(movement_widget, "Movement")
 
+        main_layout.addWidget(self.status)
+        main_layout.addWidget(self.console)
         main_layout.addWidget(self.tabs)
         central.setLayout(main_layout)
         self.setCentralWidget(central)
 
     def log(self, msg):
-        # Write to BOTH consoles
-        self.general_console.append(msg)
-        self.movement_console.append(msg)
+        self.console.append(msg)
         print(msg)
 
     @asyncSlot()
@@ -166,7 +170,7 @@ class TC_Drone_App(QMainWindow):
                 connected = await self.drone.connect()
                 if connected:
                     self.status.setText("Status: Connected")
-                    self.log("Connected...")
+                    self.log("-- Connected")
                     self.button_takeoff.setEnabled(True) # Enable Takeoff
                     
                     # Optional: Get position confirmation
