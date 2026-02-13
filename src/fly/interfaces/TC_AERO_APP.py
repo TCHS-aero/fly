@@ -99,7 +99,7 @@ class TC_Drone_App(QMainWindow):
         self.button_forward.clicked.connect(self.move_forward)
         self.button_backward = QPushButton("⬇︎")
         self.button_backward.clicked.connect(self.move_backward)
-        self.button_stop_movement = QPushButton("🛑")
+        self.button_stop_movement = QPushButton("Stop")
         self.button_stop_movement.clicked.connect(self.stoping_movement)
         self.button_stop_movement.setStyleSheet("""
             QPushButton {border-radius: 4px}
