@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QWidget, QCheckBox, QComboBox, QVBoxLayout, QLineEdit, QFileDialog
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QWidget, QLineEdit, QFileDialog, QTextEdit, QTabWidget, QVBoxLayout
 from PyQt6.QtGui import QIcon, QFont, QPixmap
 from PyQt6.QtCore import Qt, QUrl, QSize, QTimer
 from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
@@ -19,64 +19,100 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("draft 1 of drone ui")
         self.setWindowIcon(QIcon("pyqt6/half-baby-half-kid-meme-newgen"))
         self.setGeometry(500,300,1250,750)
-        self.setStyleSheet("background-color:white")
 
         self.waypoint_counter = 0
         self.next_id = 0 
         self.waypoint_x_ID = []
 
-        self.waypoint = QLineEdit(self)
-        '''self.waypoint_labels.append(self.waypoint)'''
+        self.tabs = QTabWidget(self)
+        self.setCentralWidget(self.tabs)
 
+        self.command_tab = QWidget()
+        self.command_tab.setStyleSheet("background-color: grey")
+        self.tabs.addTab(self.command_tab, "Control")
+        
+
+        self.movement_tab = QWidget()
+        self.movement_tab.setStyleSheet("background-color: grey")
+        self.tabs.addTab(self.movement_tab, "Movement")
+
+        self.console = QWidget()
+        self.console.setStyleSheet("background-color: grey")
+        self.tabs.addTab(self.console, "Console")
+
+
+        self.setStyleSheet("background-color:white")
+
+
+
+        self.console = QTextEdit(self.console)
+        self.console.setReadOnly(True)
+        self.console.setStyleSheet("background-color: grey")
+        self.console.setGeometry(675, 350, 425, 400)
+
+        
+        self.waypoint = QLineEdit(self.movement_tab)
         self.waypoint.setGeometry(200, 100, 350,50)
         self.waypoint.setPlaceholderText("enter your coordinates! Format: Lat, Lon, Alt")
         self.waypoint.setStyleSheet("color: black")
         self.waypoint.returnPressed.connect(self.parse_text)
 
-        self.error = QLabel("oi man you left an empty parameter bro! fill that in cro!",self)
+        self.error = QLabel("oi man you left an empty parameter bro! fill that in cro!",self.movement_tab)
         self.error.setStyleSheet("color: black")
         self.error.setGeometry(200,50,600,50)
         self.error.hide()
 
-        self.upload_mission = QPushButton("upload preset mission\n (MUST BE .json FILE)",self)
-        self.upload_mission.setGeometry(900,400,200,200)
+        self.upload_mission = QPushButton("upload preset mission\n (MUST BE .json FILE)",self.movement_tab)
+        self.upload_mission.setGeometry(675,100,200,175)
         self.upload_mission.setStyleSheet("background-color: grey")
         self.upload_mission.clicked.connect(self.file_upload)
         
-        self.connect_to_drone = QPushButton('connect to drone', self)
+        self.connect_to_drone = QPushButton('connect to drone', self.command_tab)
         self.connect_to_drone.setStyleSheet("background-color: grey")
         self.connect_to_drone.setGeometry(900,100,200,50)
         self.connect_to_drone.clicked.connect(self.connect_to_drone_function)
 
-        self.takeoff = QPushButton("Takeoff", self)
+        self.takeoff = QPushButton("Takeoff", self.command_tab)
         self.takeoff.setStyleSheet("background-color: grey")
         self.takeoff.setGeometry(900,160,200,50)
         self.takeoff.clicked.connect(self.takeoff_function)
 
-        self.return_to_launch = QPushButton("Return to lauch position", self)
+        self.return_to_launch = QPushButton("Return to lauch position", self.command_tab)
         self.return_to_launch.setStyleSheet("background-color: grey")
         self.return_to_launch.setGeometry(900,220,200,50)
+        self.return_to_launch.clicked.connect(self.return_to_launch_function)
         
-        self.start_mission = QPushButton("Start the mission",self)
+        self.start_mission = QPushButton("Start the mission",self.command_tab)
         self.start_mission.setStyleSheet("background-color: red")
         self.start_mission.setGeometry(675, 280, 200, 50)
         self.start_mission.clicked.connect(self.start_the_mission)
    
-        self.land_drone = QPushButton("Land drone", self)
+        self.land_drone = QPushButton("Land drone", self.command_tab)
         self.land_drone.setStyleSheet("background-color: grey")
         self.land_drone.setGeometry(900,280,200, 50)
         self.land_drone.clicked.connect(self.land_drone_function)
         
 
-        '''image = QLabel(self)
-        pixmap = QPixmap("pyqt6/teto.jpg")
-        image.setGeometry(0,0,500,500)
-        image.setPixmap(pixmap)
-        image.resize(500,500)'''
+        #create tabs
+
+        '''self.command_layout.addWidget(self.land_drone)
+        self.command_layout.addWidget(self.start_mission)
+        self.command_layout.addWidget(self.return_to_launch)
+        self.command_layout.addWidget(self.takeoff)
+        self.command_layout.addWidget(self.connect_to_drone)
+        self.tabs.addTab(self.command_widget, "Command")'''
+
+    @asyncSlot()
+    async def return_to_launch_function(self):
+        print('hi')
+        try:
+            await self.drone.return_to_home()
+            print('returned to launch')
+        except Exception as e:
+            self.log(str(e))
+            print(e)
 
 
-        self.biang = QLabel("𰻞", self)
-        self.biang.resize(100,100)
 
     @asyncSlot()
     async def connect_to_drone_function(self):
@@ -91,8 +127,8 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage("Failed to connect to drone")
                 self.connect_to_drone.setStyleSheet("background-color: red")
         except Exception as e:
-            print(f"Connection error: {e}")
-            self.statusBar().showMessage(f"Connection error: {str(e)}")
+            self.log(e)
+            print(f"Connection error: {str(e)}")
 
 
 
@@ -105,6 +141,7 @@ class MainWindow(QMainWindow):
                 i = self.mission.get_waypoint(waypoint)
                 await self.drone.move_to_waypoint(self.mission.advance_next_waypoint())
         except Exception as e:
+            self.log(str(e))
             print(e)
 
 
@@ -114,20 +151,28 @@ class MainWindow(QMainWindow):
 
     @asyncSlot()
     async def land_drone_function(self):
-
         try:
             await self.drone.land()
-
         except Exception as e:
+            self.log(str(e))
             print(e)
 
 
 
     @asyncSlot()
     async def takeoff_function(self):
-        await self.drone.takeoff(10.0)
+        try:
+            await self.drone.takeoff(10.0)
+        except Exception as e:
+            self.log(str(e))
+            print(e)
 
+
+    def log(self, msg):
+            self.console.append(msg)
+            print(msg)
     
+
     def file_upload(self):
 
         dialog = QFileDialog()
@@ -142,41 +187,49 @@ class MainWindow(QMainWindow):
             self.parse_file_upload(file)
             
         else:
+            self.log(str('user has cancelled file selection'))
             print('user cancelled file selection')
+
 
 
     def parse_file_upload(self, file):
         self.mission = Mission(file) 
         #for waypoint in self.mission.waypoints:
             #lat, lon, alt = self.mission.get_waypoint(waypoint['latitude']), self.mission.get_waypoint(waypoint['longitude']), self.mission.get_waypoint(waypoint['altitude'])
-        for i, waypoint_row in enumerate(self.mission.waypoints, 1):  # i=1 to 5
+        try:
+            for i, waypoint_row in enumerate(self.mission.waypoints, 1):  # i=1 to 5
         
-            coords = f"{waypoint_row['latitude']},{waypoint_row['longitude']},{waypoint_row['altitude']}"
-        
-            self.waypoint_counter+=1
-            self.waypoint_coord = QLabel(self)
-            self.x_label = QPushButton(icon = QIcon("~arrow/fly/src/fly/config/x.jpg"),text="" ,parent=self)
-            self.x_label.setCheckable(True)
-           
+                coords = f"{waypoint_row['latitude']},{waypoint_row['longitude']},{waypoint_row['altitude']}"
             
-            self.x_label.setGeometry(550, (self.waypoint_counter+1)*90, 50,50 )
-            self.x_label.setStyleSheet("background-color: red")
-            self.x_label.resize(50,50)
-            self.x_label.show()
+                self.waypoint_counter+=1
+                self.waypoint_coord = QLabel(self)
+                self.x_label = QPushButton(icon = QIcon("~arrow/fly/src/fly/config/x.jpg"),text="" ,parent=self)
+                self.x_label.setCheckable(True)
             
-            self.waypoint_coord.setGeometry(200, ((self.waypoint_counter+1)*90), 350, 50)
-            self.waypoint_coord.setStyleSheet("color: black; background-color: grey")
-            self.waypoint_coord.setText(f"Waypoint {self.waypoint_counter}: {coords}")
-            self.waypoint_coord.show()
+                
+                self.x_label.setGeometry(550, (self.waypoint_counter+1)*90, 50,50 )
+                self.x_label.setStyleSheet("background-color: red")
+                self.x_label.resize(50,50)
+                self.x_label.show()
+                
+                self.waypoint_coord.setGeometry(200, ((self.waypoint_counter+1)*90), 350, 50)
+                self.waypoint_coord.setStyleSheet("color: black; background-color: grey")
+                self.waypoint_coord.setText(f"Waypoint {self.waypoint_counter}: {coords}")
+                self.waypoint_coord.show()
 
-            row_id = self.next_id
-            self.x_label.row_id, self.waypoint_coord.row_id = row_id, row_id
+                row_id = self.next_id
+                self.x_label.row_id, self.waypoint_coord.row_id = row_id, row_id
 
-            self.x_label.clicked.connect(self.x_clicked)
+                self.x_label.clicked.connect(self.x_clicked)
 
-            self.waypoint_x_ID.append({"id": row_id,"label": self.waypoint_coord,"button": self.x_label})
+                self.waypoint_x_ID.append({"id": row_id,"label": self.waypoint_coord,"button": self.x_label})
 
-            self.next_id +=1 
+                self.next_id +=1 
+        except Exception as e:
+            self.log(str(e))
+            print(e)
+
+
 
 
 
