@@ -76,7 +76,7 @@ Setting up the individual scripts is simple.
 
 ### Simulation
 
-This repository uses PX4 and MAVSDK-python to connect to the drone. In order to use these scripts in a simulation, you must first install the neccessary software. There are multiple simulators we can choose from, but for this project we use JMavSim, a drone simulator built in Java. JMabSim comes with plenty of keyboard bindings for altering things such as the weather conditions, as documented [here](https://github.com/PX4/jMAVSim).
+This repository uses PX4 and MAVSDK-python to connect to the drone. In order to use these scripts in a simulation, you must first install the neccessary software. There are multiple simulators we can choose from, but for this project we use JMavSim, a drone simulator built in Java. JMavSim comes with plenty of keyboard bindings for altering things such as the weather conditions, as documented [here](https://github.com/PX4/jMAVSim).
 
 1. Clone the PX4-Autopilot repository.
     ```bash
@@ -157,13 +157,18 @@ Now, you can run any script/interface by running it's module name.
 
 ```bash
 # Here is an example of running the CLI as a module.
-python -m fly.interfaces.cli
+aero_cli
 ```
 
-Alternatively, you can run it directly by altering the python path.
-
 ```bash
-PYTHONPATH=src python -m fly.interface.cli
+# Here is how to run our GUI as a module.
+aero_gui
+```
+
+Alternatively, you can run it using the direct path.
+```bash
+python -m fly.interfaces.cli #for running the cli
+python -m fly.interfaces.gui #to run the gui
 ```
 
 For the sake of simplicity, the rest of the examples will be using the former method.
@@ -198,7 +203,7 @@ You can find plugged USB's with the command `lsusb -t`.
 ```bash
 # Replace "ttyUSB0" with whatever USB port your telemetry radio is plugged in.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-python -m fly.interfaces.cli connect --port serial:///dev/ttyUSB0:57600
+python -m fly.interfaces.cli connect --port serial:///dev/ttyUSB0:921600
 ```
 
 </details>
@@ -209,7 +214,7 @@ python -m fly.interfaces.cli connect --port serial:///dev/ttyUSB0:57600
 ```bash
 # Replace "COM3" with whatever USB port your telemetry radio is plugged in. You can find your COM port via Device Manager.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-python -m fly.interface.cli connect --port serial://COM3:921600
+python -m fly.interface.cli connect --port serial://COM3:57600 
 ```
 
 </details>

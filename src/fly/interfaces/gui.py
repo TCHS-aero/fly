@@ -327,8 +327,7 @@ class TC_Drone_App(QMainWindow):
 
 
 
-
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
@@ -338,3 +337,6 @@ if __name__ == "__main__":
     
     with loop:
         loop.run_forever()
+
+if __name__ == "__main__":
+    main()

@@ -16,7 +16,9 @@ dependencies = [
 ]
 
 [project.scripts]
-fly = "fly.cli:cli"
+aero_cli = "fly.interfaces.cli:main"
+aero_gui = "fly.interfaces.gui:main"
+
 
 [tool.setuptools.packages.find]
 where = ["src"]
