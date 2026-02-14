@@ -198,7 +198,7 @@ You can find plugged USB's with the command `lsusb -t`.
 ```bash
 # Replace "ttyUSB0" with whatever USB port your telemetry radio is plugged in.
 # If you have a differently configured BAUD rate for your pixhawk, change "921600" to said rate.
-python -m fly.interface.cli connect --port serial:///dev/ttyUSB0:921600
+python -m fly.interfaces.cli connect --port serial:///dev/ttyUSB0:57600
 ```
 
 </details>
