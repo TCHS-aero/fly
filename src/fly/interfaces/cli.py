@@ -352,7 +352,7 @@ These waypoints are mere examples, please update them with the relevant informat
 These waypoints are mere examples, please update them with the relevant information.""")
 
 
-if __name__ == "__main__":
+def main():
     cli.add_command(connect, name="connect")
     cli.add_command(takeoff, name="takeoff")
     cli.add_command(land, name="land")
@@ -362,3 +362,6 @@ if __name__ == "__main__":
     cli.add_command(mission)
     cli.add_command(move)
     cli()
+
+if __name__ == "__main__":
+    main()
