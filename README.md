@@ -216,7 +216,7 @@ You may also want to use your simulation alongside an application such as QGroun
 > If you previously ran the make command before installing dependencies, it may have caused a build error, resulting in px4_sitl or JMavSim not being found. Make sure to run ```make distclean``` to revert the build before making again.
 
 > [!TIP]
-> The simulation is not required to use any other scripts in this repository; it is simple a replacement for testing if you do not have access to a real drone.
+> The simulation is not required to use any other scripts in this repository; it is a simple replacement for testing if you do not have access to a real drone.
 
 <a name="howdoesitwork">
 
