@@ -95,10 +95,13 @@ class TC_Drone_App(QMainWindow):
         
         self.movement_controls_text = QLabel("Movement Controls")
         
+        self.logo = QLabel("TCHS Aero GUI ver.1")
+        self.logo.setStyleSheet("background-color: red")
+        self.logo.setGeometry(400,100,500,50)
 
 
         grid = QGridLayout()
-        
+        #buttons for drone movement
         self.button_up = QPushButton("Up")
         self.button_up.clicked.connect(self.move_up)
         self.button_down = QPushButton("Down")
