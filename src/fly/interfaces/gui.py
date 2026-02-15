@@ -5,8 +5,9 @@ import re
 from fly.core.drone import Drone
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox,
-    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout
+    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout,QSizePolicy
 )
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon
 from qasync import asyncSlot, QEventLoop
 
 def is_valid_port(port: str) -> bool:
@@ -28,23 +29,33 @@ class TC_Drone_App(QMainWindow):
         super().__init__()
         self.setWindowTitle("Drone Controls")
         self.drone = None
-        self.setGeometry(0,0,1000,750)
+        self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
         central = QWidget()
         main_layout = QVBoxLayout()
 
         
         self.tabs = QTabWidget()
-        
-       
+
+        #implementing font
+        self.font_id = QFontDatabase.addApplicationFont("src/fly/assets/BlackOpsOne-Regular.ttf")
+        if self.font_id != -1:  # Success check
+            font_families = QFontDatabase.applicationFontFamilies(self.font_id)
+            custom_font_name = font_families[0]  # Usually index 0
+        else:
+            print("Font failed to load")
+            custom_font_name = "Arial"  # fallback
+
         general_widget = QWidget()
         general_layout = QVBoxLayout()
         
         self.port_edit = QLineEdit()
         self.port_edit.setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
 
-
+        self.logo = QLabel("TCHS Aero GUI v1")
+        self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
         self.status = QLabel("Status: Disconnected")
         self.console = QTextEdit()
+        self.console.setStyleSheet("background-color: black")
         self.console.setReadOnly(True)
 
         self.button_connect = QPushButton("1. Connect to the drone")
@@ -88,6 +99,7 @@ class TC_Drone_App(QMainWindow):
         self.logo.setStyleSheet("background-color: red")
         self.logo.setGeometry(400,100,500,50)
 
+
         grid = QGridLayout()
         #buttons for drone movement
         self.button_up = QPushButton("Up")
@@ -108,6 +120,7 @@ class TC_Drone_App(QMainWindow):
             QPushButton {border-radius: 4px}
             QPushButton:!checked { background-color: red; color: white; }
             QPushButton:pressed { background-color: darkorange; color: white; }
+
         """)
         self.button_rth = QPushButton("Return to\nHome")
         self.button_rth.clicked.connect(self.return_to_launch)
@@ -116,7 +129,67 @@ class TC_Drone_App(QMainWindow):
             QPushButton:!checked { background-color: darkgreen; color: white; }
         """)
 
-        #where buttons will be located
+
+        #dynamic button sizes acccording to the user's expansion of the window
+        policy_connect = self.button_connect.sizePolicy()
+        policy_connect.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_connect.setSizePolicy(policy_connect)
+        self.button_connect.setMinimumHeight(60)
+    
+        policy_takeoff = self.button_takeoff.sizePolicy()
+        policy_takeoff.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_takeoff.setSizePolicy(policy_takeoff)
+        self.button_takeoff.setMinimumHeight(60)
+
+        policy_land = self.button_land.sizePolicy()
+        policy_land.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_land.setSizePolicy(policy_land)
+        self.button_land.setMinimumHeight(60)
+
+
+
+        policy_stop_mvt = self.button_stop_movement.sizePolicy()
+        policy_stop_mvt.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_stop_movement.setSizePolicy(policy_stop_mvt)
+        self.button_stop_movement.setMinimumHeight(60)
+
+        policy_rth = self.button_rth.sizePolicy()
+        policy_rth.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_rth.setSizePolicy(policy_rth)
+        self.button_rth.setMinimumHeight(60)
+
+
+        policy_up = self.button_up.sizePolicy()
+        policy_up.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_up.setSizePolicy(policy_up)
+        self.button_up.setMinimumHeight(60)
+
+        policy_down = self.button_down.sizePolicy()
+        policy_down.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_down.setSizePolicy(policy_down)
+        self.button_down.setMinimumHeight(60)
+
+        policy_left = self.button_down.sizePolicy()
+        policy_left.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_left.setSizePolicy(policy_left)
+        self.button_left.setMinimumHeight(60)
+
+        policy_right = self.button_down.sizePolicy()
+        policy_right.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_right.setSizePolicy(policy_right)
+        self.button_right.setMinimumHeight(60)
+
+        policy_foward = self.button_down.sizePolicy()
+        policy_foward.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_forward.setSizePolicy(policy_foward)
+        self.button_forward.setMinimumHeight(60)
+
+        policy_backward = self.button_down.sizePolicy()
+        policy_backward.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.button_backward.setSizePolicy(policy_backward)
+        self.button_backward.setMinimumHeight(60)
+
+
         grid.addWidget(self.button_up, 0, 4)
         grid.addWidget(self.button_down, 2, 4)
         grid.addWidget(self.button_forward, 0, 1)
@@ -141,6 +214,7 @@ class TC_Drone_App(QMainWindow):
         movement_widget.setLayout(movement_layout)
         self.tabs.addTab(movement_widget, "Movement")
 
+        main_layout.addWidget(self.logo)
         main_layout.addWidget(self.status)
         main_layout.addWidget(self.console)
         main_layout.addWidget(self.tabs)

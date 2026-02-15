@@ -16,13 +16,17 @@ class Mission:
             self.waypoints = json.load(read_file)
             self.total_waypoints = len(self.waypoints)
 
-        print("-- Success!")
+            
+            print("-- Success!")
+            return self.waypoints
+         
 
     def get_current_waypoint(self):
         return self.waypoints[self.current_index]
 
     def get_waypoint(self, index):
         try:
+            print("-- waypoint successfully retrived")
             return self.waypoints[index]
         except Exception:
             print("-- Invalid index, try again.")
@@ -31,6 +35,8 @@ class Mission:
     def advance_next_waypoint(self):
         if len(self.waypoints) == 0:
             print("-- Reached the end of the mission. No more waypoints to continue")
+            return
+            
         self.current_index += 1
         try:
             return self.waypoints[self.current_index]
@@ -75,6 +81,6 @@ class Mission:
         self.waypoints[index] = self.create_new_waypoint(lat, lon, alt)
         return self.waypoints
 
-    def append_waypopints(self, lon, lat, alt):
+    def append_waypoints(self, lon, lat, alt):
         self.waypoints.append(self.create_new_waypoint(lat, lon, alt))
         return self.waypoints
