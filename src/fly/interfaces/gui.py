@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QTextEdit,
-    QLineEdit,
+    QComboBox,
     QTabWidget,
     QGridLayout,
     QSizePolicy,
