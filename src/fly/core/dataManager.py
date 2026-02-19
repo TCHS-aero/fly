@@ -41,7 +41,7 @@ async def load_drone():
                 f"-- Port has not yet been configured in {settings}. Are you sure you ran the connect command?"
             )
             return
-
+ 
         drone = Drone(port)
         return drone
     return
