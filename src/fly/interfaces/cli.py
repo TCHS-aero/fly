@@ -142,18 +142,16 @@ async def return_to_launch():
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time",
+    "--distance",
     type=float,
-    default=1,
-    help="Duration of movement in seconds (default: 1).",
+    required=True,
+    help="Movement in meters (default: 5).",
 )
-async def left(velocity, yaw, time):
-    await execute_movement("left", velocity, yaw, time)
+async def left(velocity, yaw, distance):
+    await execute_movement("left", velocity, yaw, distance)
 
 
-@move.command(
-    name="right", help="Move the drone right (positive East) in the NED frame."
-)
+@move.command(name="right", help="Move the drone right (ast) in the NED frame.")
 @click.option(
     "--velocity", type=float, required=True, help="The velocity in m/s (e.g., 0.5)."
 )
@@ -161,13 +159,13 @@ async def left(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time",
+    "--distance",
     type=float,
-    default=1,
-    help="Duration of movement in seconds (default: 1).",
+    required=True,
+    help="Movement in meters (default: 5).",
 )
-async def right(velocity, yaw, time):
-    await execute_movement("right", velocity, yaw, time)
+async def right(velocity, yaw, distance):
+    await execute_movement("right", velocity, yaw, distance)
 
 
 @move.command(name="up", help="Move the drone up (negative Down) in the NED frame.")
@@ -178,13 +176,13 @@ async def right(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time",
+    "--distance",
     type=float,
-    default=1,
-    help="Duration of movement in seconds (default: 1).",
+    required=True,
+    help="Movement in meters (default: 5).",
 )
-async def up(velocity, yaw, time):
-    await execute_movement("up", velocity, yaw, time)
+async def up(velocity, yaw, distance):
+    await execute_movement("up", velocity, yaw, distance)
 
 
 @move.command(name="down", help="Move the drone down (positive Down) in the NED frame.")
@@ -195,13 +193,13 @@ async def up(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time",
+    "--distance",
     type=float,
-    default=1,
-    help="Duration of movement in seconds (default: 1).",
+    required=True,
+    help="Movement in meters (default: 5).",
 )
-async def down(velocity, yaw, time):
-    await execute_movement("down", velocity, yaw, time)
+async def down(velocity, yaw, distance):
+    await execute_movement("down", velocity, yaw, distance)
 
 
 @move.command(
@@ -214,13 +212,13 @@ async def down(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time",
+    "--distance",
     type=float,
-    default=1,
-    help="Duration of movement in seconds (default: 1).",
+    required=True,
+    help="Movement in meters (default: 5).",
 )
-async def forward(velocity, yaw, time):
-    await execute_movement("forward", velocity, yaw, time)
+async def forward(velocity, yaw, distance):
+    await execute_movement("forward", velocity, yaw, distance)
 
 
 @move.command(
@@ -233,13 +231,13 @@ async def forward(velocity, yaw, time):
     "--yaw", type=float, default=0.0, help="The yaw angle in degrees (default: 0)."
 )
 @click.option(
-    "--time",
+    "--distance",
     type=float,
-    default=1,
-    help="Duration of movement in seconds (default: 1).",
+    required=True,
+    help="Movement in meters (default: 5).",
 )
-async def backward(velocity, yaw, time):
-    await execute_movement("backward", velocity, yaw, time)
+async def backward(velocity, yaw, distance):
+    await execute_movement("backward", velocity, yaw, distance)
 
 
 @move.command(
@@ -255,10 +253,15 @@ async def stop():
     await drone.stop_movement()
 
 
-async def execute_movement(direction, velocity, yaw, seconds):
+async def execute_movement(direction, velocity, yaw, distance):
     print(
         f"-- Preparing to move the drone {direction} at {velocity} m/s with a yaw of {yaw} degrees..."
     )
+
+    if velocity < 0 or distance < 0:
+        print("All values must be greater than 0.")
+        return
+
     drone = await load_drone()
     if not drone:
         return
@@ -268,7 +271,7 @@ async def execute_movement(direction, velocity, yaw, seconds):
     try:
         move_method = getattr(drone, f"move_{direction}_offset", None)
         if move_method:
-            await move_method(velocity, yaw=yaw, seconds=seconds)
+            await move_method(velocity, distance, yaw=yaw)
         else:
             print("-- Movement function not found.")
     except Exception as e:
@@ -295,10 +298,10 @@ def upload_mission_file(file):
             print("-- Mission file already detected. Overwriting...")
 
     if file.endswith(".json"):
-        with open(file, 'r') as json_file:
+        with open(file, "r") as json_file:
             data = json.load(json_file)
-            
-            if not data: 
+
+            if not data:
                 print("The file is valid but contains an empty list or dictionary.")
                 return
 
@@ -362,6 +365,7 @@ def main():
     cli.add_command(mission)
     cli.add_command(move)
     cli()
+
 
 if __name__ == "__main__":
     main()
