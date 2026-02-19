@@ -258,7 +258,6 @@ class TC_Drone_App(QMainWindow):
         try:
             await self.drone.land()
             self.log("Landing...")
-            self.status.setText("Status: Landing")
             self.button_land.setChecked(False)  # Reset toggle
             self.button_land.setEnabled(False)  # Disable again
             self.button_takeoff.setEnabled(True)

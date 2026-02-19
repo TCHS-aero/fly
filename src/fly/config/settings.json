@@ -1,6 +1,6 @@
 {
     "Drone": {
-        "port": "udpin://0.0.0.0:14540",
+        "port": "udpin://0.0.0.0:14540'",
         "port-history": [
             "udpin://0.0.0.0:14540"
         ]
