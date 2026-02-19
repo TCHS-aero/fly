@@ -3,9 +3,15 @@ import asyncio
 import re
 
 from fly.core.drone import Drone
+from fly.core.dataManager import (
+    write_to_json,
+    pull_from_json,
+    drone_instance_json,
+)
+
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox,
-    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout,QSizePolicy
+    QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox, QComboBox,
+    QVBoxLayout, QWidget, QTextEdit, QTabWidget, QGridLayout,QSizePolicy
 )
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon
 from qasync import asyncSlot, QEventLoop
@@ -21,7 +27,46 @@ def is_valid_port(port: str) -> bool:
         return True
     if re.match(serial_pattern, port):
         return True
-    return False
+
+    print("-- Testing for a stable connection")
+    drone = Drone(port)
+    if not drone.connect():
+        print("-- Connection test failed; consider trying a different port.")
+        return 1
+
+    write_to_json(
+        {
+            drone_instance_json: {
+                "port": port,
+            }
+        }
+    )
+
+
+class HistoryLineEdit(QComboBox):
+    def __init__(self, max_history=5, parent=None):
+        super().__init__(parent)
+        self.max_history = max_history
+        self.setEditable(True)
+        self.lineEdit().setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
+        self.lineEdit().returnPressed.connect(self.save_history)
+        self.load_history()
+
+    def load_history(self):
+        data = pull_from_json()
+        ports = data.get(drone_instance_json, {}).get("port-history", [])
+        self.addItems(ports[-self.max_history:])
+
+    def save_history(self):
+        history = [self.itemText(i) for i in range(self.count())]
+        data = pull_from_json() or {}
+        drone_data = data.setdefault(drone_instance_json, {})
+        drone_data["port-history"] = history
+        drone_data["port"] = history[0] if history else None
+        write_to_json({drone_instance_json: drone_data})
+
+    def text(self):
+        return self.currentText()
 
 
 class TC_Drone_App(QMainWindow):
@@ -48,8 +93,12 @@ class TC_Drone_App(QMainWindow):
         general_widget = QWidget()
         general_layout = QVBoxLayout()
         
-        self.port_edit = QLineEdit()
-        self.port_edit.setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
+        self.port_edit = HistoryLineEdit()
+
+        data = pull_from_json()
+        latest_port = data.get(drone_instance_json, {}).get("port")
+        if latest_port:
+            self.port_edit.lineEdit().setText(latest_port)
 
         self.logo = QLabel("TCHS Aero GUI v1")
         self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
@@ -63,7 +112,7 @@ class TC_Drone_App(QMainWindow):
         self.button_connect.clicked.connect(self.on_connect)
         self.button_connect.setStyleSheet("""
             QPushButton {background-color: gray}
-            QPushButton:checked { background-color: green; color: white; }
+            QPushButton:checked {background-color: green; color: white; }
             QPushButton {border-radius: 4px}
         """)
 
@@ -229,40 +278,41 @@ class TC_Drone_App(QMainWindow):
     async def on_connect(self):
         if self.button_connect.isChecked():
             port = self.port_edit.text().strip()
+            
             if not port:
-                port = "udpin://0.0.0.0:14540"
-                self.log("-- Port not specified, defaulting to udpin://0.0.0.0:14540")
-
-            # Validate port string
+                data = pull_from_json()
+                port = data.get(drone_instance_json, {}).get("port", "udpin://0.0.0.0:14540")
+                self.port_edit.lineEdit().setText(port)
+            
+            self.log(f"Trying port: {port}")
+            
             if not is_valid_port(port):
-                self.log("-- Invalid port format. Please specify a valid UDP, TCP, or Serial port.")
-                self.status.setText("Status: Invalid port")
+                self.log("-- Invalid port format")
                 self.button_connect.setChecked(False)
                 return
             
-            self.drone = Drone(port=port)
-
+            self.port_edit.save_history()
+            
+            self.drone = Drone(port)
             self.log("Connecting...")
+            
             try:
                 connected = await self.drone.connect()
                 if connected:
                     self.status.setText("Status: Connected")
-                    self.log("-- Connected")
-                    self.button_takeoff.setEnabled(True) # Enable Takeoff
-                    
-                    # Optional: Get position confirmation
-                    lat, lon, alt = await self.drone.current_position()
-                    self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
+                    self.log("-- Connected!")
+                    self.button_takeoff.setEnabled(True)
+
                 else:
-                    self.status.setText("Status: Connection Failed")
-                    self.log("-- Connection test failed; consider trying a different port.")
+                    self.status.setText("Status: Failed")
                     self.button_connect.setChecked(False)
             except Exception as e:
-                self.log(f"Error: {e}")
-                self.button_connect.setEnabled(False)
+                self.log(f"Connect error: {e}")
+                self.button_connect.setChecked(False)
         else:
             self.status.setText("Status: Disconnected")
             self.button_takeoff.setEnabled(False)
+
 
     @asyncSlot()
     async def on_takeoff(self):
@@ -287,8 +337,8 @@ class TC_Drone_App(QMainWindow):
             await self.drone.land() 
             self.log("Landing...")
             self.status.setText("Status: Landing")
-            self.button_land.setChecked(False)  # Reset toggle
-            self.button_land.setEnabled(False)  # Disable again
+            self.button_land.setChecked(False)
+            self.button_land.setEnabled(False)
             self.button_takeoff.setEnabled(True)
 
         except Exception as e:
