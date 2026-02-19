@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QSizePolicy,
 )
-from PyQt6.QtGui import QFontDatabase, QIcon
+from PyQt6.QtGui import QIcon
 from qasync import asyncSlot, QEventLoop
 
 
@@ -47,15 +47,15 @@ class TC_Drone_App(QMainWindow):
         self.tabs = QTabWidget()
 
         # implementing font
-        self.font_id = QFontDatabase.addApplicationFont(
-            "src/fly/assets/BlackOpsOne-Regular.ttf"
-        )
-        if self.font_id != -1:  # Success check
-            font_families = QFontDatabase.applicationFontFamilies(self.font_id)
-            custom_font_name = font_families[0]  # Usually index 0
-        else:
-            print("Font failed to load")
-            custom_font_name = "Arial"  # fallback
+        # self.font_id = QFontDatabase.addApplicationFont(
+        #     "src/fly/assets/BlackOpsOne-Regular.ttf"
+        # )
+        # if self.font_id != -1:  # Success check
+        #     font_families = QFontDatabase.applicationFontFamilies(self.font_id)
+        #     custom_font_name = font_families[0]  # Usually index 0
+        # else:
+        #     print("Font failed to load")
+        #     custom_font_name = "Arial"  # fallback
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
@@ -64,7 +64,7 @@ class TC_Drone_App(QMainWindow):
         self.port_edit.setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
 
         self.logo = QLabel("TCHS Aero GUI v1")
-        self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
+        # self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
         self.status = QLabel("Status: Disconnected")
         self.console = QTextEdit()
         self.console.setStyleSheet("""background-color: black;
@@ -72,14 +72,13 @@ class TC_Drone_App(QMainWindow):
         """)
         self.console.setReadOnly(True)
 
-        self.button_connect = QPushButton("1. Connect to the drone")
-        self.button_connect.setCheckable(True)
+        self.button_connect = QPushButton("Connect to the drone")
         self.button_connect.clicked.connect(self.on_connect)
-        self.button_connect.setStyleSheet("""
-            QPushButton {background-color: gray}
-            QPushButton:checked { background-color: green; color: white; }
-            QPushButton {border-radius: 4px}
-        """)
+        # self.button_connect.setStyleSheet("""
+        #     QPushButton {background-color: gray}
+        #     QPushButton:checked { background-color: green; color: white; }
+        #     QPushButton {border-radius: 4px}
+        # """)
 
         self.button_takeoff = QPushButton("2. Takeoff (10m)")
         self.button_takeoff.setEnabled(False)
@@ -89,12 +88,12 @@ class TC_Drone_App(QMainWindow):
         self.button_land.setCheckable(True)
         self.button_land.setEnabled(False)
         self.button_land.clicked.connect(self.on_land)
-        self.button_land.setStyleSheet("""
-            QPushButton:disabled { background-color: lightcoral; color: white; }
-            QPushButton:!checked { background-color: red; color: white; }
-            QPushButton:pressed { background-color: darkorange; color: white; }
-            QPushButton {border-radius: 4px}
-        """)
+        # self.button_land.setStyleSheet("""
+        #     QPushButton:disabled { background-color: lightcoral; color: white; }
+        #     QPushButton:!checked { background-color: red; color: white; }
+        #     QPushButton:pressed { background-color: darkorange; color: white; }
+        #     QPushButton {border-radius: 4px}
+        # """)
 
         general_layout.addWidget(self.port_edit)
         general_layout.addWidget(self.button_connect)
@@ -109,7 +108,7 @@ class TC_Drone_App(QMainWindow):
         self.movement_controls_text = QLabel("Movement Controls")
 
         self.logo = QLabel("TCHS Aero GUI ver.1")
-        self.logo.setStyleSheet("background-color: red")
+        # self.logo.setStyleSheet("background-color: red")
         self.logo.setGeometry(400, 100, 500, 50)
 
         grid = QGridLayout()
@@ -128,18 +127,18 @@ class TC_Drone_App(QMainWindow):
         self.button_backward.clicked.connect(self.move_backward)
         self.button_stop_movement = QPushButton("Stop")
         self.button_stop_movement.clicked.connect(self.stoping_movement)
-        self.button_stop_movement.setStyleSheet("""
-            QPushButton {border-radius: 4px}
-            QPushButton:!checked { background-color: red; color: white; }
-            QPushButton:pressed { background-color: darkorange; color: white; }
+        # self.button_stop_movement.setStyleSheet("""
+        #     QPushButton {border-radius: 4px}
+        #     QPushButton:!checked { background-color: red; color: white; }
+        #     QPushButton:pressed { background-color: darkorange; color: white; }
 
-        """)
+        # """)
         self.button_rth = QPushButton("Return to\nHome")
         self.button_rth.clicked.connect(self.return_to_launch)
-        self.button_rth.setStyleSheet("""
-            QPushButton {border-radius: 4px}
-            QPushButton:!checked { background-color: darkgreen; color: white; }
-        """)
+        # self.button_rth.setStyleSheet("""
+        #     QPushButton {border-radius: 4px}
+        #     QPushButton:!checked { background-color: darkgreen; color: white; }
+        # """)
 
         # dynamic button sizes acccording to the user's expansion of the window
         policy_connect = self.button_connect.sizePolicy()
@@ -238,52 +237,35 @@ class TC_Drone_App(QMainWindow):
 
     @asyncSlot()
     async def on_connect(self):
-        if self.button_connect.isChecked():
-            port = self.port_edit.text().strip()
-            if not port:
-                port = "udpin://0.0.0.0:14540"
-                self.log("-- Port not specified, defaulting to udpin://0.0.0.0:14540")
-
-            # Validate port string
-            if not is_valid_port(port):
-                self.log(
-                    "-- Invalid port format. Please specify a valid UDP, TCP, or Serial port."
-                )
-                self.status.setText("Status: Invalid port")
-                self.button_connect.setChecked(False)
-                return
-
-            self.drone = Drone(port=port)
-
+        self.button_connect.setEnabled(False)
+        port = self.port_edit.text().strip()
+        if not is_valid_port(port):
+            self.log(
+                "-- Invalid port format. Please specify a valid UDP, TCP, or Serial port."
+            )
+            self.button_connect.setEnabled(True)
+            return
+        try:
+            self.drone = Drone(port)
             self.log("Connecting...")
-            try:
-                connected = await self.drone.connect()
-                if connected:
-                    self.status.setText("Status: Connected")
-                    self.log("-- Connected")
-                    self.button_takeoff.setEnabled(True)  # Enable Takeoff
-
-                    # Optional: Get position confirmation
-                    lat, lon, alt = await self.drone.current_position()
-                    self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
-                else:
-                    self.status.setText("Status: Connection Failed")
-                    self.log(
-                        "-- Connection test failed; consider trying a different port."
-                    )
-                    self.button_connect.setChecked(False)
-            except Exception as e:
-                self.log(f"Error: {e}")
-                self.button_connect.setEnabled(False)
-        else:
-            self.status.setText("Status: Disconnected")
-            self.button_takeoff.setEnabled(False)
+            connected = await self.drone.connect()
+            if connected:
+                self.status.setText("Status: Connected")
+                self.log("-- Connected")
+                self.button_takeoff.setEnabled(True)
+                lat, lon, alt = await self.drone.current_position()
+                self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
+            else:
+                self.status.setText("Status: Connection Failed")
+                self.log(
+                    "-- Connection test failed; consider trying a different port."
+                )
+                self.button_connect.setEnabled(True)
+        except Exception as e:
+            self.log(f"Error: {e}")
 
     @asyncSlot()
     async def on_takeoff(self):
-        if not self.drone:
-            self.log("No drone instance; connect first.")
-            return
         self.log("Starting Takeoff Sequence...")
         self.button_takeoff.setEnabled(False)
         try:
