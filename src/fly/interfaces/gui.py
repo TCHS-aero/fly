@@ -10,11 +10,22 @@ from fly.core.dataManager import (
 )
 
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox, QComboBox,
-    QVBoxLayout, QWidget, QTextEdit, QTabWidget, QGridLayout,QSizePolicy
+    QApplication,
+    QMainWindow,
+    QPushButton,
+    QLabel,
+    QDoubleSpinBox,
+    QVBoxLayout,
+    QWidget,
+    QTextEdit,
+    QLineEdit,
+    QTabWidget,
+    QGridLayout,
+    QSizePolicy,
 )
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon
+from PyQt6.QtGui import QIcon
 from qasync import asyncSlot, QEventLoop
+
 
 def is_valid_port(port: str) -> bool:
     udp_pattern = r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$"
@@ -78,17 +89,18 @@ class TC_Drone_App(QMainWindow):
         central = QWidget()
         main_layout = QVBoxLayout()
 
-        
         self.tabs = QTabWidget()
 
-        #implementing font
-        self.font_id = QFontDatabase.addApplicationFont("src/fly/assets/BlackOpsOne-Regular.ttf")
-        if self.font_id != -1:  # Success check
-            font_families = QFontDatabase.applicationFontFamilies(self.font_id)
-            custom_font_name = font_families[0]  # Usually index 0
-        else:
-            print("Font failed to load")
-            custom_font_name = "Arial"  # fallback
+        # implementing font
+        # self.font_id = QFontDatabase.addApplicationFont(
+        #     "src/fly/assets/BlackOpsOne-Regular.ttf"
+        # )
+        # if self.font_id != -1:  # Success check
+        #     font_families = QFontDatabase.applicationFontFamilies(self.font_id)
+        #     custom_font_name = font_families[0]  # Usually index 0
+        # else:
+        #     print("Font failed to load")
+        #     custom_font_name = "Arial"  # fallback
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
@@ -101,20 +113,21 @@ class TC_Drone_App(QMainWindow):
             self.port_edit.lineEdit().setText(latest_port)
 
         self.logo = QLabel("TCHS Aero GUI v1")
-        self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
+        # self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
         self.status = QLabel("Status: Disconnected")
         self.console = QTextEdit()
-        self.console.setStyleSheet("background-color: black")
+        self.console.setStyleSheet("""background-color: black;
+        color: white;
+        """)
         self.console.setReadOnly(True)
 
-        self.button_connect = QPushButton("1. Connect to the drone")
-        self.button_connect.setCheckable(True)
+        self.button_connect = QPushButton("Connect to the drone")
         self.button_connect.clicked.connect(self.on_connect)
-        self.button_connect.setStyleSheet("""
-            QPushButton {background-color: gray}
-            QPushButton:checked {background-color: green; color: white; }
-            QPushButton {border-radius: 4px}
-        """)
+        # self.button_connect.setStyleSheet("""
+        #     QPushButton {background-color: gray}
+        #     QPushButton:checked { background-color: green; color: white; }
+        #     QPushButton {border-radius: 4px}
+        # """)
 
         self.button_takeoff = QPushButton("2. Takeoff (10m)")
         self.button_takeoff.setEnabled(False)
@@ -124,12 +137,12 @@ class TC_Drone_App(QMainWindow):
         self.button_land.setCheckable(True)
         self.button_land.setEnabled(False)
         self.button_land.clicked.connect(self.on_land)
-        self.button_land.setStyleSheet("""
-            QPushButton:disabled { background-color: lightcoral; color: white; }
-            QPushButton:!checked { background-color: red; color: white; }
-            QPushButton:pressed { background-color: darkorange; color: white; }
-            QPushButton {border-radius: 4px}
-        """)
+        # self.button_land.setStyleSheet("""
+        #     QPushButton:disabled { background-color: lightcoral; color: white; }
+        #     QPushButton:!checked { background-color: red; color: white; }
+        #     QPushButton:pressed { background-color: darkorange; color: white; }
+        #     QPushButton {border-radius: 4px}
+        # """)
 
         general_layout.addWidget(self.port_edit)
         general_layout.addWidget(self.button_connect)
@@ -138,19 +151,17 @@ class TC_Drone_App(QMainWindow):
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
 
-
         movement_widget = QWidget()
         movement_layout = QVBoxLayout()
-        
-        self.movement_controls_text = QLabel("Movement Controls")
-        
-        self.logo = QLabel("TCHS Aero GUI ver.1")
-        self.logo.setStyleSheet("background-color: red")
-        self.logo.setGeometry(400,100,500,50)
 
+        self.movement_controls_text = QLabel("Movement Controls")
+
+        self.logo = QLabel("TCHS Aero GUI ver.1")
+        # self.logo.setStyleSheet("background-color: red")
+        self.logo.setGeometry(400, 100, 500, 50)
 
         grid = QGridLayout()
-        #buttons for drone movement
+        # buttons for drone movement
         self.button_up = QPushButton("Up")
         self.button_up.clicked.connect(self.move_up)
         self.button_down = QPushButton("Down")
@@ -165,26 +176,25 @@ class TC_Drone_App(QMainWindow):
         self.button_backward.clicked.connect(self.move_backward)
         self.button_stop_movement = QPushButton("Stop")
         self.button_stop_movement.clicked.connect(self.stoping_movement)
-        self.button_stop_movement.setStyleSheet("""
-            QPushButton {border-radius: 4px}
-            QPushButton:!checked { background-color: red; color: white; }
-            QPushButton:pressed { background-color: darkorange; color: white; }
+        # self.button_stop_movement.setStyleSheet("""
+        #     QPushButton {border-radius: 4px}
+        #     QPushButton:!checked { background-color: red; color: white; }
+        #     QPushButton:pressed { background-color: darkorange; color: white; }
 
-        """)
+        # """)
         self.button_rth = QPushButton("Return to\nHome")
         self.button_rth.clicked.connect(self.return_to_launch)
-        self.button_rth.setStyleSheet("""
-            QPushButton {border-radius: 4px}
-            QPushButton:!checked { background-color: darkgreen; color: white; }
-        """)
+        # self.button_rth.setStyleSheet("""
+        #     QPushButton {border-radius: 4px}
+        #     QPushButton:!checked { background-color: darkgreen; color: white; }
+        # """)
 
-
-        #dynamic button sizes acccording to the user's expansion of the window
+        # dynamic button sizes acccording to the user's expansion of the window
         policy_connect = self.button_connect.sizePolicy()
         policy_connect.setVerticalPolicy(QSizePolicy.Policy.Expanding)
         self.button_connect.setSizePolicy(policy_connect)
         self.button_connect.setMinimumHeight(60)
-    
+
         policy_takeoff = self.button_takeoff.sizePolicy()
         policy_takeoff.setVerticalPolicy(QSizePolicy.Policy.Expanding)
         self.button_takeoff.setSizePolicy(policy_takeoff)
@@ -195,8 +205,6 @@ class TC_Drone_App(QMainWindow):
         self.button_land.setSizePolicy(policy_land)
         self.button_land.setMinimumHeight(60)
 
-
-
         policy_stop_mvt = self.button_stop_movement.sizePolicy()
         policy_stop_mvt.setVerticalPolicy(QSizePolicy.Policy.Expanding)
         self.button_stop_movement.setSizePolicy(policy_stop_mvt)
@@ -206,7 +214,6 @@ class TC_Drone_App(QMainWindow):
         policy_rth.setVerticalPolicy(QSizePolicy.Policy.Expanding)
         self.button_rth.setSizePolicy(policy_rth)
         self.button_rth.setMinimumHeight(60)
-
 
         policy_up = self.button_up.sizePolicy()
         policy_up.setVerticalPolicy(QSizePolicy.Policy.Expanding)
@@ -238,7 +245,6 @@ class TC_Drone_App(QMainWindow):
         self.button_backward.setSizePolicy(policy_backward)
         self.button_backward.setMinimumHeight(60)
 
-
         grid.addWidget(self.button_up, 0, 4)
         grid.addWidget(self.button_down, 2, 4)
         grid.addWidget(self.button_forward, 0, 1)
@@ -247,9 +253,11 @@ class TC_Drone_App(QMainWindow):
         grid.addWidget(self.button_right, 1, 2)
         grid.addWidget(self.button_stop_movement, 1, 1)
         grid.addWidget(self.button_rth, 1, 4)
-        
+
         self.velocity_text = QLabel("Velocity")
         self.velocity = QDoubleSpinBox()
+        self.distance_text = QLabel("Distance")
+        self.distance = QDoubleSpinBox()
         self.yaw_text = QLabel("Yaw")
         self.yaw = QDoubleSpinBox()
 
@@ -260,6 +268,8 @@ class TC_Drone_App(QMainWindow):
         movement_layout.addWidget(self.velocity)
         movement_layout.addWidget(self.yaw_text)
         movement_layout.addWidget(self.yaw)
+        movement_layout.addWidget(self.distance_text)
+        movement_layout.addWidget(self.distance)
         movement_widget.setLayout(movement_layout)
         self.tabs.addTab(movement_widget, "Movement")
 
@@ -276,53 +286,40 @@ class TC_Drone_App(QMainWindow):
 
     @asyncSlot()
     async def on_connect(self):
-        if self.button_connect.isChecked():
-            port = self.port_edit.text().strip()
-            
-            if not port:
-                data = pull_from_json()
-                port = data.get(drone_instance_json, {}).get("port", "udpin://0.0.0.0:14540")
-                self.port_edit.lineEdit().setText(port)
-            
-            self.log(f"Trying port: {port}")
-            
-            if not is_valid_port(port):
-                self.log("-- Invalid port format")
-                self.button_connect.setChecked(False)
-                return
-            
-            self.port_edit.save_history()
-            
+        self.button_connect.setEnabled(False)
+        port = self.port_edit.text().strip()
+        if not is_valid_port(port):
+            self.log(
+                "-- Invalid port format. Please specify a valid UDP, TCP, or Serial port."
+            )
+            self.button_connect.setEnabled(True)
+            return
+        try:
             self.drone = Drone(port)
             self.log("Connecting...")
-            
-            try:
-                connected = await self.drone.connect()
-                if connected:
-                    self.status.setText("Status: Connected")
-                    self.log("-- Connected!")
-                    self.button_takeoff.setEnabled(True)
-
-                else:
-                    self.status.setText("Status: Failed")
-                    self.button_connect.setChecked(False)
-            except Exception as e:
-                self.log(f"Connect error: {e}")
-                self.button_connect.setChecked(False)
-        else:
-            self.status.setText("Status: Disconnected")
-            self.button_takeoff.setEnabled(False)
+            connected = await self.drone.connect()
+            if connected:
+                self.status.setText("Status: Connected")
+                self.log("-- Connected")
+                self.button_takeoff.setEnabled(True)
+                lat, lon, alt = await self.drone.current_position()
+                self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
+            else:
+                self.status.setText("Status: Connection Failed")
+                self.log(
+                    "-- Connection test failed; consider trying a different port."
+                )
+                self.button_connect.setEnabled(True)
+        except Exception as e:
+            self.log(f"Error: {e}")
 
 
     @asyncSlot()
     async def on_takeoff(self):
-        if not self.drone:
-            self.log("No drone instance; connect first.")
-            return
         self.log("Starting Takeoff Sequence...")
         self.button_takeoff.setEnabled(False)
         try:
-            await self.drone.takeoff(10.0) 
+            await self.drone.takeoff(10.0)
             self.log("Takeoff...")
             self.status.setText("Status: Taken off")
             self.button_land.setEnabled(True)
@@ -334,7 +331,7 @@ class TC_Drone_App(QMainWindow):
     async def on_land(self):
         self.log("Starting Landing Sequence...")
         try:
-            await self.drone.land() 
+            await self.drone.land()
             self.log("Landing...")
             self.status.setText("Status: Landing")
             self.button_land.setChecked(False)
@@ -350,92 +347,170 @@ class TC_Drone_App(QMainWindow):
         self.log("Starting Moving Up Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
-        print(self.velocity_flt, self.yaw_flt)
+        self.distance_flt = self.distance.value()
+
+        if self.distance_flt < 0 or self.velocity_flt < 0:
+            self.log("All values must be greater than 0.")
+            return
+        elif not self.distance_flt or not self.velocity_flt:
+            self.log("Distance and Velocity are required to execute this command.")
+            return
+
+        print(self.velocity_flt, self.yaw_flt, self.distance_flt)
         try:
-            await self.drone.move_up_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Up...")
             self.status.setText("Status: Moving Up")
-
+            await self.drone.move_up_offset(
+                distance=self.distance_flt, velocity=self.velocity_flt, yaw=self.yaw_flt
+            )
+            self.log("Movement finished")
+            self.status.setText("Status: Movement stopped.")
         except Exception as e:
             self.log(f"Moving Up Error: {e}")
+            self.log("Are you connected?")
 
     @asyncSlot()
     async def move_down(self):
         self.log("Starting Moving Down Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
-        print(self.velocity_flt, self.yaw_flt)
+        self.distance_flt = self.distance.value()
+
+        if self.distance_flt < 0 or self.velocity_flt < 0:
+            self.log("All values must be greater than 0.")
+            return
+        elif not self.distance_flt or not self.velocity_flt:
+            self.log("Distance and Velocity are required to execute this command.")
+            return
+
+        print(self.velocity_flt, self.yaw_flt, self.distance_flt)
         try:
-            await self.drone.move_down_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Down...")
             self.status.setText("Status: Moving Down")
-
+            await self.drone.move_down_offset(
+                distance=self.distance_flt, velocity=self.velocity_flt, yaw=self.yaw_flt
+            )
+            self.log("Movement finished")
+            self.status.setText("Status: Movement stopped.")
         except Exception as e:
-            self.log(f"Moving Down Error: {e}")
+            self.log(f"Moving Up Error: {e}")
+            self.log("Are you connected?")
 
     @asyncSlot()
     async def move_left(self):
         self.log("Starting Moving Left Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
-        print(self.velocity_flt, self.yaw_flt)
+        self.distance_flt = self.distance.value()
+
+        if self.distance_flt < 0 or self.velocity_flt < 0:
+            self.log("All values must be greater than 0.")
+            return
+        elif not self.distance_flt or not self.velocity_flt:
+            self.log("Distance and Velocity are required to execute this command.")
+            return
+
+        print(self.velocity_flt, self.yaw_flt, self.distance_flt)
         try:
-            await self.drone.move_left_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Left...")
             self.status.setText("Status: Moving Left")
-
+            await self.drone.move_left_offset(
+                distance=self.distance_flt, velocity=self.velocity_flt, yaw=self.yaw_flt
+            )
+            self.log("Movement finished")
+            self.status.setText("Status: Movement stopped.")
         except Exception as e:
-            self.log(f"Moving Left Error: {e}")
+            self.log(f"Moving Up Error: {e}")
+            self.log("Are you connected?")
 
     @asyncSlot()
     async def move_right(self):
         self.log("Starting Moving Right Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
-        print(self.velocity_flt, self.yaw_flt)
+        self.distance_flt = self.distance.value()
+
+        if self.distance_flt < 0 or self.velocity_flt < 0:
+            self.log("All values must be greater than 0.")
+            return
+        elif not self.distance_flt or not self.velocity_flt:
+            self.log("Distance and Velocity are required to execute this command.")
+            return
+
+        print(self.velocity_flt, self.yaw_flt, self.distance_flt)
         try:
-            await self.drone.move_right_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Right...")
             self.status.setText("Status: Moving Right")
-
+            await self.drone.move_right_offset(
+                distance=self.distance_flt, velocity=self.velocity_flt, yaw=self.yaw_flt
+            )
+            self.log("Movement finished")
+            self.status.setText("Status: Movement stopped.")
         except Exception as e:
-            self.log(f"Moving Right Error: {e}")
+            self.log(f"Moving Up Error: {e}")
+            self.log("Are you connected?")
 
     @asyncSlot()
     async def move_forward(self):
         self.log("Starting Moving Forward Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
-        print(self.velocity_flt, self.yaw_flt)
+        self.distance_flt = self.distance.value()
+
+        if self.distance_flt < 0 or self.velocity_flt < 0:
+            self.log("All values must be greater than 0.")
+            return
+        elif not self.distance_flt or not self.velocity_flt:
+            self.log("Distance and Velocity are required to execute this command.")
+            return
+
+        print(self.velocity_flt, self.yaw_flt, self.distance_flt)
         try:
-            await self.drone.move_forward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Forward...")
             self.status.setText("Status: Moving Forward")
-
+            await self.drone.move_forward_offset(
+                distance=self.distance_flt, velocity=self.velocity_flt, yaw=self.yaw_flt
+            )
+            self.log("Movement finished")
+            self.status.setText("Status: Movement stopped.")
         except Exception as e:
-            self.log(f"Moving Forward Error: {e}")
+            self.log(f"Moving Up Error: {e}")
+            self.log("Are you connected?")
 
     @asyncSlot()
     async def move_backward(self):
         self.log("Starting Moving Backward Sequence...")
         self.velocity_flt = self.velocity.value()
         self.yaw_flt = self.yaw.value()
-        print(self.velocity_flt, self.yaw_flt)
+        self.distance_flt = self.distance.value()
+
+        if self.distance_flt < 0 or self.velocity_flt < 0:
+            self.log("All values must be greater than 0.")
+            return
+        elif not self.distance_flt or not self.velocity_flt:
+            self.log("Distance and Velocity are required to execute this command.")
+            return
+
+        print(self.velocity_flt, self.yaw_flt, self.distance_flt)
         try:
-            await self.drone.move_backward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Backward...")
             self.status.setText("Status: Moving Backward")
-
+            await self.drone.move_backward_offset(
+                distance=self.distance_flt, velocity=self.velocity_flt, yaw=self.yaw_flt
+            )
+            self.log("Movement finished")
+            self.status.setText("Status: Movement stopped.")
         except Exception as e:
-            self.log(f"Moving Backward Error: {e}")
+            self.log(f"Moving Up Error: {e}")
+            self.log("Are you connected?")
 
     @asyncSlot()
     async def stoping_movement(self):
         self.log("Stoping Movement...")
         try:
-            await self.drone.stop_movement()
             self.log("Stoping Movement...")
             self.status.setText("Status: Stoping Movement")
+            await self.drone.stop_movement()
 
         except Exception as e:
             self.log(f"Stoping Movement Error: {e}")
@@ -450,20 +525,19 @@ class TC_Drone_App(QMainWindow):
 
         except Exception as e:
             self.log(f"Return to Launch Error: {e}")
-    
-
 
 
 def main():
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
-    
+
     win = TC_Drone_App()
     win.show()
-    
+
     with loop:
         loop.run_forever()
+
 
 if __name__ == "__main__":
     main()
