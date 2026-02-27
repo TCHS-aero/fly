@@ -418,8 +418,8 @@ class TC_Drone_App(QMainWindow):
                 else:
                     self.status.setText("Status: Failed")
                     self.button_connect.setChecked(False)
-                    self.battery_percentage.setText("Battery: --%")
-                    self.battery_voltage.setText("Battery Voltage: --V")
+                    self.battery_percentage.setText("(Battery: --%)")
+                    self.battery_voltage.setText("(Battery Voltage: --V)")
                     self.battery_consumed_action.setText("Battery Consumed: -- mAh")
                     self.battery_temp_action.setText("Battery Temperature: --℃")
                     self.battery_current_action.setText("Battery Current: --A")
@@ -430,8 +430,8 @@ class TC_Drone_App(QMainWindow):
         else:
             self.status.setText("Status: Disconnected")
             self.button_takeoff.setEnabled(False)
-            self.battery_percentage.setText("Battery: --%")
-            self.battery_voltage.setText("Battery Voltage: --V")
+            self.battery_percentage.setText("(Battery: --%)")
+            self.battery_voltage.setText("(Battery Voltage: --V)")
             self.battery_consumed_action.setText("Battery Consumed: -- mAh")
             self.battery_temp_action.setText("Battery Temperature: --℃")
             self.battery_current_action.setText("Battery Current: --A")
