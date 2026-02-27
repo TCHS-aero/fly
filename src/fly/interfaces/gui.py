@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox, QComboBox,
     QVBoxLayout, QWidget, QTextEdit, QTabWidget, QGridLayout,QSizePolicy
 )
-from PyQt6.QtGui import QFontDatabase, QIcon
+from PyQt6.QtGui import QFontDatabase, QIcon, QAction
 from qasync import asyncSlot, QEventLoop
 
 def is_valid_port(port: str) -> bool:
@@ -68,43 +68,7 @@ class HistoryLineEdit(QComboBox):
     def text(self):
         return self.currentText()
 
-class BatteryDropdown(QComboBox):
-    def __init__(self):
-        super().__init__()
-        self.setMinimumWidth(200)
-        self.addItem("Battery: --%")
-        self.setStyleSheet("""
-            QComboBox { 
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #4a90e2, stop:1 #357abd);
-                color: white; 
-                border: 1px solid #2a6db0; 
-                border-radius: 8px; 
-                padding: 6px 12px;
-                font-weight: bold;
-            }
-            QComboBox::drop-down { subcontrol-origin: padding; }
-            QComboBox::down-arrow { image: none; }
-        """)
-    
-    def update_battery(self, info):
-        """Update with full battery data."""
-        percent = info['percentage']
-        voltage = info['voltage']
-        consumed = info['consumed']
-        state = info['state']
-        
-        # Color code based on percentage
-        if percent > 75:
-            color = "#00ff00"  # Green
-        elif percent > 30:
-            color = "#ffaa00"  # Orange
-        else:
-            color = "#ff0000"  # Red
-        
-        display = f"Battery: {percent:.0f}% | {voltage:.1f}V | {consumed} | {state}"
-        self.setCurrentText(display)
-        self.setStyleSheet(self.styleSheet() + f" color: {color};")
+
 
 class TC_Drone_App(QMainWindow):
     def __init__(self):
@@ -140,9 +104,37 @@ class TC_Drone_App(QMainWindow):
         self.logo = QLabel("TCHS Aero GUI v1")
         self.logo.setStyleSheet(f"font-size:40px; font-family: {custom_font_name};")
 
+        # Status Bar
         self.status = QLabel("Status: Disconnected")
-        self.battery_label = BatteryDropdown()
-        self.statusBar().addPermanentWidget(self.battery_label)
+        self.battery_percentage = QLabel("(Battery: --%)")
+        self.battery_voltage = QLabel("(Voltage: --V)")
+
+        self.statusBar().addPermanentWidget(self.battery_percentage)
+        self.statusBar().addPermanentWidget(self.battery_voltage)
+
+        menubar = self.menuBar()
+        menubar.setNativeMenuBar(False)
+
+        status_menu = menubar.addMenu("Battery ")
+
+
+
+        self.battery_consumed_action = QAction("Consumed: -- mAh", self)
+        self.battery_consumed_action.setEnabled(False)
+        status_menu.addAction(self.battery_consumed_action)
+        
+        self.battery_temp_action = QAction("Temperature: -- ℃", self)
+        self.battery_temp_action.setEnabled(False)
+        status_menu.addAction(self.battery_temp_action)
+
+        self.battery_current_action = QAction("Current: -- A", self)
+        self.battery_current_action.setEnabled(False)
+        status_menu.addAction(self.battery_current_action)
+
+        self.battery_time_action = QAction("Time Remaining: -- s", self)
+        self.battery_time_action.setEnabled(False)
+        status_menu.addAction(self.battery_time_action)
+
         
         self.console = QTextEdit()
         self.console.setStyleSheet("background-color: black")
@@ -199,32 +191,75 @@ class TC_Drone_App(QMainWindow):
         self.setCentralWidget(central)
     
     def start_battery_monitoring(self):
-        if hasattr(self, '_battery_task') and self._battery_task:
-            self._battery_task.cancel()
-        self._battery_task = asyncio.create_task(self._monitor_battery())
-
-    async def _monitor_battery(self):
-        while self.drone:
-            try:
-                info = await self.drone.get_battery_info()
-                self.battery_dropdown.update_battery(info)
-            except Exception as e:
-                self.battery_dropdown.setCurrentText("Battery: Error")
-                self.log(f"Battery error: {e}")
-            await asyncio.sleep(2)
-
+        if hasattr(self, 'battery_task') and self.battery_task:
+            self.battery_task.cancel()
+        
+        self.battery_task = asyncio.create_task(self.monitor_battery())
 
     def stop_battery_monitoring(self):
-        if hasattr(self, '_battery_task') and self.battery_task:
+        if hasattr(self, 'battery_task') and self.battery_task:
             self.battery_task.cancel()
             self.battery_task = None
-    
-    def closeEvent(self, event):
-        self.stop_battery_monitoring()
-        if self.drone:
-            asyncio.create_task(self.drone.land())
-        event.accept()
 
+    async def monitor_battery(self):
+        while self.drone:
+            try:
+                battery_info = await self.drone.get_battery_info()
+
+
+                bp = battery_info.get('percentage')
+                try:
+                    self.battery_percentage.setText(f"(Battery Percentage: {float(bp):.1f}%)")
+                except Exception as e:
+                    self.log(f"Battery Percentage Error: {e}")
+
+                
+                bv = battery_info.get('voltage')
+                try:
+                    self.battery_voltage.setText(f"(Battery Voltage: {float(bv):.1f}V)")
+                except Exception as e:
+                    self.log(f"Battery Voltage Error: {e}")
+
+
+                bconsumed = battery_info.get('consumed')
+                try:
+                    self.battery_consumed_action.setText(f"Battery Consumed: {bconsumed}")
+
+                except Exception as e:
+                    self.log(f"Battery Consumed Error: {e}")
+                    self.battery_consumed_action.setText("Battery Consumed: --mAh")
+
+                btemp = battery_info.get('temperature')
+                if isinstance(btemp, (int, float)):
+                    self.battery_temp_action.setText(f"Temperature: {btemp:.1f}℃")
+                else: 
+                    self.battery_temp_action.setText("Temperature: -- ℃")
+
+                bc = battery_info.get('battery_current')
+                if isinstance(bc, (int, float)):
+                    self.battery_current_action.setText(f"Current: {bc:.1f}A")
+                else: 
+                    self.battery_current_action.setText("Current: -- A")
+
+                btr = battery_info.get('time_remaining')
+                if isinstance(btr, (int, float)):
+                    self.battery_time_action.setText(f"Time Remaining: {btr:.1f}s")
+                else: 
+                    self.battery_time_action.setText("Time Remaining: -- s")
+
+            
+            except Exception as e:
+                self.log(f"Battery Monitoring Error: {e}")
+                self.battery_percentage.setText("Battery Percentage: --%")
+                self.battery_voltage.setText("Battery Voltage: --V")
+                self.battery_consumed_action.setText("Battery Consumed: -- mAh") 
+                self.battery_temp_action.setText("Battery Temperature: --℃")
+                self.battery_current_action.setText("Battery Current: --A")
+                self.battery_time_action.setText("Battery Time Remaining: --s")
+
+            await asyncio.sleep(2)
+        
+        
 
     def log(self, msg):
         self.console.append(msg)
@@ -383,15 +418,26 @@ class TC_Drone_App(QMainWindow):
                 else:
                     self.status.setText("Status: Failed")
                     self.button_connect.setChecked(False)
-                    self.battery_label.setText("Battery: --%")
+                    self.battery_percentage.setText("Battery: --%")
+                    self.battery_voltage.setText("Battery Voltage: --V")
+                    self.battery_consumed_action.setText("Battery Consumed: -- mAh")
+                    self.battery_temp_action.setText("Battery Temperature: --℃")
+                    self.battery_current_action.setText("Battery Current: --A")
+                    self.battery_time_action.setText("Battery Time Remaining: --s")
             except Exception as e:
                 self.log(f"Connect error: {e}")
                 self.button_connect.setChecked(False)
         else:
             self.status.setText("Status: Disconnected")
             self.button_takeoff.setEnabled(False)
-            self.battery_label.setText("Battery: --%")
+            self.battery_percentage.setText("Battery: --%")
+            self.battery_voltage.setText("Battery Voltage: --V")
+            self.battery_consumed_action.setText("Battery Consumed: -- mAh")
+            self.battery_temp_action.setText("Battery Temperature: --℃")
+            self.battery_current_action.setText("Battery Current: --A")
+            self.battery_time_action.setText("Battery Time Remaining: --s")
             self.stop_battery_monitoring()
+            self.closeEvent()
 
     @asyncSlot()
     async def on_takeoff(self):

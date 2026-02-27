@@ -232,8 +232,10 @@ class Drone:
     async def get_battery_info(self):
         async for battery in self.drone.telemetry.battery():
             return {
-                'percentage': battery.remaining_percent,
-            'voltage': battery.voltage_v,
-            'consumed': f"{battery.consumed_mah:.0f} mAh" if battery.consumed_mah > 0 else "-- mAh",
-            'state': str(battery.charge_state).split('.')[-1] 
+            'temperature': float(battery.temperature_degc),
+            'voltage': float(battery.voltage_v),
+            'battery_current': float(battery.current_battery_a),
+            'consumed': f"{battery.capacity_consumed_ah:.0f} mAh" if battery.capacity_consumed_ah > 0 else "-- mAh",
+            'percentage': float(battery.remaining_percent),
+            'time_remaining': float(battery.time_remaining_s)
             }
