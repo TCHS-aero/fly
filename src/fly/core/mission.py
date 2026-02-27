@@ -101,11 +101,21 @@ class Mission:
         return self.waypoints
  
  
-    def upload_mission(self):
-        if not self.waypoints:
-            print("no waypoint is uploaded")
 
-    def start_mission(self):
-        pass
+    def convert_mission_items_to_plan(self, waypoints):
+        self.mission_plan = []
+        for items in waypoints():
+            self.mission_plan.append(items)
+        return self.mission.mission_plan(waypoints)
+
+
+    def upload_mission_plan(self, plan):
+            if not self.waypoints:
+                print("no waypoint is uploaded")
+            return self.mission.upload_mission(plan)
+            
+
+    def start_mission_plan(self):
+        return self.mission.start_mission()
     
     
