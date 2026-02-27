@@ -1,4 +1,5 @@
 import json
+import asyncio
 
 class Mission:
     def __init__(self, file, *, current_index = 0):
@@ -81,6 +82,30 @@ class Mission:
         self.waypoints[index] = self.create_new_waypoint(lat, lon, alt)
         return self.waypoints
 
+    async def start_the_mission(self):
+        try:
+            print("teto")
+            for waypoint in range(len(self.mission.waypoints)):
+                print('diabeto')
+                i = self.mission.get_waypoint(waypoint)
+                print("dance")
+                await self.drone.move_to_waypoint(self.mission.advance_next_waypoint())
+                print('cookie')
+        except Exception as e:
+            self.log(str(e))
+            print(e)
+
+
     def append_waypoints(self, lon, lat, alt):
         self.waypoints.append(self.create_new_waypoint(lat, lon, alt))
         return self.waypoints
+ 
+ 
+    def upload_mission(self):
+        if not self.waypoints:
+            print("no waypoint is uploaded")
+
+    def start_mission(self):
+        
+    
+    
