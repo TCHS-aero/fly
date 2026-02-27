@@ -106,6 +106,6 @@ class Mission:
             print("no waypoint is uploaded")
 
     def start_mission(self):
-        
+        pass
     
     
