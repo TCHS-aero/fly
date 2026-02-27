@@ -5,9 +5,9 @@ import re
 from fly.core.drone import Drone
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox,
-    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout,QSizePolicy, QFileDialog
+    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout,QSizePolicy, QFileDialog, QStatusBar
 )
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QAction
 from qasync import asyncSlot, QEventLoop
 from fly.core.mission import Mission
 from fly.core.drone import Drone
@@ -59,6 +59,7 @@ class TC_Drone_App(QMainWindow):
         
         
         self.battery = QLabel("Battery:-- %")
+        self.battery_action = QAction()
 
         self.console = QTextEdit()
         self.console.setStyleSheet("background-color: black; color: white")
@@ -292,12 +293,13 @@ class TC_Drone_App(QMainWindow):
 
 
     
-    async def battery_percentage_log(self):
+    async def battery_percentage_log(self, drone):
+        
         try:
-            pct = await self.drone.battery_percentage()
-            return pct 
+            percent = await self.drone.battery_percentage()
+            return percent 
         except Exception as e:
-            self.log(f"Battery error: {e}")
+            self.log(f"Battery error in percentage_log {e}")
             return None
 
 
@@ -333,7 +335,7 @@ class TC_Drone_App(QMainWindow):
                     self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
 
                     if not hasattr(self, "_battery_task"):
-                        self._battery_task = asyncio.create_task(self._battery_watcher())
+                        self._battery_task = asyncio.create_task(self._battery_watcher(self.drone))
 
                 else:
                     self.status.setText("Status: Connection Failed")
@@ -347,15 +349,15 @@ class TC_Drone_App(QMainWindow):
             self.button_takeoff.setEnabled(False)
 
 
-    async def _battery_watcher(self):
+    async def _battery_watcher(self, drone):
         while True:
             if self.drone is None:
                 await asyncio.sleep(1.0)
                 continue
 
-            pct = await self.battery_percentage_log()
-            if pct is not None:
-                self.battery.setText(f"Battery: {pct:.0f} %")
+            percent = await self.battery_percentage_log(drone)
+            if percent:
+                self.battery.setText(f"Battery: {percent:.0f} %")
             else:
                 self.battery.setText("Battery: error")
             await asyncio.sleep(1.0) 

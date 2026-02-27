@@ -24,7 +24,7 @@ class Drone:
                         break
         except asyncio.TimeoutError:
             print(
-                f"-- Failed to connect to the drone within {self.connection_timeout} seconds."
+                f"-- Failed to connect to the drone within {self.connection_timeout} seconds. (connect-drone)"
             )
 
         return connected
@@ -228,3 +228,9 @@ class Drone:
 
     async def fetch_drone_instance(self):
         return self.drone
+
+    async def battery_percentage(self):
+        async for percent in drone.telemetry.battery():
+            if percent.battery.remaining_percent:
+                return percent
+                
