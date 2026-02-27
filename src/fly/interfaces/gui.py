@@ -11,7 +11,7 @@ from fly.core.dataManager import (
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QDoubleSpinBox,
-    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout,QSizePolicy, QFileDialog, QStatusBar
+    QVBoxLayout, QWidget, QTextEdit, QLineEdit, QTabWidget, QGridLayout,QSizePolicy, QFileDialog, QStatusBar, QComboBox
 )
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QAction
 from qasync import asyncSlot, QEventLoop
@@ -225,14 +225,14 @@ class TC_Drone_App(QMainWindow):
         self.logo.setStyleSheet("background-color: red")
         self.logo.setGeometry(400,100,500,50)
 
-        main_layout.addWidget(self.logo)
-        main_layout.addWidget(self.console)
-        main_layout.addWidget(self.tabs)
+        self.main_layout.addWidget(self.logo)
+        self.main_layout.addWidget(self.console)
+        self.main_layout.addWidget(self.tabs)
 
         self.statusBar().addWidget(self.status)
         
-        central.setLayout(main_layout)
-        self.setCentralWidget(central)
+        self.central.setLayout(self.main_layout)
+        self.setCentralWidget(self.central)
     
     def start_battery_monitoring(self):
         if hasattr(self, '_battery_task') and self._battery_task:
@@ -587,8 +587,7 @@ class TC_Drone_App(QMainWindow):
         print(self.velocity_flt, self.yaw_flt)
         try:
             await self.drone.move_up_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
-        print(self.velocity_flt, self.yaw_flt)
-        try:
+            print(self.velocity_flt, self.yaw_flt)
             await self.drone.move_up_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Up...")
             self.status.setText("Status: Moving Up")
@@ -604,8 +603,7 @@ class TC_Drone_App(QMainWindow):
         print(self.velocity_flt, self.yaw_flt)
         try:
             await self.drone.move_down_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
-        print(self.velocity_flt, self.yaw_flt)
-        try:
+            print(self.velocity_flt, self.yaw_flt)
             await self.drone.move_down_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Down...")
             self.status.setText("Status: Moving Down")
@@ -621,8 +619,7 @@ class TC_Drone_App(QMainWindow):
         print(self.velocity_flt, self.yaw_flt)
         try:
             await self.drone.move_left_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
-        print(self.velocity_flt, self.yaw_flt)
-        try:
+            print(self.velocity_flt, self.yaw_flt)
             await self.drone.move_left_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Left...")
             self.status.setText("Status: Moving Left")
@@ -639,8 +636,7 @@ class TC_Drone_App(QMainWindow):
         print(self.velocity_flt, self.yaw_flt)
         try:
             await self.drone.move_right_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
-        print(self.velocity_flt, self.yaw_flt)
-        try:
+            print(self.velocity_flt, self.yaw_flt)
             await self.drone.move_right_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Right...")
 
@@ -658,8 +654,7 @@ class TC_Drone_App(QMainWindow):
         print(self.velocity_flt, self.yaw_flt)
         try:
             await self.drone.move_forward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
-        print(self.velocity_flt, self.yaw_flt)
-        try:
+            print(self.velocity_flt, self.yaw_flt)
             await self.drone.move_forward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Forward...")
             self.status.setText("Status: Moving Forward")
@@ -676,8 +671,7 @@ class TC_Drone_App(QMainWindow):
         print(self.velocity_flt, self.yaw_flt)
         try:
             await self.drone.move_backward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
-        print(self.velocity_flt, self.yaw_flt)
-        try:
+            print(self.velocity_flt, self.yaw_flt)
             await self.drone.move_backward_offset(velocity=self.velocity_flt, yaw=self.yaw_flt)
             self.log("Moving Backward...")
             self.status.setText("Status: Moving Backward")
