@@ -24,7 +24,7 @@ class Drone:
                         break
         except asyncio.TimeoutError:
             print(
-                f"-- Failed to connect to the drone within {self.connection_timeout} seconds."
+                f"-- Failed to connect to the drone within {self.connection_timeout} seconds. (connect-drone)"
             )
 
         return connected

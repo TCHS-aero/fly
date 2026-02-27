@@ -1,4 +1,6 @@
 import json
+import asyncio 
+from mavsdk import System
 
 class Mission:
     def __init__(self, file, *, current_index = 0):
@@ -19,7 +21,16 @@ class Mission:
             
             print("-- Success!")
             return self.waypoints
-         
+    
+
+
+
+
+
+
+
+
+
 
     def get_current_waypoint(self):
         return self.waypoints[self.current_index]
@@ -29,7 +40,7 @@ class Mission:
             print("-- waypoint successfully retrived")
             return self.waypoints[index]
         except Exception:
-            print("-- Invalid index, try again.")
+            print("-- Invalid index, try again. (get waypoint-mission)")
             return None
 
     def advance_next_waypoint(self):
@@ -41,7 +52,7 @@ class Mission:
         try:
             return self.waypoints[self.current_index]
         except Exception:
-            print("-- Invalid index, try again.")
+            print("-- Invalid index, try again. (advance next waypoint-misson)")
 
     def reset_mission(self):
         self.current_index = 0
@@ -52,7 +63,7 @@ class Mission:
             self.current_index = index
             return self.get_current_waypoint()
         except Exception as e:
-            print(f"-- {e}")
+            print(f"-- {e}(select waypoint-mission)")
             return None
 
     def get_keys(self):
@@ -67,7 +78,7 @@ class Mission:
                 new_waypoint[keys[i]] = data[i]
             except Exception:
                 print(
-                    "-- No new data to assign to keys or too much data per column. Defaulting to None..."
+                    "-- No new data to assign to keys or too much data per column. Defaulting to None... (create new waypoint-mission)"
                 )
                 new_waypoint[keys[i]] = None
 
