@@ -431,55 +431,9 @@ class TC_Drone_App(QMainWindow):
 
 
 
-        #mission
-        self.mission_widget = QWidget()
-        self.mission_layout = QVBoxLayout()
-        self.mission_controls_text = QLabel("Mission Controls")
 
 
-        self.waypoint = QLineEdit()
-        self.waypoint.setPlaceholderText("enter your coordinates! Format: Lat, Lon, Alt")
-        self.waypoint.setStyleSheet("color: black")
-        self.waypoint.returnPressed.connect(self.parse_text)
 
-        self.error = QLabel("oi man you left an empty parameter bro! fill that in cro!")
-        self.error.setStyleSheet("color: black")
-        self.error.hide()
-
-        self.upload_mission = QPushButton("upload preset mission\n (MUST BE .json FILE)")
-        self.upload_mission.setStyleSheet("background-color: grey")
-        self.upload_mission.clicked.connect(self.file_upload)
-
-        self.start_mission = QPushButton("Start the mission")
-        self.start_mission.setStyleSheet("background-color: red")
-        self.start_mission.clicked.connect(self.start_the_mission)
-
-        policy_waypoint = self.waypoint.sizePolicy()
-        policy_waypoint.setVerticalPolicy(QSizePolicy.Policy.Expanding)
-        self.waypoint.setSizePolicy(policy_waypoint)
-        self.waypoint.setMinimumHeight(60)
-
-        policy_error = self.error.sizePolicy()
-        policy_error.setVerticalPolicy(QSizePolicy.Policy.Expanding)
-        self.error.setSizePolicy(policy_error)
-        self.error.setMinimumHeight(60)
-
-        policy_up_mis = self.upload_mission.sizePolicy()
-        policy_up_mis.setVerticalPolicy(QSizePolicy.Policy.Expanding)
-        self.upload_mission.setSizePolicy(policy_up_mis)
-        self.upload_mission.setMinimumHeight(60)
-
-        policy_up_start_mis = self.upload_mission.sizePolicy()
-        policy_up_start_mis.setVerticalPolicy(QSizePolicy.Policy.Expanding)
-        self.start_mission.setSizePolicy(policy_up_start_mis)
-        self.start_mission.setMinimumHeight(60)
-        
-        self.mission_layout.addWidget(self.waypoint)
-        self.mission_layout.addWidget(self.error)
-        self.mission_layout.addWidget(self.upload_mission)
-        self.mission_layout.addWidget(self.start_mission)
-        self.mission_widget.setLayout(self.mission_layout)
-        self.tabs.addTab(self.mission_widget, "Mission")
 
     
 
@@ -492,24 +446,6 @@ class TC_Drone_App(QMainWindow):
         self.main_layout.addWidget(self.tabs)
         self.central.setLayout(self.main_layout)
         self.setCentralWidget(self.central)
-
-    def log(self, msg):
-        self.console.append(msg)
-        print(msg)
-
-
-    
-    async def battery_percentage_log(self, drone):
-        
-        try:
-            percent = await self.drone.battery_percentage()
-            return percent 
-        except Exception as e:
-            self.log(f"Battery error in percentage_log {e}")
-            return None
-
-
-
     
                 
     @asyncSlot()
@@ -539,13 +475,13 @@ class TC_Drone_App(QMainWindow):
                     self.status.setText("Status: Connected")
                     self.log("-- Connected")
                     self.button_takeoff.setEnabled(True) # Enable Takeoff
+
+                    self.start_battery_monitoring()
                     
                     # Optional: Get position confirmation
                     lat, lon, alt = await self.drone.current_position()
                     self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
 
-                    if not hasattr(self, "_battery_task"):
-                        self._battery_task = asyncio.create_task(self._battery_watcher(self.drone))
 
                 else:
                     self.status.setText("Status: Connection Failed")
@@ -570,7 +506,7 @@ class TC_Drone_App(QMainWindow):
             self.battery_current_action.setText("Battery Current: --A")
             self.battery_time_action.setText("Battery Time Remaining: --s")
             self.stop_battery_monitoring()
-            self.closeEvent()
+
 
     @asyncSlot()
     async def on_takeoff(self):
@@ -725,140 +661,7 @@ class TC_Drone_App(QMainWindow):
             self.log(f"Return to Launch Error: {e}")
 
 
-
-    def parse_file_upload(self, file):
-        self.mission = Mission(file) 
-        #for waypoint in self.mission.waypoints:
-            #lat, lon, alt = self.mission.get_waypoint(waypoint['latitude']), self.mission.get_waypoint(waypoint['longitude']), self.mission.get_waypoint(waypoint['altitude'])
-        try:
-            for i, waypoint_row in enumerate(self.mission.waypoints, 1):  # i=1 to 5
-        
-                coords = f"{waypoint_row['latitude']},{waypoint_row['longitude']},{waypoint_row['altitude']}"
-            
-                self.waypoint_counter+=1
-                self.waypoint_coord = QLabel(self)
-                self.x_label = QPushButton(icon = QIcon("~arrow/fly/src/fly/config/x.jpg"),text="" ,parent=self)
-                self.x_label.setCheckable(True)
-            
-                
-                self.x_label.setGeometry(550, (self.waypoint_counter+1)*90, 50,50 )
-                self.x_label.setStyleSheet("background-color: red")
-                self.x_label.resize(50,50)
-                self.x_label.show()
-                
-                self.waypoint_coord.setGeometry(200, ((self.waypoint_counter+1)*90), 350, 50)
-                self.waypoint_coord.setStyleSheet("color: black; background-color: grey")
-                self.waypoint_coord.setText(f"Waypoint {self.waypoint_counter}: {coords}")
-                self.waypoint_coord.show()
-
-                row_id = self.next_id
-                self.x_label.row_id, self.waypoint_coord.row_id = row_id, row_id
-
-                self.x_label.clicked.connect(self.x_clicked)
-
-                self.waypoint_x_ID.append({"id": row_id,"label": self.waypoint_coord,"button": self.x_label})
-
-                self.next_id +=1 
-        except Exception as e:
-            self.log(str(e))
-            print(e)
     
-    @asyncSlot()
-    async def start_the_mission(self):
-        try:
-            print("teto")
-            for waypoint in range(len(self.mission.waypoints)):
-                print('diabeto')
-                i = self.mission.get_waypoint(waypoint)
-                print("dance")
-                await self.drone.move_to_waypoint(self.mission.advance_next_waypoint())
-                print('cookie')
-        except Exception as e:
-            self.log(str(e))
-            print(e)
-    def file_upload(self):
-
-        dialog = QFileDialog()
-        dialog.setNameFilter("*.json")
-        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
-        dialogSuccess = dialog.exec()
-
-        if dialogSuccess == 1:
-            selectedFiles = dialog.selectedFiles()
-            file = selectedFiles[0]
-            print(file)
-            self.parse_file_upload(file)
-            
-        else:
-            self.log(str('user has cancelled file selection'))
-            print('user cancelled file selection')
-
-
-    def parse_text(self):
-        text = self.waypoint.text()
-        list1= [c.strip() for c in text.split(",")]
-        
-        if (len(list1) != 3) or any(c=="" for c in list1):
-            self.error.setText("oi man you didn't fill in every parameter!/use commas to seperate them!")
-            self.error.show()
-            QTimer.singleShot(2000, self.error.clear) 
-            return
-           
-        try:
-            lat = float(list1[0])
-            lon = float(list1[1])
-            alt = float(list1[2])
-            print(lat, lon, alt)
-            coords = f"{lat},{lon},{alt}"
-            print(coords)
-            self.waypoint_counter +=1
-            self.waypoint_coord = QLabel(self)
-            self.x_label = QPushButton(icon = QIcon("pyqt6/x_mark.jpg"),text="" ,parent=self)
-            self.x_label.setCheckable(True)
-            self.x_label.hide()
-            
-            self.x_label.setGeometry(550, (self.waypoint_counter+1)*90, 50,50 )
-            self.x_label.setStyleSheet("background-color: red")
-            self.x_label.resize(50,50)
-            self.x_label.show()
-            
-            '''self.waypoint_labels.append(self.waypoint_coord)'''
-            self.waypoint_coord.setGeometry(200, ((self.waypoint_counter+1)*90), 350, 50)
-            self.waypoint_coord.setStyleSheet("color: black; background-color: grey")
-            self.waypoint_coord.setText(f"Waypoint {self.waypoint_counter}: {coords}")
-            self.waypoint_coord.show()
-
-            row_id = self.next_id
-            self.x_label.row_id, self.waypoint_coord.row_id = row_id, row_id
-
-            self.x_label.clicked.connect(self.x_clicked)
-
-            self.waypoint_x_ID.append({"id": row_id,"label": self.waypoint_coord,"button": self.x_label})
-
-            self.next_id +=1 
-
-        except:
-            self.error.setText("oi man you can only have numbers! no letters!")
-            self.error.show()
-            QTimer.singleShot(2000, self.error.clear) 
-            return
-
-
-    def x_clicked(self):
-        btn = self.sender()         
-        row_id = btn.row_id   
-        for row in self.waypoint_x_ID:
-            if row["id"] == row_id:
-                row["label"].hide()
-                row["label"].setParent(None)
-
-                row["button"].hide()
-                row["button"].setParent(None)
-
-                self.waypoint_x_ID.remove(row)
-                break
-
-        self.waypoint_counter -=1
 
 
 def main():
