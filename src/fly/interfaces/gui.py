@@ -21,9 +21,9 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QTabWidget,
     QGridLayout,
-    QSizePolicy,
+    QSizePolicy
 )
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QAction
 from qasync import asyncSlot, QEventLoop
 
 
@@ -202,6 +202,41 @@ class TC_Drone_App(QMainWindow):
         main_layout.addWidget(self.tabs)
         central.setLayout(main_layout)
         self.setCentralWidget(central)
+
+        self.status = QLabel("Status: Disconnected")
+        self.battery_percentage = QLabel("(Battery: --%)")
+        self.battery_voltage = QLabel("(Voltage: --V)")
+
+        self.statusBar().addPermanentWidget(self.battery_percentage)
+        self.statusBar().addPermanentWidget(self.battery_voltage)
+
+        menubar = self.menuBar()
+        menubar.setNativeMenuBar(False)
+
+        status_menu = menubar.addMenu("Battery ")
+
+
+
+        self.battery_consumed_action = QAction("Consumed: -- mAh", self)
+        self.battery_consumed_action.setEnabled(False)
+        status_menu.addAction(self.battery_consumed_action)
+        
+        self.battery_temp_action = QAction("Temperature: -- ℃", self)
+        self.battery_temp_action.setEnabled(False)
+        status_menu.addAction(self.battery_temp_action)
+
+        self.battery_current_action = QAction("Current: -- A", self)
+        self.battery_current_action.setEnabled(False)
+        status_menu.addAction(self.battery_current_action)
+
+        self.battery_time_action = QAction("Time Remaining: -- s", self)
+        self.battery_time_action.setEnabled(False)
+        status_menu.addAction(self.battery_time_action)
+
+        
+        
+        self.battery = QLabel("Battery:-- %")
+        self.battery_action = QAction()
 
     def log(self, msg):
         self.console.append(msg)
