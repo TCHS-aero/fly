@@ -199,10 +199,10 @@ class TC_Drone_App(QMainWindow):
         self.battery_menu = QMenu()
         self.battery_menu.setToolTipsVisible(True)
 
-        self.batt_percent_action = QAction("Remaining: --%")
-        self.batt_voltage_action = QAction("Voltage: --V")
-        self.batt_temp_action = QAction("Temperature: -- C")
-        self.batt_time_action = QAction("Time Remaining: --s")
+        self.batt_percent_action = QAction("Remaining: --(%)")
+        self.batt_voltage_action = QAction("Voltage: --(V)")
+        self.batt_temp_action = QAction("Temperature: --(C)")
+        self.batt_time_action = QAction("Time Remaining: --(s)")
 
         self.battery_menu.addAction(self.batt_percent_action)
         self.battery_menu.addAction(self.batt_voltage_action)
@@ -210,7 +210,7 @@ class TC_Drone_App(QMainWindow):
         self.battery_menu.addAction(self.batt_time_action)
 
         self.battery_button = QToolButton()
-        self.battery_button.setText("Battery: --%")
+        self.battery_button.setText("Battery: --(%)")
         self.battery_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.battery_button.setMenu(self.battery_menu)
         self.battery_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
@@ -223,11 +223,11 @@ class TC_Drone_App(QMainWindow):
 
     async def update_battery(self):
         async for telemetry in self.drone.drone.telemetry.battery():
-            self.battery_button.setText(f"Battery: {telemetry.remaining_percent} %")
-            self.batt_percent_action.setText(f"Remaining: {telemetry.remaining_percent} %")
-            self.batt_voltage_action.setText(f"Voltage: {round(telemetry.voltage_v)} V")
-            self.batt_temp_action.setText(f"Temperature: {round(telemetry.temperature_degc, 1)} C")
-            self.batt_time_action.setText(f"Time Remaining: {telemetry.time_remaining_s} s")
+            self.battery_button.setText(f"Battery: {telemetry.remaining_percent}(%)")
+            self.batt_percent_action.setText(f"Remaining: {telemetry.remaining_percent}(%)")
+            self.batt_voltage_action.setText(f"Voltage: {round(telemetry.voltage_v)}(V)")
+            self.batt_temp_action.setText(f"Temperature: {round(telemetry.temperature_degc, 1)}(C)")
+            self.batt_time_action.setText(f"Time Remaining: {telemetry.time_remaining_s}(s)")
 
     async def takeoff_land_toggle(self):
         async for telemetry in self.drone.drone.telemetry.in_air():
