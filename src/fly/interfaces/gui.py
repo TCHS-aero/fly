@@ -21,9 +21,10 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QTabWidget,
     QGridLayout,
-    QSizePolicy
+    QSizePolicy,
+    QMessageBox
 )
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon
 from qasync import asyncSlot, QEventLoop
 
 
@@ -88,7 +89,7 @@ class TC_Drone_App(QMainWindow):
         self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
         central = QWidget()
         main_layout = QVBoxLayout()
-
+        self._tasks = []
         self.tabs = QTabWidget()
 
         # implementing font
@@ -203,46 +204,20 @@ class TC_Drone_App(QMainWindow):
         central.setLayout(main_layout)
         self.setCentralWidget(central)
 
-        self.status = QLabel("Status: Disconnected")
+
+        # Status Bar
         self.battery_percentage = QLabel("(Battery: --%)")
-        self.battery_voltage = QLabel("(Voltage: --V)")
-
         self.statusBar().addPermanentWidget(self.battery_percentage)
-        self.statusBar().addPermanentWidget(self.battery_voltage)
-
-        menubar = self.menuBar()
-        menubar.setNativeMenuBar(False)
-
-        status_menu = menubar.addMenu("Battery ")
-
-
-
-        self.battery_consumed_action = QAction("Consumed: -- mAh", self)
-        self.battery_consumed_action.setEnabled(False)
-        status_menu.addAction(self.battery_consumed_action)
-        
-        self.battery_temp_action = QAction("Temperature: -- ℃", self)
-        self.battery_temp_action.setEnabled(False)
-        status_menu.addAction(self.battery_temp_action)
-
-        self.battery_current_action = QAction("Current: -- A", self)
-        self.battery_current_action.setEnabled(False)
-        status_menu.addAction(self.battery_current_action)
-
-        self.battery_time_action = QAction("Time Remaining: -- s", self)
-        self.battery_time_action.setEnabled(False)
-        status_menu.addAction(self.battery_time_action)
-
-        
-        
-        self.battery = QLabel("Battery:-- %")
-        self.battery_action = QAction()
 
     def log(self, msg):
         self.console.append(msg)
         print(msg)
 
-    async def takeoff_land_toggle(self):
+    async def _update_battery(self):
+        async for telemetry in self.drone.drone.telemetry.battery():
+            self.battery_percentage.setText(f"(Battery: {telemetry.remaining_percent}%)")
+
+    async def _takeoff_land_toggle(self):
         async for telemetry in self.drone.drone.telemetry.in_air():
             if telemetry:
                 self.button_land.setEnabled(True)
@@ -250,6 +225,22 @@ class TC_Drone_App(QMainWindow):
             else:
                 self.button_land.setEnabled(False)
                 self.button_takeoff.setEnabled(True)
+
+    async def _run_checks_on_connect(self):
+        battery = asyncio.ensure_future(self._update_battery())
+        takeoff_toggle = asyncio.ensure_future(self._takeoff_land_toggle())
+        self._tasks.extend([battery, takeoff_toggle])
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Warning!',
+                                     "Are you sure you want to quit?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
+
+        if reply == QMessageBox.StandardButton.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
     @asyncSlot()
     async def on_connect(self):
@@ -268,7 +259,7 @@ class TC_Drone_App(QMainWindow):
                 self.log("-- Connected")
                 lat, lon, alt = await self.drone.current_position()
                 self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
-                asyncio.create_task(self.takeoff_land_toggle())
+                await self._run_checks_on_connect()
             else:
                 self.log(f"-- Failed to connect to the drone within {self.drone.connection_timeout} seconds.")
                 self.button_connect.setEnabled(True)
@@ -294,7 +285,7 @@ class TC_Drone_App(QMainWindow):
             await self.drone.land()
             self.log("Landing...")
             self.button_land.setChecked(False)  # Reset toggle
-            self.button_land.setEnabled(False)  # Disable again
+            self.button_land.setEnabled(False)
             self.button_takeoff.setEnabled(True)
 
         except Exception as e:
@@ -373,7 +364,6 @@ def main():
 
     with loop:
         loop.run_forever()
-
 
 if __name__ == "__main__":
     main()
