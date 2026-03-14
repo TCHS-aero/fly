@@ -221,15 +221,15 @@ class TC_Drone_App(QMainWindow):
         self.console.append(msg)
         print(msg)
 
-    async def _update_battery(self):
+    async def update_battery(self):
         async for telemetry in self.drone.drone.telemetry.battery():
-            self.battery_button.setText(f"Battery: {telemetry.remaining_percent}")
+            self.battery_button.setText(f"Battery: {telemetry.remaining_percent} %")
             self.batt_percent_action.setText(f"Remaining: {telemetry.remaining_percent} %")
             self.batt_voltage_action.setText(f"Voltage: {round(telemetry.voltage_v)} V")
             self.batt_temp_action.setText(f"Temperature: {round(telemetry.temperature_degc, 1)} C")
             self.batt_time_action.setText(f"Time Remaining: {telemetry.time_remaining_s} s")
 
-    async def _takeoff_land_toggle(self):
+    async def takeoff_land_toggle(self):
         async for telemetry in self.drone.drone.telemetry.in_air():
             if telemetry:
                 self.button_land.setEnabled(True)
@@ -238,9 +238,9 @@ class TC_Drone_App(QMainWindow):
                 self.button_land.setEnabled(False)
                 self.button_takeoff.setEnabled(True)
 
-    async def _run_checks_on_connect(self):
-        battery = asyncio.ensure_future(self._update_battery())
-        takeoff_toggle = asyncio.ensure_future(self._takeoff_land_toggle())
+    async def run_checks_on_connect(self):
+        battery = asyncio.ensure_future(self.update_battery())
+        takeoff_toggle = asyncio.ensure_future(self.takeoff_land_toggle())
         self._tasks.extend([battery, takeoff_toggle])
 
     def closeEvent(self, event):
@@ -271,7 +271,7 @@ class TC_Drone_App(QMainWindow):
                 self.log("-- Connected")
                 lat, lon, alt = await self.drone.current_position()
                 self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
-                await self._run_checks_on_connect()
+                await self.run_checks_on_connect()
             else:
                 self.log(f"-- Failed to connect to the drone within {self.drone.connection_timeout} seconds.")
                 self.button_connect.setEnabled(True)
@@ -303,7 +303,7 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             self.log(f"Landing Error: {e}")
 
-    async def _execute_movement(self, direction, method):
+    async def execute_movement(self, direction, method):
         self.log(f"Starting Moving {direction} Sequence...")
         velocity = self.velocity.value()
         yaw = self.yaw.value()
@@ -326,27 +326,27 @@ class TC_Drone_App(QMainWindow):
 
     @asyncSlot()
     async def move_up(self):
-        await self._execute_movement("Up", self.drone.move_up_offset)
+        await self.execute_movement("Up", self.drone.move_up_offset)
 
     @asyncSlot()
     async def move_down(self):
-        await self._execute_movement("Down", self.drone.move_down_offset)
+        await self.execute_movement("Down", self.drone.move_down_offset)
 
     @asyncSlot()
     async def move_left(self):
-        await self._execute_movement("Left", self.drone.move_left_offset)
+        await self.execute_movement("Left", self.drone.move_left_offset)
 
     @asyncSlot()
     async def move_right(self):
-        await self._execute_movement("Right", self.drone.move_right_offset)
+        await self.execute_movement("Right", self.drone.move_right_offset)
 
     @asyncSlot()
     async def move_forward(self):
-        await self._execute_movement("Forward", self.drone.move_forward_offset)
+        await self.execute_movement("Forward", self.drone.move_forward_offset)
 
     @asyncSlot()
     async def move_backward(self):
-        await self._execute_movement("Backward", self.drone.move_backward_offset)
+        await self.execute_movement("Backward", self.drone.move_backward_offset)
 
     @asyncSlot()
     async def stoping_movement(self):
