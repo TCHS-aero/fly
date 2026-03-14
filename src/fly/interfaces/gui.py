@@ -22,9 +22,12 @@ from PyQt6.QtWidgets import (
     QTabWidget,
     QGridLayout,
     QSizePolicy,
-    QMessageBox
+    QMessageBox,
+    QMenu,
+    QToolButton,
 )
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtCore import Qt
 from qasync import asyncSlot, QEventLoop
 
 
@@ -91,17 +94,6 @@ class TC_Drone_App(QMainWindow):
         main_layout = QVBoxLayout()
         self._tasks = []
         self.tabs = QTabWidget()
-
-        # implementing font
-        # self.font_id = QFontDatabase.addApplicationFont(
-        #     "src/fly/assets/BlackOpsOne-Regular.ttf"
-        # )
-        # if self.font_id != -1:  # Success check
-        #     font_families = QFontDatabase.applicationFontFamilies(self.font_id)
-        #     custom_font_name = font_families[0]  # Usually index 0
-        # else:
-        #     print("Font failed to load")
-        #     custom_font_name = "Arial"  # fallback
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
@@ -204,10 +196,26 @@ class TC_Drone_App(QMainWindow):
         central.setLayout(main_layout)
         self.setCentralWidget(central)
 
+        self.battery_menu = QMenu()
+        self.battery_menu.setToolTipsVisible(True)
 
-        # Status Bar
-        self.battery_percentage = QLabel("(Battery: --%)")
-        self.statusBar().addPermanentWidget(self.battery_percentage)
+        self.batt_percent_action = QAction("Remaining: --%")
+        self.batt_voltage_action = QAction("Voltage: --V")
+        self.batt_temp_action = QAction("Temperature: -- C")
+        self.batt_time_action = QAction("Time Remaining: --s")
+
+        self.battery_menu.addAction(self.batt_percent_action)
+        self.battery_menu.addAction(self.batt_voltage_action)
+        self.battery_menu.addAction(self.batt_temp_action)
+        self.battery_menu.addAction(self.batt_time_action)
+
+        self.battery_button = QToolButton()
+        self.battery_button.setText("Battery: --%")
+        self.battery_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.battery_button.setMenu(self.battery_menu)
+        self.battery_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+
+        self.statusBar().addPermanentWidget(self.battery_button)
 
     def log(self, msg):
         self.console.append(msg)
@@ -215,7 +223,11 @@ class TC_Drone_App(QMainWindow):
 
     async def _update_battery(self):
         async for telemetry in self.drone.drone.telemetry.battery():
-            self.battery_percentage.setText(f"(Battery: {telemetry.remaining_percent}%)")
+            self.battery_button.setText(f"Battery: {telemetry.remaining_percent}")
+            self.batt_percent_action.setText(f"Remaining: {telemetry.remaining_percent} %")
+            self.batt_voltage_action.setText(f"Voltage: {round(telemetry.voltage_v)} V")
+            self.batt_temp_action.setText(f"Temperature: {round(telemetry.temperature_degc, 1)} C")
+            self.batt_time_action.setText(f"Time Remaining: {telemetry.time_remaining_s} s")
 
     async def _takeoff_land_toggle(self):
         async for telemetry in self.drone.drone.telemetry.in_air():
