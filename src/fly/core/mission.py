@@ -84,3 +84,16 @@ class Mission:
     def append_waypoints(self, lon, lat, alt):
         self.waypoints.append(self.create_new_waypoint(lat, lon, alt))
         return self.waypoints
+
+    def convert_mission_items_to_plan(self, waypoints):
+    # format: 
+    # latitude_deg, longitude_deg, relative_altitude_m,
+    # speed_m_s, is_fly_through, gimbal_pitch_deg, gimbal_yaw_deg, camera_action, 
+    # loiter_time_s, camera_photo_interval_s, acceptance_radius_m, yaw_deg,
+    # camera_photo_distance_m, vehicle_action
+
+    # [ [lon1, lat1, alt1], [lon2, lat2, alt2] ]
+        self.mission_plan = []
+        for items in waypoints:
+            self.mission_plan.append(items)
+        return self.mission_plan
