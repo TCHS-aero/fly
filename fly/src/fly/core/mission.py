@@ -175,7 +175,7 @@ class Mission:
                 break
 
         except Exception as e:
-            print("convert mission items to plan, error message --> ", e)'''
+            print("convert mission items to plan, error message --> ", e) TEST 123'''
 
         self.mission_plan = []
         for items in waypoints:
