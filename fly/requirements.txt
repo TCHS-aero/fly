@@ -1,4 +1,0 @@
-mavsdk
-PyQt6
-qasync
-asyncclick
