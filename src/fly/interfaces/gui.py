@@ -64,7 +64,6 @@ class HistoryLineEdit(QComboBox):
         self.max_history = max_history
         self.setEditable(True)
         self.lineEdit().setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
-        self.lineEdit().returnPressed.connect(self.save_history)
         self.load_history()
 
     def load_history(self):
@@ -269,6 +268,7 @@ class TC_Drone_App(QMainWindow):
             connected = await self.drone.connect()
             if connected:
                 self.log("-- Connected")
+                HistoryLineEdit.save_history(self)
                 lat, lon, alt = await self.drone.current_position()
                 self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
                 await self.run_checks_on_connect()
