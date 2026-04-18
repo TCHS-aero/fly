@@ -127,4 +127,5 @@ class Mission:
     
 if __name__ == "__main__":
     miku = Mission('/home/lemmonboys/arrow/mission_files/mission_waypoints.json')
-    miku.convert_mission_items_to_plan()
+    miku.convert_mission_items_to_plan(miku.waypoints)
+    print(miku.waypoints)
