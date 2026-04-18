@@ -103,10 +103,16 @@ class Mission:
  
 
     def convert_mission_items_to_plan(self, waypoints):
+    # format: 
+    # latitude_deg, longitude_deg, relative_altitude_m,
+    # speed_m_s, is_fly_through, gimbal_pitch_deg, gimbal_yaw_deg, camera_action, 
+    # loiter_time_s, camera_photo_interval_s, acceptance_radius_m, yaw_deg,
+    # camera_photo_distance_m, vehicle_action
+
         self.mission_plan = []
-        for items in waypoints():
+        for items in waypoints:
             self.mission_plan.append(items)
-        return self.mission.mission_plan(waypoints)
+        return self.mission_plan
 
 
     def upload_mission_plan(self, plan):
@@ -119,3 +125,5 @@ class Mission:
         return self.mission.start_mission()
     
     
+if __name__ == "__main__":
+    miku = Mission('/home/lemmonboys/arrow/mission_files/mission_waypoints.json')
