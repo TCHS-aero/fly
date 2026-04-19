@@ -1,12 +1,18 @@
 import json
 import asyncio
 
+
+
+
+
 class Mission:
     def __init__(self, file, *, current_index = 0):
+        self.get_current_waypointdrone = System()
         self.file = file
         self.current_index = current_index
         self.waypoints = []
         self.total_waypoints = 0
+        self.upload_mission = []
 
         self.parse_file()
 
@@ -116,9 +122,11 @@ class Mission:
 
 
     def upload_mission_plan(self, plan):
-            if not self.waypoints:
-                print("no waypoint is uploaded")
-            return self.mission.upload_mission(plan)
+        if not self.waypoints:
+            print("no waypoint is uploaded")
+        else:
+            self.upload_mission.append(plan)
+            return self.drone.mission.upload_mission_plan(upload_mission)
             
 
     def start_mission_plan(self):
@@ -128,4 +136,6 @@ class Mission:
 if __name__ == "__main__":
     miku = Mission('/home/lemmonboys/arrow/mission_files/mission_waypoints.json')
     miku.convert_mission_items_to_plan(miku.waypoints)
-    print(miku.waypoints)
+    print(miku.waypoints, "\n")
+    print("LINE")
+    miku.upload_mission_plan(miku.mission_plan)
