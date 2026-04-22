@@ -1,13 +1,12 @@
 import json
 import asyncio
-from mavsdk import System
+from mavsdk.mission import MissionItem, MissionPlan
 
 
 
 
 class Mission:
     def __init__(self, file, *, current_index = 0):
-        self.drone = System()
         self.get_current_waypoint
         self.file = file
         self.current_index = current_index
@@ -110,26 +109,18 @@ class Mission:
         return self.waypoints
  
  
+    def convert_mission_items_to_plan(self):
+            self.mission_plan = []
+            for item in self.waypoints:
+                self.mission_plan.append(list(item.values()))
+            return self.mission_plan
 
-    async def convert_mission_items_to_plan(self, waypoints):
-        
-    # format: 
-    # latitude_deg, longitude_deg, relative_altitude_m,
-    # speed_m_s, is_fly_through, gimbal_pitch_deg, gimbal_yaw_deg, camera_action, 
-    # loiter_time_s, camera_photo_interval_s, acceptance_radius_m, yaw_deg,
-    # camera_photo_distance_m, vehicle_action
-        async for item in waypoints:
-            self.mission_plan.append(list(item.values()))
-        return self.mission_plan
-
-
+    
     async def upload_mission(self, drone):
-        if not self.waypoints:
-            print("no waypoint is uploaded")
-        elif self.mission_plan == []:
-            print("you have nothing uploaded to the mission plan! Use convert_mission_items_to_plan!")
-        else:
-            return self.drone.mission.upload_mission(self.mission_plan)
+        if not self.mission_plan:
+            print("No mission plan")
+            return
+        await drone.mission.upload_mission(MissionPlan(self.mission_plan))
             # return self.uploaded_mission_plan.append(self.mission_plan)
             #return self.drone.mission.upload_mission_plan(self.upload_mission)
             
