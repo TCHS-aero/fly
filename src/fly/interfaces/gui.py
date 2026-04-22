@@ -69,14 +69,15 @@ class HistoryLineEdit(QComboBox):
     def load_history(self):
         data = pull_from_json()
         ports = data.get(drone_instance_json, {}).get("port-history", [])
-        self.addItems(ports[-self.max_history:])
+        self.clear()
+        self.addItems(ports[self.max_history - 1 : ])
 
     def save_history(self):
-        history = [self.itemText(i) for i in range(self.count())]
+        history = self.currentIndex()
         data = pull_from_json() or {}
         drone_data = data.setdefault(drone_instance_json, {})
         drone_data["port-history"] = history
-        drone_data["port"] = history[0] if history else None
+        drone_data["port"] = "udpin://0.0.0.0:14540" if history else None
         write_to_json({drone_instance_json: drone_data})
 
     def text(self):
@@ -268,7 +269,7 @@ class TC_Drone_App(QMainWindow):
             connected = await self.drone.connect()
             if connected:
                 self.log("-- Connected")
-                HistoryLineEdit.save_history(self)
+                self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
                 self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
                 await self.run_checks_on_connect()
