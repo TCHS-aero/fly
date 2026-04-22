@@ -7,12 +7,14 @@ import asyncio
 
 class Mission:
     def __init__(self, file, *, current_index = 0):
-        self.get_current_waypointdrone = System()
+        self.get_current_waypoint
         self.file = file
         self.current_index = current_index
-        self.waypoints = []
         self.total_waypoints = 0
-        self.upload_mission = []
+        self.uploaded_mission_plan = []
+        self.mission_plan = []
+        self.waypoints = []
+
 
         self.parse_file()
 
@@ -115,18 +117,21 @@ class Mission:
     # loiter_time_s, camera_photo_interval_s, acceptance_radius_m, yaw_deg,
     # camera_photo_distance_m, vehicle_action
 
-        self.mission_plan = []
+        
         for items in waypoints:
             self.mission_plan.append(items)
         return self.mission_plan
 
 
-    def upload_mission_plan(self, plan):
+    def upload_mission_plan(self):
         if not self.waypoints:
             print("no waypoint is uploaded")
+        elif self.mission_plan == []:
+            print("you have nothing uploaded to the mission plan! Use convert_mission_items_to_plan!")
         else:
-            self.upload_mission.append(plan)
-            return self.drone.mission.upload_mission_plan(upload_mission)
+            print(self.uploaded_mission_plan.append(self.mission_plan))
+            return self.uploaded_mission_plan.append(self.mission_plan)
+            #return self.drone.mission.upload_mission_plan(self.upload_mission)
             
 
     def start_mission_plan(self):
@@ -134,8 +139,8 @@ class Mission:
     
     
 if __name__ == "__main__":
-    miku = Mission('/home/lemmonboys/arrow/mission_files/mission_waypoints.json')
+    miku = Mission('mission_files/mission_waypoints.json')
+    # print(miku.parse_file())
     miku.convert_mission_items_to_plan(miku.waypoints)
-    print(miku.waypoints, "\n")
-    print("LINE")
-    miku.upload_mission_plan(miku.mission_plan)
+    print(miku.convert_mission_items_to_plan(miku.waypoints))
+    miku.upload_mission_plan()
