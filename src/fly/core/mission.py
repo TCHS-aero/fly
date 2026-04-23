@@ -7,11 +7,9 @@ from mavsdk.mission import MissionItem, MissionPlan
 
 class Mission:
     def __init__(self, file, *, current_index = 0):
-        self.get_current_waypoint
         self.file = file
         self.current_index = current_index
         self.total_waypoints = 0
-        self.uploaded_mission_plan = []
         self.mission_plan = []
         self.waypoints = []
 
@@ -28,6 +26,21 @@ class Mission:
             
             print("-- Success!")
             return self.waypoints
+
+    def convert_mission_items_to_plan(self):
+        self.mission_plan = []
+        for item in self.waypoints:
+            self.mission_plan.append(list(item.values()))
+        return self.mission_plan
+
+    
+    async def upload_the_mission(self, drone):
+        if not self.mission_plan:
+            print("No mission plan")
+            return
+        await drone.mission.upload_mission(MissionPlan(self.mission_plan))
+            # return self.uploaded_mission_plan.append(self.mission_plan)
+            #return self.drone.mission.upload_mission_plan(self.upload_mission)
          
 
     def get_current_waypoint(self):
@@ -109,20 +122,7 @@ class Mission:
         return self.waypoints
  
  
-    def convert_mission_items_to_plan(self):
-            self.mission_plan = []
-            for item in self.waypoints:
-                self.mission_plan.append(list(item.values()))
-            return self.mission_plan
-
     
-    async def upload_mission(self, drone):
-        if not self.mission_plan:
-            print("No mission plan")
-            return
-        await drone.mission.upload_mission(MissionPlan(self.mission_plan))
-            # return self.uploaded_mission_plan.append(self.mission_plan)
-            #return self.drone.mission.upload_mission_plan(self.upload_mission)
             
 
     def start_mission_plan(self):
