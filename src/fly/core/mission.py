@@ -27,10 +27,34 @@ class Mission:
             print("-- Success!")
             return self.waypoints
 
+    '''def convert_mission_items_to_plan(self):
+        self.mission_plan = []
+        for item in self.waypoints:
+            print(item)
+            self.mission_plan.append(list(item.values()))
+        return self.mission_plan'''
+
+        
     def convert_mission_items_to_plan(self):
         self.mission_plan = []
         for item in self.waypoints:
-            self.mission_plan.append(list(item.values()))
+            mission_item = MissionItem(
+                latitude_deg=item['latitude_deg'],
+                longitude_deg=item['longitude_deg'],
+                relative_altitude_m=item['relative_altitude_m'],
+                speed_m_s=item['speed_m_s'],
+                is_fly_through=item['is_fly_through'],
+                gimbal_pitch_deg=item['gimbal_pitch_deg'],
+                gimbal_yaw_deg=item['gimbal_yaw_deg'],
+                camera_action=item['camera_action'],
+                loiter_time_s=item['loiter_time_s'],
+                camera_photo_interval_s=item['camera_photo_interval_s'],
+                acceptance_radius_m=item['acceptance_radius_m'],
+                yaw_deg=item['yaw_deg'],
+                camera_photo_distance_m=item['camera_photo_distance_m'],
+                vehicle_action=item['vehicle_action']
+            )
+            self.mission_plan.append(mission_item)
         return self.mission_plan
 
     
@@ -131,7 +155,7 @@ class Mission:
     
 if __name__ == "__main__":
     miku = Mission('mission_files/mission_waypoints.json')
-    # print(miku.parse_file())
-    miku.convert_mission_items_to_plan(miku.waypoints)
-    print(miku.convert_mission_items_to_plan(miku.waypoints))
-    miku.upload_mission()
+    miku.convert_mission_items_to_plan()
+    print(miku.convert_mission_items_to_plan())
+    print("/n", miku.mission_plan)
+    miku.upload_the_mission()
