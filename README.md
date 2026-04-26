@@ -152,7 +152,7 @@ aero_cli connect --port serial://COM3:57600
 
 ### Simulation
 
-This repository uses PX4 and MAVSDK-python to connect to the drone. In order to use these scripts in a simulation, you must first install the neccessary software. There are multiple simulators we can choose from, but for this project we use JMavSim, a drone simulator built in Java. JMavSim comes with plenty of keyboard bindings for altering things such as the weather conditions, as documented [here](https://github.com/PX4/jMAVSim).
+This repository uses PX4 and MAVSDK-python to connect to the drone. In order to use these scripts in a simulation, you must first install the neccessary software. There are multiple simulators we can choose from, but for this project we use JMavSim, a drone simulator built in Java. JMavSim comes with plenty of keyboard bindings for altering things such as the weather conditions, as documented [here](https://github.com/PX4/jMAVSim). PX4 does not run natively on Windows, so Windows users should use Windows Subsystem for Linux (WSL) to run simulations.
 
 1. Clone the PX4-Autopilot repository.
     ```bash
