@@ -10,9 +10,9 @@
         "camera_action" : 0,
         "loiter_time_s" : 0.0,
         "camera_photo_interval_s": 0.000,
-        "acceptance_radius_m" : 0.0,
+        "acceptance_radius_m" : 2.0,
         "yaw_deg" : 0.0,
-        "camera_photo_distance_m" : 0.0,
+        "camera_photo_distance_m" : 2.0,
         "vehicle_action" : 0
         
     },
@@ -27,9 +27,9 @@
         "camera_action" : 0,
         "loiter_time_s" : 0.0,
         "camera_photo_interval_s": 0.000,
-        "acceptance_radius_m" : 0.0,
+        "acceptance_radius_m" : 2.0,
         "yaw_deg" : 0.0,
-        "camera_photo_distance_m" : 0.0,
+        "camera_photo_distance_m" : 2.0,
         "vehicle_action" : 0
     },
     {
@@ -43,9 +43,9 @@
         "camera_action" : 0,
         "loiter_time_s" : 0.0,
         "camera_photo_interval_s": 0.000,
-        "acceptance_radius_m" : 0.0,
+        "acceptance_radius_m" : 2.0,
         "yaw_deg" : 0.0,
-        "camera_photo_distance_m" : 0.0,
+        "camera_photo_distance_m" : 2.0,
         "vehicle_action" : 0
     },
     {
@@ -59,9 +59,9 @@
         "camera_action" : 0,
         "loiter_time_s" : 0.0,
         "camera_photo_interval_s": 0.000,
-        "acceptance_radius_m" : 0.0,
+        "acceptance_radius_m" : 2.0,
         "yaw_deg" : 0.0,
-        "camera_photo_distance_m" : 0.0,
+        "camera_photo_distance_m" : 2.0,
         "vehicle_action" : 0
     },
     {
@@ -75,9 +75,9 @@
         "camera_action" : 0,
         "loiter_time_s" : 0.0,
         "camera_photo_interval_s": 0.000,
-        "acceptance_radius_m" : 0.0,
+        "acceptance_radius_m" : 2.0,
         "yaw_deg" : 0.0,
-        "camera_photo_distance_m" : 0.0,
+        "camera_photo_distance_m" : 2.0,
         "vehicle_action" : 0
     }
 ]

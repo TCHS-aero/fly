@@ -145,8 +145,9 @@ class Mission:
     async def check_mission_progress(self, drone):
         async for progress in drone.mission.mission_progress():
             print(progress)
-            await asyncio.sleep(1)
 
+    async def set_current_mission_item(self, index, drone):
+        await drone.mission.set_current_mission_item(index)
     
     
 if __name__ == "__main__":

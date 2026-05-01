@@ -37,16 +37,19 @@ async def main():
         missionTEST.convert_mission_items_to_plan()
         print('converting json file\'s mission items to mission_plan')
 
-        
-        
         await missionTEST.upload_the_mission(drone)
         print('uploaded mission!') 
+
+        await missionTEST.set_current_mission_item(0, drone)
+        print('set first waypoint to index 0')
+
+        await missionTEST.start_mission_plan(drone)
+        print('start mission')
 
         mission_progress = asyncio.create_task(missionTEST.check_mission_progress(drone))
         await mission_progress
 
-        await missionTEST.start_mission_plan(drone)
-        print('start mission')
+        
     except Exception as e:
         print(e)
 
