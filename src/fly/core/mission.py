@@ -134,15 +134,19 @@ class Mission:
         if not self.mission_plan:
             print("No mission plan")
             return
+        print("uploading the mission")
         await drone.mission.upload_mission(MissionPlan(self.mission_plan))
             # return self.uploaded_mission_plan.append(self.mission_plan)
             #return self.drone.mission.upload_mission_plan(self.upload_mission)
-         
-    
-            
 
     async def start_mission_plan(self, drone):
         await drone.mission.start_mission()
+
+    async def check_mission_progress(self, drone):
+        async for progress in drone.mission.mission_progress():
+            print(progress)
+            await asyncio.sleep(1)
+
     
     
 if __name__ == "__main__":
