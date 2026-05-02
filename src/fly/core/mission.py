@@ -148,6 +148,9 @@ class Mission:
 
     async def set_current_mission_item(self, index, drone):
         await drone.mission.set_current_mission_item(index)
+
+    async def clear_mission(self, drone):
+        await drone.mission.clear_mission()
     
     
 if __name__ == "__main__":

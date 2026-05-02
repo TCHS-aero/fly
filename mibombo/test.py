@@ -34,6 +34,9 @@ async def main():
     print("takeoff")
 
     try:
+        missionTEST.clear_mission()
+        print('clearing old mission if there was an old mission')
+        
         missionTEST.convert_mission_items_to_plan()
         print('converting json file\'s mission items to mission_plan')
 
