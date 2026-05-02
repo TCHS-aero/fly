@@ -25,13 +25,8 @@ async def main():
             print('unsuccessful health checkup')
             continue 
     
-    
-
-    await drone.action.arm() 
-    print("arm")
-
-    await drone.action.takeoff() 
-    print("takeoff")
+    await drone.action.arm()
+    print("armed")
 
     try:
         await missionTEST.clear_mission(drone)

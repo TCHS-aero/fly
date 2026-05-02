@@ -145,6 +145,9 @@ class Mission:
     async def check_mission_progress(self, drone):
         async for progress in drone.mission.mission_progress():
             print(progress)
+            if progress.current == progress.total:
+                print('mission complete')
+                break
 
     async def set_current_mission_item(self, index, drone):
         await drone.mission.set_current_mission_item(index)
