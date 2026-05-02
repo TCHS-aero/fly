@@ -34,17 +34,17 @@ async def main():
     print("takeoff")
 
     try:
-        missionTEST.clear_mission()
+        await missionTEST.clear_mission(drone)
         print('clearing old mission if there was an old mission')
-        
+
+        await missionTEST.return_to_launch_after_mission_completion(drone, True)
+        print('drone is set to return after mission completion.')
+
         missionTEST.convert_mission_items_to_plan()
         print('converting json file\'s mission items to mission_plan')
 
         await missionTEST.upload_the_mission(drone)
         print('uploaded mission!') 
-
-        await missionTEST.set_current_mission_item(0, drone)
-        print('set first waypoint to index 0')
 
         await missionTEST.start_mission_plan(drone)
         print('start mission')

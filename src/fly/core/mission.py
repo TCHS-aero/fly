@@ -151,6 +151,9 @@ class Mission:
 
     async def clear_mission(self, drone):
         await drone.mission.clear_mission()
+
+    async def return_to_launch_after_mission_completion(self,drone,boolean): #takes effect once another missionplan is uploaded, so best to enable this THEN upload plan
+        await drone.mission.set_return_to_launch_after_mission(boolean)
     
     
 if __name__ == "__main__":
