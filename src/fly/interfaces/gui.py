@@ -64,20 +64,23 @@ class HistoryLineEdit(QComboBox):
         self.max_history = max_history
         self.setEditable(True)
         self.lineEdit().setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
-        self.lineEdit().returnPressed.connect(self.save_history)
         self.load_history()
 
     def load_history(self):
         data = pull_from_json()
         ports = data.get(drone_instance_json, {}).get("port-history", [])
-        self.addItems(ports[-self.max_history:])
+        self.clear()
+        if ports:
+            self.addItems(ports[-self.max_history:])
+        else:
+            self.addItem("There is no ports saved")
+            self.setCurrentIndex(0)
 
     def save_history(self):
-        history = [self.itemText(i) for i in range(self.count())]
         data = pull_from_json() or {}
         drone_data = data.setdefault(drone_instance_json, {})
-        drone_data["port-history"] = history
-        drone_data["port"] = history[0] if history else None
+        drone_data["port-history"].insert(0, self.currentText())
+        drone_data["port"] = drone_data["port-history"][0]
         write_to_json({drone_instance_json: drone_data})
 
     def text(self):
@@ -269,6 +272,7 @@ class TC_Drone_App(QMainWindow):
             connected = await self.drone.connect()
             if connected:
                 self.log("-- Connected")
+                self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
                 self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
                 await self.run_checks_on_connect()
