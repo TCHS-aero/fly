@@ -80,6 +80,7 @@ class HistoryLineEdit(QComboBox):
         if self.count() == 1 and self.itemText(0) == "No Port History":
             self.removeItem(0)
             self.addItems(items)
+            return
         
         self.addItems(items)
 
