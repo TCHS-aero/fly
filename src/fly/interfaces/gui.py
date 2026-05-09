@@ -66,22 +66,37 @@ class HistoryLineEdit(QComboBox):
         self.lineEdit().setPlaceholderText("Port, e.g. udpin://0.0.0.0:14540")
         self.load_history()
 
-    def load_history(self):
-        data = pull_from_json()
-        ports = data.get(drone_instance_json, {}).get("port-history", [])
+    def set_empty_state(self):
+        self.addItem("No Port History")
+        self.model().item(0).setFlags(Qt.ItemFlag.NoItemFlags)
+        self.setCurrentIndex(-1)
+
+    def update_items(self, items):
         self.clear()
-        if ports:
-            self.addItems(ports[-self.max_history:])
-        else:
-            self.addItem("There is no ports saved")
-            self.setCurrentIndex(0)
+        if not items:
+            self.set_empty_state()
+            return
+
+        if self.count() == 1 and self.itemText(0) == "No Port History":
+            self.removeItem(0)
+            self.addItems(items)
+        
+        self.addItems(items)
+
+    def load_history(self):
+        data = pull_from_json() or {}
+        ports = data.get(drone_instance_json, {}).get("port-history", [])
+        self.update_items(ports)
 
     def save_history(self):
         data = pull_from_json() or {}
-        drone_data = data.setdefault(drone_instance_json, {})
+        if not data:
+            return
+        drone_data = data.get(drone_instance_json, {})
         drone_data["port-history"].insert(0, self.currentText())
         drone_data["port"] = drone_data["port-history"][0]
         write_to_json({drone_instance_json: drone_data})
+        self.update_items(drone_data.get("port-history", {}))
 
     def text(self):
         return self.currentText()
