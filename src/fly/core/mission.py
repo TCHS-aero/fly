@@ -89,18 +89,6 @@ class Mission:
         self.waypoints[index] = self.create_new_waypoint(lat, lon, alt)
         return self.waypoints
 
-    async def start_the_mission(self):
-        try:
-            print("teto")
-            for waypoint in range(len(self.mission.waypoints)):
-                print('diabeto')
-                i = self.mission.get_waypoint(waypoint)
-                print("dance")
-                await self.drone.move_to_waypoint(self.mission.advance_next_waypoint())
-                print('cookie')
-        except Exception as e:
-            self.log(str(e))
-            print(e)
 
 
     def append_waypoints(self, lon, lat, alt):
@@ -129,15 +117,13 @@ class Mission:
                 self.mission_plan.append(mission_item)
             return self.mission_plan
 
-    
+# intergrate this with waypoints 
     async def upload_the_mission(self, drone):
         if not self.mission_plan:
             print("No mission plan")
             return
         print("uploading the mission")
         await drone.mission.upload_mission(MissionPlan(self.mission_plan))
-            # return self.uploaded_mission_plan.append(self.mission_plan)
-            #return self.drone.mission.upload_mission_plan(self.upload_mission)
 
     async def start_mission_plan(self, drone):
         await drone.mission.start_mission()
@@ -149,20 +135,20 @@ class Mission:
                 print('mission complete')
                 break
 
-    async def set_current_mission_item(self, index, drone):
+    async def set_current_mission_item(self, drone, index):
         await drone.mission.set_current_mission_item(index)
 
     async def clear_mission(self, drone):
         await drone.mission.clear_mission()
 
     async def return_to_launch_after_mission_completion(self,drone,boolean): #takes effect once another missionplan is uploaded, so best to enable this THEN upload plan
-        await drone.mission.set_return_to_launch_after_mission(boolean)
+        return drone.mission.set_return_to_launch_after_mission(boolean)
 
     async def is_mission_finished(self, drone):
-        await drone.mission.is_mission_finished()
+        return drone.mission.is_mission_finished()
     
     async def get_return_to_launch_after_mission(self,drone):
-        await drone.mission.get_return_to_launch_after_mission()
+        return drone.mission.get_return_to_launch_after_mission()
 
     async def cancel_mission_download(self, drone):
         await drone.mission.cancel_mission_download()
@@ -171,7 +157,7 @@ class Mission:
         await drone.mission.cancel_mission_upload
 
     async def download_mission(self, drone):
-        await drone.mission.download_mission()
+        return drone.mission.download_mission()
 
     async def download_mission_with_progress(self, drone):
         await drone.mission.download_mission_with_progress()
@@ -179,8 +165,8 @@ class Mission:
     async def pause_mission(self, drone):
         await drone.mission.pause_mission()
 
-    async def upload_mission_with_progress(self, drone):
-        await drone.mission.upload_mission_with_progress()
+    async def upload_mission_with_progress(self, drone, mission):
+        await drone.mission.upload_mission_with_progress(mission)
 
 
     
