@@ -157,6 +157,33 @@ class Mission:
 
     async def return_to_launch_after_mission_completion(self,drone,boolean): #takes effect once another missionplan is uploaded, so best to enable this THEN upload plan
         await drone.mission.set_return_to_launch_after_mission(boolean)
+
+    async def is_mission_finished(self, drone):
+        await drone.mission.is_mission_finished()
+    
+    async def get_return_to_launch_after_mission(self,drone):
+        await drone.mission.get_return_to_launch_after_mission()
+
+    async def cancel_mission_download(self, drone):
+        await drone.mission.cancel_mission_download()
+
+    async def cancel_mission_upload(self, drone):
+        await drone.mission.cancel_mission_upload
+
+    async def download_mission(self, drone):
+        await drone.mission.download_mission()
+
+    async def download_mission_with_progress(self, drone):
+        await drone.mission.download_mission_with_progress()
+
+    async def pause_mission(self, drone):
+        await drone.mission.pause_mission()
+
+    async def upload_mission_with_progress(self, drone):
+        await drone.mission.upload_mission_with_progress()
+
+
+    
     
     
 if __name__ == "__main__":
