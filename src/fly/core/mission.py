@@ -22,9 +22,23 @@ class Mission:
         with open(self.file, "r") as read_file:
             self.waypoints = json.load(read_file)
             self.total_waypoints = len(self.waypoints)
+            for waypoint in self.waypoints:
+                
+                if None not in waypoint.values():
+                    continue
+                
+                try:
+                    for item in waypoint.items():  
+                        k, v = item
+                        if v is None:
+                            waypoint[k] = float('nan')
+                except Exception as e:
+                    print(e)
+                   
 
             
             print("-- Success!")
+            print(self.waypoints[0])
             return self.waypoints
 
     
@@ -101,21 +115,31 @@ class Mission:
                 mission_item = MissionItem(
                     latitude_deg=item['latitude_deg'],
                     longitude_deg=item['longitude_deg'],
-                    relative_altitude_m=item['relative_altitude_m'],
-                    speed_m_s=item['speed_m_s'],
-                    is_fly_through=item['is_fly_through'],
-                    gimbal_pitch_deg=item['gimbal_pitch_deg'],
-                    gimbal_yaw_deg=item['gimbal_yaw_deg'],
-                    camera_action=MissionItem.CameraAction(item['camera_action']),
-                    loiter_time_s=item['loiter_time_s'],
-                    camera_photo_interval_s=item['camera_photo_interval_s'],
-                    acceptance_radius_m=item['acceptance_radius_m'],
-                    yaw_deg=item['yaw_deg'],
-                    camera_photo_distance_m=item['camera_photo_distance_m'],
-                    vehicle_action=MissionItem.VehicleAction(item['vehicle_action'])
+                    relative_altitude_m=10,
+                    speed_m_s=50,
+                    is_fly_through=True, #DO NOT ADD A LOITER TIME IF THIS IS SET TO TRUE
+                    gimbal_pitch_deg=float('nan'),
+                    gimbal_yaw_deg=float('nan'),
+                    camera_action=MissionItem.CameraAction(0),
+                    loiter_time_s=float('nan'),
+                    camera_photo_interval_s=0.0,
+                    acceptance_radius_m=20.0,
+                    yaw_deg=0.0,
+                    camera_photo_distance_m=0.0,
+                    vehicle_action=MissionItem.VehicleAction(0)
                 )
                 self.mission_plan.append(mission_item)
             return self.mission_plan
+
+#found problems:
+# if you give the mission a loiter time and is fly through is true, then there is a coflicitng option:
+# "Conflicting options set: fly_through=true and loiter_time>0. (mission_impl.cpp:455)" 
+# and disables fly_through
+
+# gibmal pitch and yaw somehow makes the drone oscillate back and forth for awhile when it gets to its waypoint before continuing on. 
+# the reason we believe why it affects the drone causes problems is because we don't have a camera configured in the sitl.
+# (what the hell? the most insignificant item screws our drone over :( we were laughing and confused at the same time when we found this)
+
 
 # intergrate this with waypoints 
     async def upload_the_mission(self, drone):
@@ -136,13 +160,16 @@ class Mission:
                 break
 
     async def set_current_mission_item(self, drone, index):
-        await drone.mission.set_current_mission_item(index)
+        try:
+            await drone.mission.set_current_mission_item(index)
+        except Exception as e:
+            print(e)
 
     async def clear_mission(self, drone):
         await drone.mission.clear_mission()
 
     async def return_to_launch_after_mission_completion(self,drone,boolean): #takes effect once another missionplan is uploaded, so best to enable this THEN upload plan
-        return drone.mission.set_return_to_launch_after_mission(boolean)
+        return await drone.mission.set_return_to_launch_after_mission(boolean)
 
     async def is_mission_finished(self, drone):
         return drone.mission.is_mission_finished()

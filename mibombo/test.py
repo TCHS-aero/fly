@@ -25,10 +25,12 @@ async def main():
             print('unsuccessful health checkup')
             continue 
     
-    await drone.action.arm()
-    print("armed")
+    
 
     try:
+        await drone.action.arm()
+        print("armed")
+        
         await missionTEST.clear_mission(drone)
         print('clearing old mission if there was an old mission')
 
@@ -41,8 +43,11 @@ async def main():
         await missionTEST.upload_the_mission(drone)
         print('uploaded mission!') 
 
+        #await drone.action.takeoff()
+
+        #await missionTEST.set_current_mission_item(drone, 1)
+
         await missionTEST.start_mission_plan(drone)
-        print('start mission')
 
         mission_progress = asyncio.create_task(missionTEST.check_mission_progress(drone))
         await mission_progress
