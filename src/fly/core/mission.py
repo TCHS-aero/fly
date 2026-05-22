@@ -1,11 +1,13 @@
 import json
+import asyncio
+from mavsdk.mission import MissionItem, MissionPlan
 
 class Mission:
-    def __init__(self, file, *, current_index = 0):
+    def __init__(self, file):
         self.file = file
-        self.current_index = current_index
-        self.waypoints = []
         self.total_waypoints = 0
+        self.mission_plan = []
+        self.waypoints = []
 
         self.parse_file()
 
@@ -15,14 +17,34 @@ class Mission:
         with open(self.file, "r") as read_file:
             self.waypoints = json.load(read_file)
             self.total_waypoints = len(self.waypoints)
+            for waypoint in self.waypoints:
+                
+                if None not in waypoint.values():
+                    continue
+                
+                try:
+                    for item in waypoint.items():  
+                        k, v = item
+                        if v is None:
+                            waypoint[k] = float('nan')
 
+                except Exception as e:
+                    print(e)
+                    return 1
             
             print("-- Success!")
             return self.waypoints
-         
 
-    def get_current_waypoint(self):
-        return self.waypoints[self.current_index]
+    def get_raw_waypoints(self):
+        return self.waypoints
+
+    async def get_current_waypoint(self, drone_instance):
+        if self.mission_plan == False:
+            print("No mission uploaded")
+
+        plan = await self.download_mission(drone_instance)
+        
+        return plan.mission_items[await self.get_mission_progress(drone_instance)]
 
     def get_waypoint(self, index):
         try:
@@ -32,68 +54,81 @@ class Mission:
             print("-- Invalid index, try again.")
             return None
 
-    def advance_next_waypoint(self):
-        if len(self.waypoints) == 0:
-            print("-- Reached the end of the mission. No more waypoints to continue")
-            return
-            
-        self.current_index += 1
-        try:
-            return self.waypoints[self.current_index]
-        except Exception:
-            print("-- Invalid index, try again.")
-
-    def reset_mission(self):
-        self.current_index = 0
-        return self.get_current_waypoint()
-
-    def select_waypoint(self, index):
-        try:
-            self.current_index = index
-            return self.get_current_waypoint()
-        except Exception as e:
-            print(f"-- {e}")
-            return None
-
     def get_keys(self):
         return list(self.waypoints[-1].keys())
 
-    def create_new_waypoint(self, lat, lon, alt):
-        data = (lat, lon, alt)
-        new_waypoint = {}
-        keys = self.get_keys()
-        for i in range(len(keys)):
-            try:
-                new_waypoint[keys[i]] = data[i]
-            except Exception:
-                print(
-                    "-- No new data to assign to keys or too much data per column. Defaulting to None..."
-                )
-                new_waypoint[keys[i]] = None
+    def convert_mission_items_to_plan(self):
+            self.mission_plan = []
+            for item in self.waypoints:
+               mission_item = MissionItem(
+                    latitude_deg=item['latitude_deg'],
+                    longitude_deg=item['longitude_deg'],
+                    relative_altitude_m=item['relative_altitude_m'],
+                    speed_m_s=item['speed_m_s'],
+                    is_fly_through=item['is_fly_through'],
+                    gimbal_pitch_deg=item['gimbal_pitch_deg'],
+                    gimbal_yaw_deg=item['gimbal_yaw_deg'],
+                    camera_action=MissionItem.CameraAction(item['camera_action']),
+                    loiter_time_s=item['loiter_time_s'],
+                    camera_photo_interval_s=item['camera_photo_interval_s'],
+                    acceptance_radius_m=item['acceptance_radius_m'],
+                    yaw_deg=item['yaw_deg'],
+                    camera_photo_distance_m=item['camera_photo_distance_m'],
+                    vehicle_action=MissionItem.VehicleAction(item['vehicle_action'])
+               )
+               self.mission_plan.append(mission_item)
+            return self.mission_plan
 
-        return new_waypoint
+    async def return_to_launch_after_mission_completion(self, drone_instance, boolean):
+        return await drone_instance.drone.mission.set_return_to_launch_after_mission(boolean)
 
-    def insert_waypoints(self, lon, lat, alt, index):
-        self.waypoints.insert(index, self.create_new_waypoint(lat, lon, alt))
-        return self.waypoints
+    async def reset_mission(self, drone_instance):
+        await self.set_current_mission_target(drone_instance, 0)
 
-    def replace_waypoints(self, lon, lat, alt, index):
-        self.waypoints[index] = self.create_new_waypoint(lat, lon, alt)
-        return self.waypoints
+    async def upload_mission(self, drone_instance, return_to_launch):
+        self.convert_mission_items_to_plan()
+        await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
+        await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan))
 
-    def append_waypoints(self, lon, lat, alt):
-        self.waypoints.append(self.create_new_waypoint(lat, lon, alt))
-        return self.waypoints
+    async def start_mission(self, drone_instance):
+        await drone_instance.drone.mission.start_mission()
 
-    def convert_mission_items_to_plan(self, waypoints):
-    # format: 
-    # latitude_deg, longitude_deg, relative_altitude_m,
-    # speed_m_s, is_fly_through, gimbal_pitch_deg, gimbal_yaw_deg, camera_action, 
-    # loiter_time_s, camera_photo_interval_s, acceptance_radius_m, yaw_deg,
-    # camera_photo_distance_m, vehicle_action
+    async def get_mission_progress(self, drone_instance):
+        async for progress in drone_instance.drone.mission.mission_progress():
+            return progress.current
+            if progress.current == progress.total:
+                print('mission complete')
+                return None
+                break
 
-    # [ [lon1, lat1, alt1], [lon2, lat2, alt2] ]
-        self.mission_plan = []
-        for items in waypoints:
-            self.mission_plan.append(items)
-        return self.mission_plan
+    async def set_current_mission_target(self, drone_instance, index):
+        await drone_instance.drone.mission.set_current_mission_item(index)
+
+    async def clear_mission(self, drone_instance):
+        await drone_instance.drone.mission.clear_mission()
+
+    async def is_mission_finished(self, drone_instance):
+        return drone_instancedrone.mission.is_mission_finished()
+    
+    async def get_return_to_launch_after_mission(self, drone_instance):
+        return drone_instance.drone.mission.get_return_to_launch_after_mission()
+
+    async def cancel_mission_download(self, drone_instance):
+        await drone_instance.drone.mission.cancel_mission_download()
+
+    async def cancel_mission_upload(self, drone_instance):
+        return await drone_instance.drone.mission.cancel_mission_upload()
+
+    async def download_mission(self, drone_instance):
+        return await drone_instance.drone.mission.download_mission()
+
+    async def download_mission_with_progress(self, drone_instance):
+        return await drone_instance.drone.mission.download_mission_with_progress()
+
+    async def pause_mission(self, drone_instance):
+        await drone_instance.drone.mission.pause_mission()
+
+    async def upload_mission_with_progress(self, drone_instance, mission):
+        self.convert_mission_items_to_plan()
+        await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
+        await drone_instace.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
