@@ -59,6 +59,18 @@ This repository is a python module; thus, setting it up is simple.
 
     </details>
 
+    <details>
+      <summary>Windows</summary>
+        
+      1. Install Ubuntu through website: https://ubuntu.com/download
+        Then install git, Sudo is required.
+
+            ```bash
+            sudo apt install git
+            ```
+
+    </details>
+
 
 2. Clone this repository.
     ```bash
@@ -197,6 +209,36 @@ This repository uses PX4 and MAVSDK-python to connect to the drone. In order to 
             ```bash
             bash Tools/setup/macos.sh --sim-tools
             ```
+
+    </details>
+
+    <details>
+      <summary>Windows</summary>
+
+      1. Install WSL2 through powershell.
+
+        ```bash
+            wsl --install
+            ```
+      2. restart computer after
+      3. Ubuntu will automatically pop up. It'll ask username and password. If you don't have one, don't worry, it'll just create a new user for you. (Side note: there'll be no characte showing for password when you type them in. Don't freak out.)
+      4. Verify WSL is correctly installed, open powershell
+
+        ```wsl -l -v```
+
+        You should see: Ubuntu    Running    2
+      5. Close the current Ubuntu tab and open a new one. 
+
+       ```wsl```
+
+       6. Update Ubuntu
+
+       ```bash
+          sudo apt update
+          sudo apt upgrade
+       ```
+
+      
 
     </details>
 
