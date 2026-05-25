@@ -43,17 +43,13 @@ class Mission:
             print("No mission uploaded")
 
         plan = await self.download_mission(drone_instance)
-        
-        return plan.mission_items[await self.get_mission_progress(drone_instance)]
+        current_progress = await self.get_mission_progress(drone_instance)
+        if current_progress is None:
+            print("-- Mission Completed")
+            return 0
 
-    def get_waypoint(self, index):
-        try:
-            print("-- waypoint successfully retrived")
-            return self.waypoints[index]
-        except Exception:
-            print("-- Invalid index, try again.")
-            return None
-
+        return plan.mission_items[current_progress]
+    
     def get_keys(self):
         return list(self.waypoints[-1].keys())
 
@@ -95,11 +91,11 @@ class Mission:
 
     async def get_mission_progress(self, drone_instance):
         async for progress in drone_instance.drone.mission.mission_progress():
-            return progress.current
             if progress.current == progress.total:
                 print('mission complete')
                 return None
                 break
+            return progress.current
 
     async def set_current_mission_target(self, drone_instance, index):
         await drone_instance.drone.mission.set_current_mission_item(index)
@@ -108,7 +104,7 @@ class Mission:
         await drone_instance.drone.mission.clear_mission()
 
     async def is_mission_finished(self, drone_instance):
-        return drone_instancedrone.mission.is_mission_finished()
+        return drone_instance.drone.mission.is_mission_finished()
     
     async def get_return_to_launch_after_mission(self, drone_instance):
         return drone_instance.drone.mission.get_return_to_launch_after_mission()
@@ -131,4 +127,4 @@ class Mission:
     async def upload_mission_with_progress(self, drone_instance, mission):
         self.convert_mission_items_to_plan()
         await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
-        await drone_instace.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
+        await drone_instance.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
