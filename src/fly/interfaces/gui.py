@@ -100,6 +100,7 @@ class TC_Drone_App(QMainWindow):
         main_layout = QVBoxLayout()
         self._tasks = []
         self.tabs = QTabWidget()
+        self.connected = False
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
@@ -258,16 +259,21 @@ class TC_Drone_App(QMainWindow):
         self._tasks.extend([battery, takeoff_toggle])
 
     def closeEvent(self, event):
+        if self.connected:
+            reply = QMessageBox.warning(self, "Woah there!", "Make sure that you disconnected your drone before closing this program.")
+            event.ignore()
+            return
+
         reply = QMessageBox.question(self, 'Warning!',
                                      "Are you sure you want to quit?",
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                      QMessageBox.StandardButton.No)
-
+    
         if reply == QMessageBox.StandardButton.Yes:
             event.accept()
         else:
             event.ignore()
-
+ 
     @asyncSlot()
     async def on_connect(self):
         self.button_connect.setEnabled(False)
@@ -282,8 +288,8 @@ class TC_Drone_App(QMainWindow):
         try:
             self.drone = Drone(port)
             self.log("Connecting...")
-            connected = await self.drone.connect()
-            if connected:
+            self.connected = await self.drone.connect()
+            if self.connected:
                 self.log("-- Connected")
                 self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
@@ -292,6 +298,7 @@ class TC_Drone_App(QMainWindow):
             else:
                 self.log(f"-- Failed to connect to the drone within {self.drone.connection_timeout} seconds.")
                 self.button_connect.setEnabled(True)
+                self.button_disconnect.setEnabled(False)
         except Exception as e:
             self.log(f"Error: {e}")
 
@@ -323,6 +330,7 @@ class TC_Drone_App(QMainWindow):
             self.batt_time_action.setText("Time Remaining: --(s)")
 
             self.log("-- Disconnected")
+            self.connected = False
         except Exception as e:
             self.log(f"Disconnect Error: {e}")
 
