@@ -79,6 +79,8 @@ class HistoryLineEdit(QComboBox):
         if not data:
             return
         drone_data = data.get(drone_instance_json, {})
+        if self.currentText() in drone_data["port-history"]:
+            drone_data["port-history"].remove(self.currentText())
         drone_data["port-history"].insert(0, self.currentText())
         drone_data["port"] = drone_data["port-history"][0]
         write_to_json({drone_instance_json: drone_data})
