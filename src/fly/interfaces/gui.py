@@ -117,6 +117,10 @@ class TC_Drone_App(QMainWindow):
         self.button_connect = QPushButton("Connect to the drone")
         self.button_connect.clicked.connect(self.on_connect)
 
+        self.button_disconnect = QPushButton("Disconnect")
+        self.button_disconnect.setEnabled(False)
+        self.button_disconnect.clicked.connect(self.on_disconnect)
+
         self.button_takeoff = QPushButton("2. Takeoff (10m)")
         self.button_takeoff.setEnabled(False)
         self.button_takeoff.clicked.connect(self.on_takeoff)
@@ -128,6 +132,7 @@ class TC_Drone_App(QMainWindow):
 
         general_layout.addWidget(self.port_edit)
         general_layout.addWidget(self.button_connect)
+        general_layout.addWidget(self.button_disconnect)
         general_layout.addWidget(self.button_takeoff)
         general_layout.addWidget(self.button_land)
         general_widget.setLayout(general_layout)
@@ -158,10 +163,13 @@ class TC_Drone_App(QMainWindow):
         self.button_rth.clicked.connect(self.return_to_launch)
 
         # dynamic button sizes acccording to the user's expansion of the window
-        for btn in [self.button_connect, self.button_takeoff, self.button_land, 
-                    self.button_stop_movement, self.button_rth, self.button_up, 
-                    self.button_down, self.button_left, self.button_right, 
-                    self.button_forward, self.button_backward]:
+        for btn in [
+            self.button_connect, self.button_disconnect,
+            self.button_takeoff, self.button_land,
+            self.button_stop_movement, self.button_rth,
+            self.button_up, self.button_down, self.button_left,
+            self.button_right, self.button_forward, self.button_backward
+        ]:
             policy = btn.sizePolicy()
             policy.setVerticalPolicy(QSizePolicy.Policy.Expanding)
             btn.setSizePolicy(policy)
@@ -261,10 +269,12 @@ class TC_Drone_App(QMainWindow):
     @asyncSlot()
     async def on_connect(self):
         self.button_connect.setEnabled(False)
+        self.button_disconnect.setEnabled(True)
         port = self.port_edit.text().strip()
         if not is_valid_port(port):
             self.log("-- Invalid port format. Please specify a valid UDP, TCP, or Serial port.")
             self.button_connect.setEnabled(True)
+            self.button_disconnect.setEnabled(False)
             return
 
         try:
@@ -285,7 +295,42 @@ class TC_Drone_App(QMainWindow):
 
 
     @asyncSlot()
+    async def on_disconnect(self):
+        if self.drone is None:
+            self.log("-- No drone is connected.")
+            return
+
+        self.log("Disconnecting...")
+
+        try:
+            for task in self._tasks:
+                task.cancel()
+            self._tasks.clear()
+
+            del self.drone
+
+            self.button_connect.setEnabled(True)
+            self.button_disconnect.setEnabled(False)
+            self.button_takeoff.setEnabled(False)
+            self.button_land.setEnabled(False)
+
+            self.battery_button.setText("Battery: --(%)")
+            self.batt_percent_action.setText("Remaining: --(%)")
+            self.batt_voltage_action.setText("Voltage: --(V)")
+            self.batt_temp_action.setText("Temperature: --(C)")
+            self.batt_time_action.setText("Time Remaining: --(s)")
+
+            self.log("-- Disconnected")
+        except Exception as e:
+            self.log(f"Disconnect Error: {e}")
+
+
+    @asyncSlot()
     async def on_takeoff(self):
+        if self.drone is None:
+            self.log("You are not connected to a drone.")
+            return
+
         self.log("Starting Takeoff Sequence...")
         self.button_takeoff.setEnabled(False)
         try:
@@ -294,7 +339,7 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             self.log(f"Takeoff Error: {e}")
             self.button_takeoff.setEnabled(True)
-
+    
     @asyncSlot()
     async def on_land(self):
         self.log("Starting Landing Sequence...")
