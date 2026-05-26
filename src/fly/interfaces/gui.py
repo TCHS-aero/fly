@@ -277,7 +277,6 @@ class TC_Drone_App(QMainWindow):
     @asyncSlot()
     async def on_connect(self):
         self.button_connect.setEnabled(False)
-        self.button_disconnect.setEnabled(True)
         port = self.port_edit.text().strip()
         if not is_valid_port(port):
             self.log("-- Invalid port format. Please specify a valid UDP, TCP, or Serial port.")
@@ -291,6 +290,7 @@ class TC_Drone_App(QMainWindow):
             self.connected = await self.drone.connect()
             if self.connected:
                 self.log("-- Connected")
+                self.button_disconnect.setEnabled(True)
                 self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
                 self.log(f"Pos: {lat:.5f}, {lon:.5f}, {alt:.1f}m")
