@@ -27,8 +27,9 @@ def pull_from_json():
     try:
         with open(settings, "r") as read_file:
             return json.load(read_file)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"-- Error reading data from {settings}. Returning empty data.")
+        print(e)
         return {}
 
 

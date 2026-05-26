@@ -43,21 +43,6 @@ def is_valid_port(port: str) -> bool:
     if re.match(serial_pattern, port):
         return True
 
-    print("-- Testing for a stable connection")
-    drone = Drone(port)
-    if not drone.connect():
-        print("-- Connection test failed; consider trying a different port.")
-        return 1
-
-    write_to_json(
-        {
-            drone_instance_json: {
-                "port": port,
-            }
-        }
-    )
-
-
 class HistoryLineEdit(QComboBox):
     def __init__(self, max_history=5, parent=None):
         super().__init__(parent)
