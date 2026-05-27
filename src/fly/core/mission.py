@@ -40,7 +40,8 @@ class Mission:
 
     async def get_current_waypoint(self, drone_instance):
         if self.mission_plan == False:
-            print("No mission uploaded")
+            print("-- No mission uploaded")
+            return
 
         plan = await self.download_mission(drone_instance)
         current_progress = await self.get_mission_progress(drone_instance)
@@ -92,7 +93,7 @@ class Mission:
     async def get_mission_progress(self, drone_instance):
         async for progress in drone_instance.drone.mission.mission_progress():
             if progress.current == progress.total:
-                print('mission complete')
+                print('-- Mission Complete!')
                 return None
                 break
             return progress.current
