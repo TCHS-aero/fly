@@ -418,6 +418,9 @@ class TC_Drone_App(QMainWindow):
 
     @asyncSlot()
     async def stoping_movement(self):
+        if not self.connected:
+            return
+
         print("-- Stopping Movement...")
         try:
             await self.drone.stop_movement()
@@ -426,6 +429,9 @@ class TC_Drone_App(QMainWindow):
 
     @asyncSlot()
     async def return_to_launch(self):
+        if not self.connected:
+            return
+
         print("-- Starting to Return to Launch...")
         try:
             await self.drone.return_to_home()
