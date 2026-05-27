@@ -13,6 +13,7 @@ class Drone:
         self.connection_timeout = connection_timeout
 
     async def connect(self):
+        print("-- Connecting...")
         connected = False
         try:
             async with asyncio.timeout(self.connection_timeout):
