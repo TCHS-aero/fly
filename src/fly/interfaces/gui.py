@@ -4,9 +4,8 @@ import re
 
 from fly.core.drone import Drone
 from fly.core.dataManager import (
-    write_to_json,
-    pull_from_json,
-    drone_instance_json,
+    update_port_data,
+    pull_port_data,
 )
 
 from PyQt6.QtWidgets import (
@@ -70,21 +69,22 @@ class HistoryLineEdit(QComboBox):
         self.addItems(items)
 
     def load_history(self):
-        data = pull_from_json() or {}
-        ports = data.get(drone_instance_json, {}).get("port-history", [])
-        self.update_items(ports)
+        data = pull_port_data()
+        _, history = data 
+        self.update_items(history)
 
     def save_history(self):
-        data = pull_from_json() or {}
+        data = pull_port_data()
         if not data:
             return
-        drone_data = data.get(drone_instance_json, {})
-        if self.currentText() in drone_data["port-history"]:
-            drone_data["port-history"].remove(self.currentText())
-        drone_data["port-history"].insert(0, self.currentText())
-        drone_data["port"] = drone_data["port-history"][0]
-        write_to_json({drone_instance_json: drone_data})
-        self.update_items(drone_data.get("port-history", {}))
+
+        port, history = data
+        if self.currentText() in history:
+            history.remove(self.currentText())
+        history.insert(0, self.currentText())
+        port = history[0]
+        update_port_data(port = port, history = history)
+        self.update_items(history)
 
     def text(self):
         return self.currentText()
@@ -107,10 +107,9 @@ class TC_Drone_App(QMainWindow):
         
         self.port_edit = HistoryLineEdit()
 
-        data = pull_from_json()
-        latest_port = data.get(drone_instance_json, {}).get("port")
-        if latest_port:
-            self.port_edit.lineEdit().setText(latest_port)
+        data = pull_port_data()
+        if data[0]:
+            self.port_edit.lineEdit().setText(data[0])
 
         self.logo = QLabel("TCHS Aero GUI v1")
         self.console = QTextEdit()

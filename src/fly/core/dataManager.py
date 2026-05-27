@@ -5,78 +5,34 @@ from fly.core.drone import Drone
 from fly.core.mission import Mission
 
 settings = files("fly.config").joinpath("settings.json")
-mission_file_json = "Mission"
-drone_instance_json = "Drone"
 
-
-def write_to_json(data):
-    existing_data = pull_from_json() or {}
-
-    for key, value in data.items():
-        if existing_data.get(key) != value:
-            print(f"-- Updating {key}")
-            existing_data[key] = value
-
-    with open(settings, "w") as write_file:
-        print("-- Writing...")
-        json.dump(existing_data, write_file, ensure_ascii=False, indent=4)
-        print("-- Writing finished")
-
-
-def pull_from_json():
+def pull_port_data():
     try:
         with open(settings, "r") as read_file:
-            return json.load(read_file)
+            data = json.load(read_file)
+            return (data["port"], data["port-history"])
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"-- Error reading data from {settings}. Returning empty data.")
         print(e)
-        return {}
+        return None
+    
+def update_port_data(port: string = None, history: list = None):
+    try:
+        existing_data = pull_port_data()
+        new_port, new_history = existing_data
 
+        if port is not None:
+            new_port = port
+        if history is not None:
+            new_history = history
 
-async def load_drone():
-    drone_data = pull_from_json().get(drone_instance_json)
-    if drone_data:
-        port = drone_data.get("port", None)
-        if not port:
-            print(
-                f"-- Port has not yet been configured in {settings}. Are you sure you ran the connect command?"
-            )
-            return
- 
-        drone = Drone(port)
-        return drone
-    return
+        final_data = {"port": new_port, "port-history": new_history}
 
-
-async def load_mission():
-    mission = pull_from_json().get(mission_file_json)
-    if mission:
-        file_path = mission.get("file_path", None)
-        if not file_path:
-            print(
-                "-- No mission file found. Are you sure you ran mission import --file?"
-            )
-            return
-
-        current_index = mission.get("current_index", 0)
-
-        mission = Mission(file_path, current_index=current_index)
-        return mission
-    return
-
-
-async def save_mission(mission):
-    print("-- Updating Mission Data...")
-    write_to_json(
-        {
-            mission_file_json: {
-                "file_path": mission.file,
-                "current_index": mission.current_index,
-            }
-        }
-    )
-    return
-
+        with open(settings, "w") as write_file:
+            print("-- Writing...")
+            json.dump(final_data, write_file, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(e)
 
 def wipe_config():
     confirm = True
@@ -97,5 +53,5 @@ def wipe_config():
     if ans == "n":
         return
 
-    write_to_json({mission_file_json: {}, drone_instance_json: {"port": None}})
+    update_port_data(port = "", history = [])
     print("-- Data wiped! This is irreversible.")
