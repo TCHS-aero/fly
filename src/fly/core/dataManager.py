@@ -16,7 +16,7 @@ def pull_port_data():
         print(e)
         return None
     
-def update_port_data(port: string = None, history: list = None):
+def update_port_data(port: str = None, history: list = None):
     try:
         existing_data = pull_port_data()
         new_port, new_history = existing_data
