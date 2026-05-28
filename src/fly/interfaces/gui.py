@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QMessageBox,
     QMenu,
+    QCheckBox,
     QToolButton,
 )
 from PyQt6.QtGui import QIcon, QAction
@@ -104,7 +105,10 @@ class TC_Drone_App(QMainWindow):
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
-        
+
+        mission_widget = QWidget()
+        mission_layout = QVBoxLayout()
+
         self.port_edit = HistoryLineEdit()
 
         data = pull_port_data()
@@ -115,6 +119,8 @@ class TC_Drone_App(QMainWindow):
         self.console = QTextEdit(self)
         self.console.setStyleSheet("background-color: black; color: white;")
         self.console.setReadOnly(True)
+
+#---- general tab
 
         self.button_connect = QPushButton("Connect")
         self.button_connect.clicked.connect(self.on_connect)
@@ -138,6 +144,44 @@ class TC_Drone_App(QMainWindow):
         general_layout.addWidget(self.button_land)
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
+
+#-- mission tab
+    
+        self.StartMission = QPushButton("Start the Mission")
+        self.StartMission.clicked.connect(self.StartMissionFunc)
+        self.StartMission.setEnabled(False)
+
+        self.UploadMission = QPushButton('Upload Mission')
+        self.UploadMission.clicked.connect(self.UploadMissionFunc)
+
+        self.ReturnToLaunch = QCheckBox('Drone Returns to Launch Waypoint')
+        self.ReturnToLaunch.setCheckState(Qt.CheckState.Unchecked)
+        self.ReturnToLaunch.stateChanged.connect(self.RTLFunction)
+
+        self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
+        self.ResetMission.clicked.connect(self.ResetMissionFunc)
+
+        self.ClearMission = QPushButton("Clear the Mission") #deletes the uploaded mission so it starts with a clean slate
+        self.ClearMission.clicked.connect(self.ClearMissionFunc)
+
+        self.PauseMission = QPushButton('Pause Ongoing Mission')
+        self.PauseMission.clicked.connect(self.PauseMissionFunc)
+
+        mission_layout.addWidget(self.StartMission)
+        mission_layout.addWidget(self.UploadMission)
+        mission_layout.addWidget(self.ReturnToLaunch)
+        mission_layout.addWidget(self.ResetMission)
+        mission_layout.addWidget(self.ClearMission)
+        mission_layout.addWidget(self.PauseMission)
+        mission_widget.setLayout(mission_layout)
+        self.tabs.addTab(mission_widget, "Mission")
+        
+
+
+
+
+
+#---movement tab
 
         movement_widget = QWidget()
         movement_layout = QVBoxLayout()
@@ -208,6 +252,8 @@ class TC_Drone_App(QMainWindow):
         main_layout.addWidget(self.tabs)
         central.setLayout(main_layout)
         self.setCentralWidget(central)
+
+#---battery percentage counter
 
         self.battery_menu = QMenu()
         self.battery_menu.setToolTipsVisible(True)
@@ -439,7 +485,16 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(f"-- Return to Launch Error: {e}")
 
+    async def StartMissionFunc(self):
+        if not self.connected:
+            return
 
+        print("-- Starting Mission...")
+        try:
+            await self.mission.start_mission()
+            print('-- Mission Started...')
+        except Exception as e:
+            printf('-- Starting Mission Error: {e}')
 def main():
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
