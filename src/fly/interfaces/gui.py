@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QTabWidget,
     QGridLayout,
+    QFileDialog,
     QSizePolicy,
     QMessageBox,
     QMenu,
@@ -96,12 +97,14 @@ class TC_Drone_App(QMainWindow):
         super().__init__()
         self.setWindowTitle("Drone Controls")
         self.drone = None
+        self.mission = None
         self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
         central = QWidget()
         main_layout = QVBoxLayout()
         self._tasks = []
         self.tabs = QTabWidget()
         self.connected = False
+        
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
@@ -167,8 +170,8 @@ class TC_Drone_App(QMainWindow):
         self.PauseMission = QPushButton('Pause Ongoing Mission')
         self.PauseMission.clicked.connect(self.PauseMissionFunc)
 
-        mission_layout.addWidget(self.StartMission)
         mission_layout.addWidget(self.UploadMission)
+        mission_layout.addWidget(self.StartMission)
         mission_layout.addWidget(self.ReturnToLaunch)
         mission_layout.addWidget(self.ResetMission)
         mission_layout.addWidget(self.ClearMission)
@@ -494,7 +497,22 @@ class TC_Drone_App(QMainWindow):
             await self.mission.start_mission()
             print('-- Mission Started...')
         except Exception as e:
-            printf('-- Starting Mission Error: {e}')
+            print(f'-- Starting Mission Error: {e}')
+
+    async def UploadMissionFunc(self):
+        if not self.connected:
+            return
+
+        try:
+            upload_file = QFileDialog()
+            upload_file.setFileMode(QFileDialog.FileMode.ExistingFiles)
+            upload_file.setNameFilter(".json files (*.json)")
+
+            self.mission = Mission(upload_file)
+            self.mission.upload_mission()
+        except Exception as e:
+            print(f'-- Uploading Mission Error: {e}')
+
 def main():
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
