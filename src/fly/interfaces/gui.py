@@ -3,6 +3,7 @@ import asyncio
 import re
 
 from fly.core.drone import Drone
+from fly.core.mission import Mission
 from fly.core.dataManager import (
     update_port_data,
     pull_port_data,
@@ -149,36 +150,37 @@ class TC_Drone_App(QMainWindow):
         self.tabs.addTab(general_widget, "General")
 
 #-- mission tab
-    
-        self.StartMission = QPushButton("Start the Mission")
-        self.StartMission.clicked.connect(self.StartMissionFunc)
-        self.StartMission.setEnabled(False)
+        try:
+            self.StartMission = QPushButton("Start the Mission")
+            self.StartMission.clicked.connect(self.StartMissionFunc)
+            self.StartMission.setEnabled(False)
 
-        self.UploadMission = QPushButton('Upload Mission')
-        self.UploadMission.clicked.connect(self.UploadMissionFunc)
+            self.UploadMission = QPushButton('Upload Mission')
+            self.UploadMission.clicked.connect(self.UploadMissionFunc)
 
-        self.ReturnToLaunch = QCheckBox('Drone Returns to Launch Waypoint')
-        self.ReturnToLaunch.setCheckState(Qt.CheckState.Unchecked)
-        self.ReturnToLaunch.stateChanged.connect(self.RTLFunction)
+            self.ReturnToLaunch = QCheckBox('Drone Returns to Launch Waypoint')
+            self.ReturnToLaunch.setCheckState(Qt.CheckState.Unchecked)
+            self.ReturnToLaunch.stateChanged.connect(self.RTLFunction)
 
-        self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
-        self.ResetMission.clicked.connect(self.ResetMissionFunc)
+            self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
+            self.ResetMission.clicked.connect(self.ResetMissionFunc)
 
-        self.ClearMission = QPushButton("Clear the Mission") #deletes the uploaded mission so it starts with a clean slate
-        self.ClearMission.clicked.connect(self.ClearMissionFunc)
+            self.ClearMission = QPushButton("Clear the Mission") #deletes the uploaded mission so it starts with a clean slate
+            self.ClearMission.clicked.connect(self.ClearMissionFunc)
 
-        self.PauseMission = QPushButton('Pause Ongoing Mission')
-        self.PauseMission.clicked.connect(self.PauseMissionFunc)
+            self.PauseMission = QPushButton('Pause Ongoing Mission')
+            self.PauseMission.clicked.connect(self.PauseMissionFunc)
 
-        mission_layout.addWidget(self.UploadMission)
-        mission_layout.addWidget(self.StartMission)
-        mission_layout.addWidget(self.ReturnToLaunch)
-        mission_layout.addWidget(self.ResetMission)
-        mission_layout.addWidget(self.ClearMission)
-        mission_layout.addWidget(self.PauseMission)
-        mission_widget.setLayout(mission_layout)
-        self.tabs.addTab(mission_widget, "Mission")
-        
+            mission_layout.addWidget(self.UploadMission)
+            mission_layout.addWidget(self.StartMission)
+            mission_layout.addWidget(self.ReturnToLaunch)
+            mission_layout.addWidget(self.ResetMission)
+            mission_layout.addWidget(self.ClearMission)
+            mission_layout.addWidget(self.PauseMission)
+            mission_widget.setLayout(mission_layout)
+            self.tabs.addTab(mission_widget, "Mission")
+        except Exception as e:
+            print(e)
 
 
 
@@ -488,6 +490,8 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(f"-- Return to Launch Error: {e}")
 
+
+    @asyncSlot()
     async def StartMissionFunc(self):
         if not self.connected:
             return
@@ -499,19 +503,39 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(f'-- Starting Mission Error: {e}')
 
+    @asyncSlot()
     async def UploadMissionFunc(self):
         if not self.connected:
             return
 
         try:
-            upload_file = QFileDialog()
+            upload_file = QFileDialog.getOpenFileName(self,"Select Mission File","","JSON files (*.json)")
             upload_file.setFileMode(QFileDialog.FileMode.ExistingFiles)
             upload_file.setNameFilter(".json files (*.json)")
 
+            if not upload_file:
+                return
+
             self.mission = Mission(upload_file)
-            self.mission.upload_mission()
+            await self.mission.upload_mission()
+
         except Exception as e:
             print(f'-- Uploading Mission Error: {e}')
+    @asyncSlot()
+    async def RTLFunction(self):
+        pass
+
+    @asyncSlot()
+    async def ResetMissionFunc(self):
+        pass
+
+    @asyncSlot()
+    async def ClearMissionFunc(self):
+        pass
+    
+    @asyncSlot()
+    async def PauseMissionFunc(self):
+        pass
 
 def main():
     app = QApplication(sys.argv)
