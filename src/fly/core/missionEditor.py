@@ -63,3 +63,8 @@ class MissionEditor:
         clean = [{k: v for k, v in wp.items() if k!="_meta"} for wp in waypoints]
         with open(self.path, "w") as f:
             json.dump(clean, f, indent = 2)
+
+        # _meta is for something like this:
+            # "_meta": {"type": "poi_approach", "poi_id":1}
+        # It will be appended in mission_waypoints.json, and then
+        # removed before being sent to drone
