@@ -21,7 +21,7 @@ class MissionEditor:
         self.path = Path(local_mission_path)
         self._lock = asyncio.Lock()
 
-    async def current_index(self) -> init:
+    async def current_index(self) -> int:
         # returns current waypoint index from mavsdk, or -1 if not active
 
     async def seconds_until_next_waypoint(self) -> float:
