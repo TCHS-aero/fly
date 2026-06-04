@@ -68,8 +68,6 @@ class MissionEditor:
             self.save_waypoints(wps)
             await self._upload_and_resume(wps,idx)
 
-        # ...
-
     @require_safe_edit_window
     async def insert_waypoint(self, at: int, wp: dict):
         # insert a waypoint at position 'at'
