@@ -77,9 +77,7 @@ class MissionEditor:
 
     @require_safe_edit_window
     async def remove_waypoint(self, at: int):
-        if not await self.is_safe_to_edit():
-            print("Cannot edit mission now.")
-            return
+        pass
 
     # private helpers
 
