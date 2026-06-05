@@ -6,7 +6,7 @@ from geographiclib.geodesic import Geodesic
 Point = tuple[float,float] # lat_deg, lon_deg
 
 def haversine_m(pt1: Point, pt2: Point) -> float:
-    return haversine(pt1, pt2, unit = Unit.METERS)
+    return haversine(pt1, pt2, unit = Unit.METERS) # could also use Geodesic but haversine is more lightweight and accurate enough
 
 # choosing to input North and East offset since it is native to MAVSDK (uses NED), rather than bearing
 def offset_coords(start_pt: Point, north_m: float, east_m: float) -> Point:
