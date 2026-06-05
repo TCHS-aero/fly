@@ -35,6 +35,7 @@ class StreamCapture:
         # 4. cv2.imwrite(path, frame) - save as JPEG; filename derived from ts
         # 5. Return (ImagePayload.path)
         # Returns None if the stream is unavaliable (caller can retry next tick)
+        # Note: must wrap OpenCV logic in a thread pool `await asyncio.to_thread(...)`, just like what is in open()
         pass
 
     async def watch_and_capture(self, notify_queue: asyncio.Queue):
@@ -57,9 +58,12 @@ class StreamCapture:
                     wp_index=progress.current, phase="survey"
                 )
                 if capture_result is not None:
-                    pass  # put result onto queue; another part of program will listen
-
-                await asyncio.sleep(0.1)
+                    # put result onto queue; another part of program will listen
+                    payload, img_path = capture_result
+                    try:
+                        notify_queue.put_nowait(payload)
+                    except asyncio.QueueFull:
+                        print("-- Queue full, dropping frame")
 
         print("Watcher stopped.")
 
