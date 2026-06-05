@@ -13,6 +13,11 @@ class ImagePayload:
     phase: str  # survey | calibration | manual
     filename: str
 
+    @property
+    def pos(self) -> Point:
+        # Bridge to any geo function that takes a Point
+        return (self.lat, self.lon)
+
     @staticmethod
     def now_ts() -> str:  # `:-3` chops off 3 digits to get milliseconds
         return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
