@@ -63,7 +63,9 @@ class StreamCapture:
                     try:
                         notify_queue.put_nowait(payload)
                     except asyncio.QueueFull:
-                        print("-- Queue full, dropping frame")
+                        print(
+                            f"-- Queue full, dropping frame. Dropping image payload for waypoint {progress.current}"
+                        )
 
         print("Watcher stopped.")
 
