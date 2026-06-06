@@ -22,21 +22,58 @@ class StreamCapture:
     async def open(self) -> bool:
         # opens the rtsp stream via cv2.VideoCapture (runs in executor to avoid
         # blocking the event loop during the 1s RTSP handshake)
-        # Creates image_dir if it doesn't exist. Returns True on success.
-        pass
+        self._cap = await asyncio.to_thread(cv2.VideoCapture(self.rtsp_url))
+
+        # Creates image_dir if it doesn't exist.
+        self.image_dir.mkdir(parents = True, exist_ok = True):
+
+        # Checks if image_dir exists and returns True, otherwise returns False
+        if self.image_dir.exists():
+            return True
+        return False
 
     async def capture_frame(
         self, wp_index: int, phase: str = "survey"
     ) -> tuple[ImagePayload, Path] | None:
+        # Note: must wrap OpenCV logic in a thread pool `await asyncio.to_thread(...)`, just like what is in open()
+
+        # 2. cap.read() - live frame from HM30
+        ret, frame = await asyncio.to_thread(self._cap.read())
+
+        # Returns None if the stream is unavaliable (caller can retry next tick)
+        if not self._cap.isOpened():
+            print("-- Video stream is not opened.")
+            return None
+
+        if not ret:
+            print("-- Failed to capture frame.")
+            return None
+
         # grabs current frame and pairs it with live telemetry
         ts = ImagePayload.now_ts()
-        # 2. cap.read() - live frame from HM30
+
+        # creates image path under self.image_dir
+        image_path = self.image_dir / f"frame_{ts}.png"
+
         # 3. drone.current_position() - lat, lon, alt_rel from MAVSDK
+        lat, lon, alt_rel = self.drone.current_position()
+
         # 4. cv2.imwrite(path, frame) - save as JPEG; filename derived from ts
+        await asyncio.to_thread(cv2.imwrite(image_path, frame))
+
         # 5. Return (ImagePayload and Path)
-        # Returns None if the stream is unavaliable (caller can retry next tick)
-        # Note: must wrap OpenCV logic in a thread pool `await asyncio.to_thread(...)`, just like what is in open()
-        pass
+        payload = ImagePayload(
+            ts = ts,
+            lat = lat,
+            lon = lon,
+            alt_rel = alt_rel,
+            wp_index = wp_index,
+            phase = phase,
+            filename = f"frame_{ts}"
+        )
+
+        return (payload, image_path)
+
 
     async def watch_and_capture(self, notify_queue: asyncio.Queue):
         # Background task: subscribes to mission_progress() and calls
