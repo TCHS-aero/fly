@@ -59,7 +59,6 @@ class MissionEditor:
 
     @require_safe_edit_window
     async def append_waypoint(self, wp:dict):
-        # appends waypoint to end of mission
         async with self._lock:
             idx = await self.current_index()
             await self._pause()
