@@ -33,7 +33,7 @@ class StreamCapture:
         # 2. cap.read() - live frame from HM30
         # 3. drone.current_position() - lat, lon, alt_rel from MAVSDK
         # 4. cv2.imwrite(path, frame) - save as JPEG; filename derived from ts
-        # 5. Return (ImagePayload.path)
+        # 5. Return (ImagePayload and Path)
         # Returns None if the stream is unavaliable (caller can retry next tick)
         # Note: must wrap OpenCV logic in a thread pool `await asyncio.to_thread(...)`, just like what is in open()
         pass
