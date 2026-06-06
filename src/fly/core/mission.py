@@ -82,10 +82,10 @@ class Mission:
     async def reset_mission(self, drone_instance):
         await self.set_current_mission_target(drone_instance, 0)
 
-    async def upload_mission(self, drone_instance, return_to_launch):
+    async def upload_mission(self, drone_instance):
         self.convert_mission_items_to_plan()
-        await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
-        await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan))
+        '''await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
+        await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan))'''
 
     async def start_mission(self, drone_instance):
         await drone_instance.drone.mission.start_mission()

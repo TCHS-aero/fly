@@ -151,7 +151,7 @@ class TC_Drone_App(QMainWindow):
 
 #-- mission tab
         try:
-            self.StartMission = QPushButton("Start the Mission")
+            self.StartMission = QPushButton("Start the Mission (TAKEOFF FIRST)")
             self.StartMission.clicked.connect(self.StartMissionFunc)
             self.StartMission.setEnabled(False)
 
@@ -498,29 +498,39 @@ class TC_Drone_App(QMainWindow):
 
         print("-- Starting Mission...")
         try:
-            await self.mission.start_mission()
+            await self.mission.start_mission(self.drone)
             print('-- Mission Started...')
         except Exception as e:
             print(f'-- Starting Mission Error: {e}')
 
-    @asyncSlot()
-    async def UploadMissionFunc(self):
+    def UploadMissionFunc(self):
+        
         if not self.connected:
             return
 
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Mission File",
+            "",
+            "JSON files (*.json)"
+        )
+
+        if not file_path:
+            return
+
+        task = asyncio.ensure_future(self.do_upload(file_path))
+        self._tasks.append(task)
+
+    async def do_upload(self, file_path):
         try:
-            upload_file = QFileDialog.getOpenFileName(self,"Select Mission File","","JSON files (*.json)")
-            upload_file.setFileMode(QFileDialog.FileMode.ExistingFiles)
-            upload_file.setNameFilter(".json files (*.json)")
-
-            if not upload_file:
-                return
-
-            self.mission = Mission(upload_file)
-            await self.mission.upload_mission()
-
+            print("-- Uploading Mission...")
+            self.mission = Mission(file_path)
+            await self.mission.upload_mission(self.drone)
+            self.StartMission.setEnabled(True)
+            print("-- Mission Uploaded Successfully")
         except Exception as e:
             print(f'-- Uploading Mission Error: {e}')
+
     @asyncSlot()
     async def RTLFunction(self):
         pass
