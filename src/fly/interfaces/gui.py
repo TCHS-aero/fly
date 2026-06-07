@@ -7,6 +7,7 @@ from fly.core.dataManager import (
     update_port_data,
     pull_port_data,
 )
+from fly.core.mission import Mission
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -24,6 +25,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QMenu,
     QToolButton,
+    QLineEdit
 )
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
@@ -73,7 +75,7 @@ class HistoryLineEdit(QComboBox):
         _, history = data 
         self.update_items(history)
 
-    def save_history(self):
+    def save_history(self):  
         data = pull_port_data()
         if not data:
             return
@@ -229,6 +231,46 @@ class TC_Drone_App(QMainWindow):
         self.battery_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
 
         self.statusBar().addPermanentWidget(self.battery_button)
+
+        # Info Widget
+        waypoint_widget = QWidget()
+        waypoint_layout = QVBoxLayout()
+        waypoint_grid = QGridLayout()
+
+        self.waypoint_title = QLabel("Waypoint Info")
+
+        self.wp_latitude = QLineEdit()
+        self.wp_longitude = QLineEdit()
+        self.wp_relative_altitude = QLineEdit()
+        self.wp_speed = QLineEdit()
+        self.wp_is_fly_through = QLineEdit()
+        self.wp_gimbal_pitch = QLineEdit()
+        self.wp_gimbal_yaw = QLineEdit()
+        self.wp_camera_action = QLineEdit()
+        self.wp_loiter_time = QLineEdit()
+        self.wp_camera_photo_interval = QLineEdit()
+        self.wp_acceptance_radius = QLineEdit()
+        self.wp_yaw = QLineEdit()
+        self.wp_camera_photo_distance = QLineEdit()
+        self.wp_vehicle_action = QLineEdit()
+
+        self.waypoint_fields = [
+            ("Latitude (deg)", self.wp_latitude),
+            ("Longitude (deg)", self.wp_longitude),
+            ("Relative Altitude (m)", self.wp_relative_altitude),
+            ("Speed (m/s)", self.wp_speed),
+            ("Is Fly Through", self.wp_is_fly_through),
+            ("Gimbal Pitch (deg)", self.wp_gimbal_pitch),
+            ("Gimbal Yaw (deg)", self.wp_gimbal_yaw),
+            ("Camera Action", self.wp_camera_action),
+            ("Loiter Time (s)", self.wp_loiter_time),
+            ("Camera Photo Interval (s)", self.wp_camera_photo_interval),
+            ("Acceptance Radius (m)", self.wp_acceptance_radius),
+            ("Yaw (deg)", self.wp_yaw),
+            ("Camera Photo Distance (m)", self.wp_camera_photo_distance),
+            ("Vehicle Action", self.wp_vehicle_action),
+        ]
+
 
     class StreamToTextBox:
         def __init__(self, text_edit):
