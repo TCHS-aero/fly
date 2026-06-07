@@ -271,6 +271,24 @@ class TC_Drone_App(QMainWindow):
             ("Vehicle Action", self.wp_vehicle_action),
         ]
 
+        for row, (label_text, field) in enumerate(self.waypoint_fields):
+
+            field.setReadOnly(True)
+            waypoint_grid.addWidget(QLabel(label_text), row, 0)
+            waypoint_grid.addWidget(field, row, 1)
+
+            self.button_refresh_waypoint = QPushButton("Refresh Waypoint Info")
+            self.button_refresh_waypoint.clicked.connect(self.on_refresh_waypoint)
+
+
+            waypoint_layout.addWidget(self.waypoint_title)
+            waypoint_layout.addLayout(waypoint_grid)
+            waypoint_layout.addWidget(self.button_refresh_waypoint)
+
+
+            waypoint_widget.setLayout(waypoint_layout)
+            self.tabs.addTab(waypoint_widget, "Waypoint Info")
+
 
     class StreamToTextBox:
         def __init__(self, text_edit):
