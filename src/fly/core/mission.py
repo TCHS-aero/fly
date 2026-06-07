@@ -17,6 +17,10 @@ class Mission:
         with open(self.file, "r") as read_file:
             self.waypoints = json.load(read_file)
             self.total_waypoints = len(self.waypoints)
+
+            self.RTL = waypoint['RTL']
+            print(self.RTL)
+
             for waypoint in self.waypoints:
                 
                 if None not in waypoint.values():
@@ -25,12 +29,14 @@ class Mission:
                 try:
                     for item in waypoint.items():  
                         k, v = item
+                        print(k,v,item)
+
                         if v is None:
                             waypoint[k] = float('nan')
 
                 except Exception as e:
                     print(e)
-                    return 1
+                    return 
             
             print("-- Success!")
             return self.waypoints
@@ -84,8 +90,7 @@ class Mission:
 
     async def upload_mission(self, drone_instance):
         self.convert_mission_items_to_plan()
-        '''await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
-        await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan))'''
+        await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan)) 
 
     async def start_mission(self, drone_instance):
         await drone_instance.drone.mission.start_mission()

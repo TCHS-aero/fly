@@ -151,16 +151,18 @@ class TC_Drone_App(QMainWindow):
 
 #-- mission tab
         try:
-            self.StartMission = QPushButton("Start the Mission (TAKEOFF FIRST)")
+            self.StartMission = QPushButton("Start the Mission")
             self.StartMission.clicked.connect(self.StartMissionFunc)
             self.StartMission.setEnabled(False)
 
             self.UploadMission = QPushButton('Upload Mission')
             self.UploadMission.clicked.connect(self.UploadMissionFunc)
 
-            self.ReturnToLaunch = QCheckBox('Drone Returns to Launch Waypoint')
+            self.ReturnToLaunch = QCheckBox('Drone Returns to Launch After Completion')
             self.ReturnToLaunch.setCheckState(Qt.CheckState.Unchecked)
             self.ReturnToLaunch.stateChanged.connect(self.RTLFunction)
+
+            self.RTLWARNING = QPushButton("^ ^ Applies to the next uploaded mission ^ ^")
 
             self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
             self.ResetMission.clicked.connect(self.ResetMissionFunc)
@@ -172,8 +174,9 @@ class TC_Drone_App(QMainWindow):
             self.PauseMission.clicked.connect(self.PauseMissionFunc)
 
             mission_layout.addWidget(self.UploadMission)
-            mission_layout.addWidget(self.StartMission)
             mission_layout.addWidget(self.ReturnToLaunch)
+            mission_layout.addWidget(self.RTLWARNING)
+            mission_layout.addWidget(self.StartMission)
             mission_layout.addWidget(self.ResetMission)
             mission_layout.addWidget(self.ClearMission)
             mission_layout.addWidget(self.PauseMission)
@@ -498,8 +501,19 @@ class TC_Drone_App(QMainWindow):
 
         print("-- Starting Mission...")
         try:
-            await self.mission.start_mission(self.drone)
-            print('-- Mission Started...')
+            async for state in self.drone.drone.telemetry.in_air(): 
+                in_the_air = state
+                break 
+
+            if in_the_air:
+                await self.mission.start_mission(self.drone)
+                print('-- Mission Started...')
+                self.StartMission.setEnabled(False)
+                    
+            else:
+                print('-- ayo sus you need to takeoff before starting mission!...')
+                return
+            
         except Exception as e:
             print(f'-- Starting Mission Error: {e}')
 
@@ -531,9 +545,22 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(f'-- Uploading Mission Error: {e}')
 
+
     @asyncSlot()
     async def RTLFunction(self):
-        pass
+        print('does it work pls pls pls')
+        try:
+            if Qt.CheckState.Checked:
+                print(self.mission)
+                await self.mission.return_to_launch_after_mission_completion(self.drone, True)
+                print('hi')
+            else:
+                await self.mission.return_to_launch_after_mission_completion(self.drone, False)
+                
+
+        except Exception as e:
+
+            print(f"-- RTL Function, {e}")
 
     @asyncSlot()
     async def ResetMissionFunc(self):
@@ -545,7 +572,13 @@ class TC_Drone_App(QMainWindow):
     
     @asyncSlot()
     async def PauseMissionFunc(self):
-        pass
+        try:
+            print("-- Pausing Mission...")
+            await self.mission.pause_mission(self.drone)
+            self.StartMission.setEnabled(True)
+
+        except Exception as e:
+            print(f'-- Pausing Mission Error: {e}')
 
 def main():
     app = QApplication(sys.argv)

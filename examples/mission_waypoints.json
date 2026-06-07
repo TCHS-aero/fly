@@ -1,5 +1,9 @@
 [
     {
+        "RTL": true
+    },
+    
+    {
         "latitude_deg": 47.399075,
         "longitude_deg": 8.545180,
         "relative_altitude_m": 45.0,
