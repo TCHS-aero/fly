@@ -69,7 +69,7 @@ class StreamCapture:
             alt_rel = alt_rel,
             wp_index = wp_index,
             phase = phase,
-            filename = f"frame_{ts}"
+            image_path = image_path
         )
 
         return (payload, image_path)
