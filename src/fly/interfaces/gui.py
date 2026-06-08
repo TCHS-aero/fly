@@ -331,17 +331,17 @@ class TC_Drone_App(QMainWindow):
             waypoint_grid.addWidget(QLabel(label_text), row, 0)
             waypoint_grid.addWidget(field, row, 1)
 
-            self.button_refresh_waypoint = QPushButton("Refresh Waypoint Info")
-            self.button_refresh_waypoint.clicked.connect(self.on_refresh_waypoint)
+        self.button_refresh_waypoint = QPushButton("Refresh Waypoint Info")
+        self.button_refresh_waypoint.clicked.connect(self.on_refresh_waypoint)
 
 
-            waypoint_layout.addWidget(self.waypoint_title)
-            waypoint_layout.addLayout(waypoint_grid)
-            waypoint_layout.addWidget(self.button_refresh_waypoint)
+        waypoint_layout.addWidget(self.waypoint_title)
+        waypoint_layout.addLayout(waypoint_grid)
+        waypoint_layout.addWidget(self.button_refresh_waypoint)
 
 
-            waypoint_widget.setLayout(waypoint_layout)
-            self.tabs.addTab(waypoint_widget, "Waypoint Info")
+        waypoint_widget.setLayout(waypoint_layout)
+        self.tabs.addTab(waypoint_widget, "Waypoint Info")
 
 
     class StreamToTextBox:
@@ -427,6 +427,46 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             sys.stdout = sys.__stdout__
             print(f"Error: {e}")
+
+
+    @asyncSlot()
+    async def on_refresh_waypoint(self):
+
+        if not self.connected or self.drone is None:
+            print("-- No drone connected.")
+            return
+
+        try:
+            current_item = await Mission.get_current_waypoint(self.mission, self.drone)
+            if current_item == 0:
+                print("-- Mission completed.")
+                return
+
+            if current_item is None:
+                print("-- No waypoint found.")
+                return
+
+            self.set_waypoint_info(current_item)
+            print("-- Waypoint info updated.")
+
+        except Exception as e:
+            print(f"-- Waypoint Info Error: {e}")
+
+    def set_waypoint_info(self, current_item):
+        self.wp_latitude.setText(str(current_item.latitude_deg))
+        self.wp_longitude.setText(str(current_item.longitude_deg))
+        self.wp_relative_altitude.setText(str(current_item.relative_altitude_m))
+        self.wp_speed.setText(str(current_item.speed_m_s))
+        self.wp_is_fly_through.setText(str(current_item.is_fly_through))
+        self.wp_gimbal_pitch.setText(str(current_item.gimbal_pitch_deg))
+        self.wp_gimbal_yaw.setText(str(current_item.gimbal_yaw_deg))
+        self.wp_camera_action.setText(current_item.camera_action.name)
+        self.wp_loiter_time.setText(str(current_item.loiter_time_s))
+        self.wp_camera_photo_interval.setText(str(current_item.camera_photo_interval_s))
+        self.wp_acceptance_radius.setText(str(current_item.acceptance_radius_m))
+        self.wp_yaw.setText(str(current_item.yaw_deg))
+        self.wp_camera_photo_distance.setText(str(current_item.camera_photo_distance_m))
+        self.wp_vehicle_action.setText(current_item.vehicle_action.name)
 
 
     @asyncSlot()
