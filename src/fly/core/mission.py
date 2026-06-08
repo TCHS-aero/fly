@@ -15,11 +15,13 @@ class Mission:
         print(f"-- Parsing {self.file}")
 
         with open(self.file, "r") as read_file:
-            self.waypoints = json.load(read_file)
+            self.data = json.load(read_file)
             self.total_waypoints = len(self.waypoints)
 
-            self.RTL = waypoint['RTL']
-            print(self.RTL)
+            self.RTL_dic = self.data[0]
+            self.RTL = self.RTL_dic["RTL"]
+
+            self.waypoints = self.data[1:]
 
             for waypoint in self.waypoints:
                 
@@ -29,7 +31,6 @@ class Mission:
                 try:
                     for item in waypoint.items():  
                         k, v = item
-                        print(k,v,item)
 
                         if v is None:
                             waypoint[k] = float('nan')
