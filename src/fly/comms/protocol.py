@@ -13,7 +13,7 @@ class ImagePayload:
     alt_rel: float  # meters above home
     wp_index: int
     phase: str  # survey | calibration | manual
-    filename: str
+    image_path: str
 
     @property
     def pos(self) -> Point:
