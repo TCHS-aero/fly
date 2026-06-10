@@ -25,7 +25,6 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QMessageBox,
     QMenu,
-    QCheckBox,
     QToolButton,
     QLineEdit
 )
@@ -517,7 +516,7 @@ class TC_Drone_App(QMainWindow):
                 self.StartMission.setEnabled(False)
                 await self.mission.return_to_launch_after_mission_completion(self.drone, self.mission.RTL)
 
-                if self.mission.is_mission_finished(self.drone): #ehhh? why no woerk
+                if await self.mission.is_mission_finished(self.drone): #ehhh? why no woerk
                     print('-- Mission Finished!')
                 else:
                     print("- uhhhh it didn't finish...")
@@ -549,7 +548,7 @@ class TC_Drone_App(QMainWindow):
         self._tasks.append(task)
 
 
-        class MissionInfoWindow(QWidget):
+    class MissionInfoWindow(QWidget):
         def __init__(self):
             super().__init__()    
 
