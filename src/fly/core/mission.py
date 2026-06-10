@@ -45,18 +45,41 @@ class Mission:
     def get_raw_waypoints(self):
         return self.waypoints
 
-    async def get_current_waypoint(self, drone_instance):
-        if self.mission_plan == False:
+    async def get_next_waypoint(self, drone_instance):
+        if not self.mission_plan:
             print("-- No mission uploaded")
-            return
+            return None
 
         plan = await self.download_mission(drone_instance)
         current_progress = await self.get_mission_progress(drone_instance)
+
         if current_progress is None:
-            print("-- Mission Completed")
-            return 0
+            return None
+
+        if current_progress < 0 or current_progress >= len(plan.mission_items):
+            return None
 
         return plan.mission_items[current_progress]
+
+
+    async def get_previous_waypoint(self, drone_instance):
+        if not self.mission_plan:
+            print("-- No mission uploaded")
+            return None
+
+        plan = await self.download_mission(drone_instance)
+        current_progress = await self.get_mission_progress(drone_instance)
+
+        if current_progress is None:
+            if len(plan.mission_items) > 0:
+                return plan.mission_items[-1]
+            return None
+
+        previous_index = current_progress - 1
+        if previous_index < 0:
+            return None
+
+        return plan.mission_items[previous_index]
     
     def get_keys(self):
         return list(self.waypoints[-1].keys())
