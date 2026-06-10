@@ -372,6 +372,8 @@ class TC_Drone_App(QMainWindow):
     
         if reply == QMessageBox.StandardButton.Yes:
             event.accept()
+            if self.new_window:
+                self.new_window.close()
         else:
             event.ignore()
  
