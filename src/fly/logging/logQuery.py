@@ -12,4 +12,4 @@ def entries_by_waypoint(log: FlightLog, wp_index: int) -> list[dict]:
     # all entries within the ISO 8601 timestamp range [ts_start, ts_end], inclusive
 
 def nearest_entry(log: FlightLog, pos: Point) -> dict | None:
-    # the entry whose capture position is closest to pos. None of log is empty
+    # the entry whose capture position is closest to pos. None if log is empty
