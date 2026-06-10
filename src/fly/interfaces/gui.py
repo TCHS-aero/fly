@@ -126,14 +126,15 @@ class TC_Drone_App(QMainWindow):
         data = pull_port_data()
         if data[0]:
             self.port_edit.lineEdit().setText(data[0])
-#--- Title
+        #--- Title
         printo = QLabel("TCHS Aero GUI v1")
-#--- Console
 
+        #--- Console
         self.console = QTextEdit(self)
         self.console.setStyleSheet("background-color: black; color: white;")
         self.console.setReadOnly(True)
-#--- Progress Bar
+
+        #--- Progress Bar
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setMaximum(0)
         self.progress_bar.active = False
@@ -143,7 +144,7 @@ class TC_Drone_App(QMainWindow):
         self.waypoint_info.setFixedSize(30,30)
         self.waypoint_info.clicked.connect(self.openNewWindow)
 
-#--- Progress Bar Title + file name
+        #--- Progress Bar Title + file name
         self.pbtitle = QLabel("No Mission Uploaded...")
         self.pbfilename = QLabel("No Mission Uploaded...")
 
@@ -151,8 +152,7 @@ class TC_Drone_App(QMainWindow):
         progress_layout.addWidget(self.waypoint_info)
         
 
-#---- general tab
-
+        #---- general tab
         self.button_connect = QPushButton("Connect")
         self.button_connect.clicked.connect(self.on_connect)
 
@@ -176,7 +176,7 @@ class TC_Drone_App(QMainWindow):
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
 
-#-- mission tab
+        #-- mission tab
         try:
             self.StartMission = QPushButton("Start the Mission")
             self.StartMission.clicked.connect(self.StartMissionFunc)
@@ -184,8 +184,6 @@ class TC_Drone_App(QMainWindow):
 
             self.UploadMission = QPushButton('Upload Mission')
             self.UploadMission.clicked.connect(self.UploadMissionFunc)
-
-    
 
             self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
             self.ResetMission.clicked.connect(self.ResetMissionFunc)
@@ -206,12 +204,7 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(e)
 
-
-
-
-
-#---movement tab
-
+        #---movement tab
         movement_widget = QWidget()
         movement_layout = QVBoxLayout()
 
@@ -292,8 +285,7 @@ class TC_Drone_App(QMainWindow):
         central.setLayout(main_layout)
         self.setCentralWidget(central)
 
-#---battery percentage counter
-
+        #---battery percentage counter
         self.battery_menu = QMenu()
         self.battery_menu.setToolTipsVisible(True)
 
@@ -315,10 +307,10 @@ class TC_Drone_App(QMainWindow):
 
         self.statusBar().addPermanentWidget(self.battery_button)
 
-#--- opens new window to waypoint info
+    #--- opens new window to waypoint info
     def openNewWindow(self):
         if self.new_window is None:
-            self.new_window = self.Waypoint_Info_Window(self)
+            self.new_window = self.Waypoint_Info_Window(self.drone, self.mission, self.connected)
 
         self.new_window.show()
         self.new_window.raise_()
@@ -326,8 +318,6 @@ class TC_Drone_App(QMainWindow):
 
         task = asyncio.create_task(self.new_window.auto_refresh_waypoints())
         self._tasks.append(task)
-
-       
 
 
     class StreamToTextBox:
@@ -656,9 +646,13 @@ class TC_Drone_App(QMainWindow):
             print(f'-- Pausing Mission Error: {e}')
 
     class Waypoint_Info_Window(QWidget):
-        def __init__(self, parent_app):
+        def __init__(self, drone, mission, connected):
             super().__init__()
-            self.parent_app = parent_app
+
+            self.drone = drone
+            self.mission = mission
+            self.connected = connected
+
             self.setWindowTitle("Waypoint Info")
             self.resize(700, 500)
 
@@ -771,21 +765,17 @@ class TC_Drone_App(QMainWindow):
             
         @asyncSlot()
         async def on_refresh_waypoint(self):
-            connected = await self.drone.connect()
-            drone = self.drone
-            mission = self.mission
-
-            if not connected or drone is None:
+            if not self.connected or self.drone is None:
                 print("-- No drone connected.")
                 return
             
-            if mission is None:
+            if self.mission is None:
                 print("-- No mission uploaded.")
                 return
 
             try:
-                next_item = await mission.get_next_waypoint(drone)
-                previous_item = await mission.get_previous_waypoint(drone)
+                next_item = await self.mission.get_next_waypoint(self.drone)
+                previous_item = await self.mission.get_previous_waypoint(self.drone)
 
                 self.set_next_waypoint_info(next_item)
                 self.set_previous_waypoint_info(previous_item)
@@ -797,7 +787,7 @@ class TC_Drone_App(QMainWindow):
 
         async def auto_refresh_waypoints(self):
             try:
-                while self.drone.connect() and self.drone and self.mission:
+                while self.connected and self.drone and self.mission:
                     await self.on_refresh_waypoint()
                     await asyncio.sleep(2)
             except Exception as e:
