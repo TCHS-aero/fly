@@ -8,7 +8,6 @@ from fly.core.dataManager import (
     update_port_data,
     pull_port_data,
 )
-from fly.core.mission import Mission
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -101,6 +100,7 @@ class TC_Drone_App(QMainWindow):
         self.setWindowTitle("Drone Controls")
         self.drone = None
         self.mission = None
+        self.w = None
         self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
         central = QWidget()
         main_layout = QVBoxLayout()
@@ -157,23 +157,29 @@ class TC_Drone_App(QMainWindow):
             self.StartMission.clicked.connect(self.StartMissionFunc)
             self.StartMission.setEnabled(False)
 
+
             self.UploadMission = QPushButton('Upload Mission')
             self.UploadMission.clicked.connect(self.UploadMissionFunc)
 
-    
 
             self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
             self.ResetMission.clicked.connect(self.ResetMissionFunc)
 
+            self.MissionInfo = QPushButton("Show Mission INfo") #shows you the information within the mission
+            self.MissionInfo.clicked.connect(self.showMissionInfo)
+
             self.ClearMission = QPushButton("Clear the Mission") #deletes the uploaded mission so it starts with a clean slate
             self.ClearMission.clicked.connect(self.ClearMissionFunc)
+
 
             self.PauseMission = QPushButton('Pause Ongoing Mission')
             self.PauseMission.clicked.connect(self.PauseMissionFunc)
 
+
             mission_layout.addWidget(self.UploadMission)
             mission_layout.addWidget(self.StartMission)
             mission_layout.addWidget(self.ResetMission)
+            mission_layout.addWidget(self.MissionInfo)
             mission_layout.addWidget(self.ClearMission)
             mission_layout.addWidget(self.PauseMission)
             mission_widget.setLayout(mission_layout)
@@ -280,62 +286,7 @@ class TC_Drone_App(QMainWindow):
 
         self.statusBar().addPermanentWidget(self.battery_button)
 
-        # Info Widget
-        waypoint_widget = QWidget()
-        waypoint_layout = QVBoxLayout()
-        waypoint_grid = QGridLayout()
 
-        self.waypoint_title = QLabel("Waypoint Info")
-
-        self.wp_latitude = QLineEdit()
-        self.wp_longitude = QLineEdit()
-        self.wp_relative_altitude = QLineEdit()
-        self.wp_speed = QLineEdit()
-        self.wp_is_fly_through = QLineEdit()
-        self.wp_gimbal_pitch = QLineEdit()
-        self.wp_gimbal_yaw = QLineEdit()
-        self.wp_camera_action = QLineEdit()
-        self.wp_loiter_time = QLineEdit()
-        self.wp_camera_photo_interval = QLineEdit()
-        self.wp_acceptance_radius = QLineEdit()
-        self.wp_yaw = QLineEdit()
-        self.wp_camera_photo_distance = QLineEdit()
-        self.wp_vehicle_action = QLineEdit()
-
-        self.waypoint_fields = [
-            ("Latitude (deg)", self.wp_latitude),
-            ("Longitude (deg)", self.wp_longitude),
-            ("Relative Altitude (m)", self.wp_relative_altitude),
-            ("Speed (m/s)", self.wp_speed),
-            ("Is Fly Through", self.wp_is_fly_through),
-            ("Gimbal Pitch (deg)", self.wp_gimbal_pitch),
-            ("Gimbal Yaw (deg)", self.wp_gimbal_yaw),
-            ("Camera Action", self.wp_camera_action),
-            ("Loiter Time (s)", self.wp_loiter_time),
-            ("Camera Photo Interval (s)", self.wp_camera_photo_interval),
-            ("Acceptance Radius (m)", self.wp_acceptance_radius),
-            ("Yaw (deg)", self.wp_yaw),
-            ("Camera Photo Distance (m)", self.wp_camera_photo_distance),
-            ("Vehicle Action", self.wp_vehicle_action),
-        ]
-
-        for row, (label_text, field) in enumerate(self.waypoint_fields):
-
-            field.setReadOnly(True)
-            waypoint_grid.addWidget(QLabel(label_text), row, 0)
-            waypoint_grid.addWidget(field, row, 1)
-
-        self.button_refresh_waypoint = QPushButton("Refresh Waypoint Info")
-        self.button_refresh_waypoint.clicked.connect(self.on_refresh_waypoint)
-
-
-        waypoint_layout.addWidget(self.waypoint_title)
-        waypoint_layout.addLayout(waypoint_grid)
-        waypoint_layout.addWidget(self.button_refresh_waypoint)
-
-
-        waypoint_widget.setLayout(waypoint_layout)
-        self.tabs.addTab(waypoint_widget, "Waypoint Info")
 
 
     class StreamToTextBox:
@@ -348,6 +299,7 @@ class TC_Drone_App(QMainWindow):
         
         def flush(self):
             pass
+
     
     async def update_battery(self):
         async for telemetry in self.drone.drone.telemetry.battery():
@@ -421,46 +373,6 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             sys.stdout = sys.__stdout__
             print(f"Error: {e}")
-
-
-    @asyncSlot()
-    async def on_refresh_waypoint(self):
-
-        if not self.connected or self.drone is None:
-            print("-- No drone connected.")
-            return
-
-        try:
-            current_item = await Mission.get_current_waypoint(self.mission, self.drone)
-            if current_item == 0:
-                print("-- Mission completed.")
-                return
-
-            if current_item is None:
-                print("-- No waypoint found.")
-                return
-
-            self.set_waypoint_info(current_item)
-            print("-- Waypoint info updated.")
-
-        except Exception as e:
-            print(f"-- Waypoint Info Error: {e}")
-
-    def set_waypoint_info(self, current_item):
-        self.wp_latitude.setText(str(current_item.latitude_deg))
-        self.wp_longitude.setText(str(current_item.longitude_deg))
-        self.wp_relative_altitude.setText(str(current_item.relative_altitude_m))
-        self.wp_speed.setText(str(current_item.speed_m_s))
-        self.wp_is_fly_through.setText(str(current_item.is_fly_through))
-        self.wp_gimbal_pitch.setText(str(current_item.gimbal_pitch_deg))
-        self.wp_gimbal_yaw.setText(str(current_item.gimbal_yaw_deg))
-        self.wp_camera_action.setText(current_item.camera_action.name)
-        self.wp_loiter_time.setText(str(current_item.loiter_time_s))
-        self.wp_camera_photo_interval.setText(str(current_item.camera_photo_interval_s))
-        self.wp_acceptance_radius.setText(str(current_item.acceptance_radius_m))
-        self.wp_yaw.setText(str(current_item.yaw_deg))
-        self.wp_camera_photo_distance.setText(str(current_item.camera_photo_distance_m))
-        self.wp_vehicle_action.setText(current_item.vehicle_action.name)
 
 
     @asyncSlot()
@@ -635,6 +547,124 @@ class TC_Drone_App(QMainWindow):
 
         task = asyncio.ensure_future(self.do_upload(file_path))
         self._tasks.append(task)
+
+
+        class MissionInfoWindow(QWidget):
+        def __init__(self):
+            super().__init__()    
+
+            # Info Widget
+            waypoint_layout = QVBoxLayout()
+            waypoint_grid = QGridLayout()
+
+            self.waypoint_title = QLabel("Waypoint Info")
+
+            self.wp_latitude = QLineEdit()
+            self.wp_longitude = QLineEdit()
+            self.wp_relative_altitude = QLineEdit()
+            self.wp_speed = QLineEdit()
+            self.wp_is_fly_through = QLineEdit()
+            self.wp_gimbal_pitch = QLineEdit()
+            self.wp_gimbal_yaw = QLineEdit()
+            self.wp_camera_action = QLineEdit()
+            self.wp_loiter_time = QLineEdit()
+            self.wp_camera_photo_interval = QLineEdit()
+            self.wp_acceptance_radius = QLineEdit()
+            self.wp_yaw = QLineEdit()
+            self.wp_camera_photo_distance = QLineEdit()
+            self.wp_vehicle_action = QLineEdit()
+
+            self.waypoint_fields = [
+                ("Latitude (deg)", self.wp_latitude),
+                ("Longitude (deg)", self.wp_longitude),
+                ("Relative Altitude (m)", self.wp_relative_altitude),
+                ("Speed (m/s)", self.wp_speed),
+                ("Is Fly Through", self.wp_is_fly_through),
+                ("Gimbal Pitch (deg)", self.wp_gimbal_pitch),
+                ("Gimbal Yaw (deg)", self.wp_gimbal_yaw),
+                ("Camera Action", self.wp_camera_action),
+                ("Loiter Time (s)", self.wp_loiter_time),
+                ("Camera Photo Interval (s)", self.wp_camera_photo_interval),
+                ("Acceptance Radius (m)", self.wp_acceptance_radius),
+                ("Yaw (deg)", self.wp_yaw),
+                ("Camera Photo Distance (m)", self.wp_camera_photo_distance),
+                ("Vehicle Action", self.wp_vehicle_action),
+            ]
+
+            for row, (label_text, field) in enumerate(self.waypoint_fields):
+
+                field.setReadOnly(True)
+                waypoint_grid.addWidget(QLabel(label_text), row, 0)
+                waypoint_grid.addWidget(field, row, 1)
+
+            self.button_refresh_waypoint = QPushButton("Refresh Waypoint Info")
+            self.button_refresh_waypoint.clicked.connect(self.on_refresh_waypoint)
+
+
+            waypoint_layout.addWidget(self.waypoint_title)
+            waypoint_layout.addLayout(waypoint_grid)
+            waypoint_layout.addWidget(self.button_refresh_waypoint)
+
+
+            self.setLayout(waypoint_layout)
+        
+        @asyncSlot()
+        async def on_refresh_waypoint(self):
+
+            if not self.connected or self.drone is None:
+                print("-- No drone connected.")
+                return
+
+            try:
+                current_item = await Mission.get_current_waypoint(self.mission, self.drone)
+                if current_item == 0:
+                    print("-- Mission completed.")
+                    return
+
+                if current_item is None:
+                    print("-- No waypoint found.")
+                    return
+
+                self.set_waypoint_info(current_item)
+                print("-- Waypoint info updated.")
+
+            except Exception as e:
+                print(f"-- Waypoint Info Error: {e}")
+
+
+        def set_waypoint_info(self, current_item):
+            self.wp_latitude.setText(str(current_item.latitude_deg))
+            self.wp_longitude.setText(str(current_item.longitude_deg))
+            self.wp_relative_altitude.setText(str(current_item.relative_altitude_m))
+            self.wp_speed.setText(str(current_item.speed_m_s))
+            self.wp_is_fly_through.setText(str(current_item.is_fly_through))
+            self.wp_gimbal_pitch.setText(str(current_item.gimbal_pitch_deg))
+            self.wp_gimbal_yaw.setText(str(current_item.gimbal_yaw_deg))
+            self.wp_camera_action.setText(current_item.camera_action.name)
+            self.wp_loiter_time.setText(str(current_item.loiter_time_s))
+            self.wp_camera_photo_interval.setText(str(current_item.camera_photo_interval_s))
+            self.wp_acceptance_radius.setText(str(current_item.acceptance_radius_m))
+            self.wp_yaw.setText(str(current_item.yaw_deg))
+            self.wp_camera_photo_distance.setText(str(current_item.camera_photo_distance_m))
+            self.wp_vehicle_action.setText(current_item.vehicle_action.name)
+
+
+        @asyncSlot()
+        async def show_waypoint_info(self):
+            try:
+                current_item = await Mission.get_current_waypoint(self.mission, self.drone)
+                while current_item != 0:
+                    asyncio.sleep(5)
+                    self.set_waypoint_info(current_item)
+
+            except Exception as e:
+                print(f"-- Waypoint Info Error: {e}")
+
+    
+    def showMissionInfo(self, checked):
+        if self.w is None:
+            self.w = self.MissionInfoWindow()
+        self.w.show()
 
     async def do_upload(self, file_path):
         try:
