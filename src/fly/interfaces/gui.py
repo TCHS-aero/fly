@@ -8,7 +8,8 @@ from fly.core.drone import Drone
 from fly.core.mission import Mission
 from fly.core.dataManager import (
     update_port_data,
-    pull_port_data,
+    pull_data,
+    update_mission_data,
 )
 
 from PyQt6.QtWidgets import (
@@ -77,16 +78,17 @@ class HistoryLineEdit(QComboBox):
         self.addItems(items)
 
     def load_history(self):
-        data = pull_port_data()
-        _, history = data 
+        data = pull_data()
+        history = data.get("port-history", None)
         self.update_items(history)
 
     def save_history(self):  
-        data = pull_port_data()
+        data = pull_data()
         if not data:
             return
 
-        port, history = data
+        port = data["port"]
+        history = data["port-history"]
         if self.currentText() in history:
             history.remove(self.currentText())
         history.insert(0, self.currentText())
@@ -120,8 +122,8 @@ class Waypoint_Info_Window(QWidget):
         self.next_grid = QGridLayout()
         self.current_grid = QGridLayout()
 
-        self.next_title = QLabel("Next Waypoint")
-        self.current_title = QLabel("Current Waypoint")
+        self.next_title = QLabel("Next Objective Waypoint")
+        self.current_title = QLabel("Last Completed Waypoint")
 
         self.nwp_latitude = QLineEdit()
         self.nwp_longitude = QLineEdit()
@@ -220,12 +222,9 @@ class Waypoint_Info_Window(QWidget):
 
     async def refresh_waypoint_information(self, current):
         try:
-            print("retrieving current info")
             current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current)
 
-            print("setting next")
             self.set_next_waypoint_info(next_item)
-            print("setting current")
             self.set_current_waypoint_info(current_item)
 
             print("-- Waypoint info updated.")
@@ -325,9 +324,9 @@ class TC_Drone_App(QMainWindow):
 
         self.port_edit = HistoryLineEdit()
 
-        data = pull_port_data()
-        if data[0]:
-            self.port_edit.lineEdit().setText(data[0])
+        data = pull_data()
+        if data["port"]:
+            self.port_edit.lineEdit().setText(data["port"])
 
         #--- Title
         printo = QLabel("TCHS Aero GUI v1")
@@ -573,7 +572,6 @@ class TC_Drone_App(QMainWindow):
             if await self.mission.drone_have_mission(self.drone):
                 self.pbtitle.setText("Mission Progress:")
                 self.progress_bar.setEnabled(True)
-                
             else:
                 self.pbtitle.setText("No Uploaded Mission")
                 self.progress_bar.setMaximum(0)
@@ -642,6 +640,22 @@ class TC_Drone_App(QMainWindow):
                 self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
                 print(f"\nCurrent Position\n    - Latitude: {lat:.5f}\n    - Longitude: {lon:.5f}\n    - Altitude: {alt:.1f} (meters)\n")
+
+                data = pull_data()
+                if data:
+                    print('data')
+                    current = data.get("current-mission-progress", None)
+                    total = data.get("total-mission-progress", None)
+        
+                    if current == total:
+                        self.progress_bar.setMaximum(0)
+                        self.progress_bar.setValue(0)
+                        self.progress_bar.setFormat("Mission Complete!")
+                    else:
+                        self.progress_bar.setMaximum(total)
+                        self.progress_bar.setValue(current)
+                        self.progress_bar.setFormat(f"Waypoint {current} / {total}")
+ 
                 await self.run_checks_on_connect()
             else:
                 sys.stdout = sys.__stdout__
@@ -784,15 +798,13 @@ class TC_Drone_App(QMainWindow):
                 await self.new_window.refresh_waypoint_information(current)
 
             self.progress_bar.setMaximum(total)
-            self.progress_bar.setValue(current+1)
-            self.progress_bar.setFormat(f"Waypoint {current+1} / {total}")
-            if current == total-1:
+            self.progress_bar.setValue(current)
+            self.progress_bar.setFormat(f"Waypoint {current} / {total}")
+            update_mission_data(current, total)
+            if current == total:
                 self.progress_bar.setMaximum(0)
                 self.progress_bar.setValue(0)
                 self.progress_bar.setFormat("Mission Complete!")
-                await asyncio.sleep(5)
-                self.progress_bar.setFormat("")
-                break
 
             await asyncio.sleep(2)
         
