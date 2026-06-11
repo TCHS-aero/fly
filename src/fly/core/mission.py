@@ -9,6 +9,7 @@ class Mission:
         self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
+        self.downloaded_plan = None
 
         if self.file:
             self.parse_file(self.file)
@@ -47,38 +48,37 @@ class Mission:
     def get_raw_waypoints(self):
         return self.waypoints
 
-    async def get_next_waypoint(self, drone_instance):
-        if not self.mission_plan:
-            print("-- No mission uploaded")
-            return None
+    async def get_current_next_waypoint_info(self, drone_instance):
+        if not self.downloaded_plan:
+            self.downloaded_plan = await self.download_mission(drone_instance)
 
-        plan = await self.download_mission(drone_instance)
         current_progress = await self.get_mission_progress(drone_instance)
 
         if current_progress is None:
             return None
 
-        if current_progress < 0 or current_progress >= len(plan.mission_items):
+        if current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
             return None
 
-        return plan.mission_items[current_progress]
+        return (self.downloaded_plan.mission_items[current_progress], self.downloaded_plan.mission_items[current_progress + 1])
 
     async def get_current_waypoint(self, drone_instance):
-        if not self.mission_plan:
-            print("-- No mission uploaded")
+        if not self.downloaded_plan:
+            plan = await self.download_mission(drone_instance)
             return None
 
-        plan = await self.download_mission(drone_instance)
         current_progress = await self.get_mission_progress(drone_instance)
 
         if current_progress is None:
             return None
 
-        return plan.mission_items[current_progress]
+        return self.downloaded_plan.mission_items[current_progress]
    
     async def drone_have_mission(self, drone_instance):
-        plan = await self.download_mission(drone_instance)
-        if len(list(plan.mission_items)) > 1:
+        if not self.downloaded_plan:
+            self.downloaded_plan = await self.download_mission(drone_instance)
+
+        if len(list(self.downloaded_plan.mission_items)) > 1:
             return True
         return False
 
@@ -114,6 +114,7 @@ class Mission:
         await self.set_current_mission_target(drone_instance, 0)
 
     async def upload_mission(self, drone_instance):
+        await self.clear_mission(drone_instance)
         self.convert_mission_items_to_plan()
         await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan)) 
 
@@ -132,6 +133,7 @@ class Mission:
         await drone_instance.drone.mission.set_current_mission_item(index)
 
     async def clear_mission(self, drone_instance):
+        self.downloaded_plan = None
         await drone_instance.drone.mission.clear_mission()
 
     async def is_mission_finished(self, drone_instance):
