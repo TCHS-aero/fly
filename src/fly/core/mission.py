@@ -54,13 +54,16 @@ class Mission:
     async def get_current_next_waypoint_info(self, drone_instance, current_progress):
         self.downloaded_plan = await self.download_mission(drone_instance)
 
-        if current_progress is None:
+        if current_progress is None or current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
             return None, None
 
-        if current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
-            return None, None
+        if current_progress == 0:
+            return (None, self.downloaded_plan.mission_items[current_progress])
 
-        return (self.downloaded_plan.mission_items[current_progress - 1], self.downloaded_plan.mission_items[current_progress])
+        try:
+            return (self.downloaded_plan.mission_items[current_progress - 1], self.downloaded_plan.mission_items[current_progress])
+        except Exception:
+            return (self.downloaded_plan.mission_items[current_progress], None)
 
     async def drone_have_mission(self, drone_instance):
         self.downloaded_plan = await self.download_mission(drone_instance)
