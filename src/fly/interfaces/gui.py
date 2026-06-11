@@ -643,7 +643,6 @@ class TC_Drone_App(QMainWindow):
 
                 data = pull_data()
                 if data:
-                    print('data')
                     current = data.get("current-mission-progress", None)
                     total = data.get("total-mission-progress", None)
         
