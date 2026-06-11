@@ -106,7 +106,10 @@ class Waypoint_Info_Window(QWidget):
         self.connected = connected
 
         self.setWindowTitle("Waypoint Info")
-        self.resize(700, 500)
+        self.resize(800, 500)
+
+        self.setMinimumHeight(500)
+        self.setMaximumHeight(500)
 
         main_layout = QVBoxLayout()
         self.box_layout = QHBoxLayout()
@@ -203,9 +206,18 @@ class Waypoint_Info_Window(QWidget):
         self.box_layout.addLayout(self.current_layout)
         self.box_layout.addLayout(self.next_layout)
 
-        main_layout.addLayout(self.box_layout)
-        self.setLayout(main_layout)
-        
+
+        self.setLayout(self.box_layout)
+        main_widget = QWidget()
+        main_widget.setLayout(self.box_layout)
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(main_widget, "Info")
+
+        window_layout = QVBoxLayout()
+        window_layout.addWidget(self.tabs)
+        self.setLayout(window_layout)       
+
     async def refresh_waypoint_information(self, current):
         try:
             print("retrieving current info")
@@ -294,6 +306,7 @@ class TC_Drone_App(QMainWindow):
         self.drone = None
         self.mission = Mission()
         self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
+        self.setMinimumWidth(400)
         central = QWidget()
         main_layout = QVBoxLayout()
         self._tasks = []
