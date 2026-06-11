@@ -343,7 +343,6 @@ class TC_Drone_App(QMainWindow):
         #--- Progress Bar
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setMaximum(0)
-        self.progress_bar.active = False
         self.progress_bar.setValue(0)
 
         self.waypoint_info = QPushButton("+")
@@ -352,11 +351,10 @@ class TC_Drone_App(QMainWindow):
 
         #--- Progress Bar Title + file name
         self.pbtitle = QLabel(self)
-        self.pbtitle.setText("Mission Progress:")
+        self.pbtitle.setText("")
 
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.waypoint_info)
-        
 
         #---- general tab
         self.button_connect = QPushButton("Connect")
@@ -569,7 +567,20 @@ class TC_Drone_App(QMainWindow):
                 self.PauseMission.setEnabled(False)
                 self.ResetMission.setEnabled(True)
             await asyncio.sleep(2)
-    
+   
+    async def mission_uploaded_text(self):
+        while True:
+            if await self.mission.drone_have_mission(self.drone):
+                self.pbtitle.setText("Mission Progress:")
+                self.progress_bar.setEnabled(True)
+            else:
+                self.pbtitle.setText("No Uploaded Mission")
+                self.progress_bar.setMaximum(0)
+                self.progress_bar.setValue(0)
+                self.progress_bar.setFormat("")
+                self.progress_bar.setEnabled(False)
+            await asyncio.sleep(2)
+
     async def run_checks_on_connect(self):
         def log_task_result(task):
             try:
@@ -583,13 +594,15 @@ class TC_Drone_App(QMainWindow):
         takeoff_toggle = asyncio.create_task(self.takeoff_land_toggle())
         mission_buttons = asyncio.create_task(self.mission_button_toggles())
         mission_progress = asyncio.create_task(self.track_mission_progress())
+        mission_uploaded_text = asyncio.create_task(self.mission_uploaded_text())
 
         battery.add_done_callback(log_task_result)
         takeoff_toggle.add_done_callback(log_task_result)
         mission_buttons.add_done_callback(log_task_result)
         mission_progress.add_done_callback(log_task_result)
+        mission_uploaded_text.add_done_callback(log_task_result)
 
-        self._tasks.extend([battery, takeoff_toggle, mission_buttons, mission_progress])
+        self._tasks.extend([battery, takeoff_toggle, mission_buttons, mission_progress, mission_uploaded_text])
 
     def closeEvent(self, event):
         if self.connected:
@@ -853,7 +866,7 @@ class TC_Drone_App(QMainWindow):
     async def ClearMissionFunc(self):
         try:
             print('-- Clearing old mission from drone...')
-            await self.drone.drone.mission.clear_mission()
+            await self.mission.clear_mission(self.drone)
             print("-- Clearing Mission Success!")
         except Exception as e:
             print(f"Clearing Mission Error: {e}")

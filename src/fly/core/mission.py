@@ -63,7 +63,6 @@ class Mission:
 
         return plan.mission_items[current_progress]
 
-
     async def get_current_waypoint(self, drone_instance):
         if not self.mission_plan:
             print("-- No mission uploaded")
@@ -76,7 +75,13 @@ class Mission:
             return None
 
         return plan.mission_items[current_progress]
-    
+   
+    async def drone_have_mission(self, drone_instance):
+        plan = await self.download_mission(drone_instance)
+        if len(list(plan.mission_items)) > 1:
+            return True
+        return False
+
     def get_keys(self):
         return list(self.waypoints[-1].keys())
 
