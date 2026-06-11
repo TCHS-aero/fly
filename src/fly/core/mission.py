@@ -9,6 +9,8 @@ class Mission:
         self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
+        self.current_progress = 0
+        self.RTL = False
         self.downloaded_plan = None
 
         if self.file:
@@ -19,12 +21,10 @@ class Mission:
 
         with open(file, "r") as read_file:
             self.data = json.load(read_file)
+            self.RTL = self.data.pop(0)
+            self.waypoints = self.data
             self.total_waypoints = len(self.waypoints)
 
-            self.RTL_dic = self.data[0]
-            self.RTL = self.RTL_dic["RTL"]
-
-            self.waypoints = self.data[1:]
 
             for waypoint in self.waypoints:
                 
@@ -48,11 +48,9 @@ class Mission:
     def get_raw_waypoints(self):
         return self.waypoints
 
-    async def get_current_next_waypoint_info(self, drone_instance):
+    async def get_current_next_waypoint_info(self, drone_instance, current_progress):
         if not self.downloaded_plan:
             self.downloaded_plan = await self.download_mission(drone_instance)
-
-        current_progress = await self.get_mission_progress(drone_instance)
 
         if current_progress is None:
             return None
@@ -60,20 +58,11 @@ class Mission:
         if current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
             return None
 
-        return (self.downloaded_plan.mission_items[current_progress], self.downloaded_plan.mission_items[current_progress + 1])
+        try:
+            return (self.downloaded_plan.mission_items[current_progress], self.downloaded_plan.mission_items[current_progress + 1])
+        except Exception:
+            return (self.downloaded_plan.mission_items[current_progress], None)
 
-    async def get_current_waypoint(self, drone_instance):
-        if not self.downloaded_plan:
-            plan = await self.download_mission(drone_instance)
-            return None
-
-        current_progress = await self.get_mission_progress(drone_instance)
-
-        if current_progress is None:
-            return None
-
-        return self.downloaded_plan.mission_items[current_progress]
-   
     async def drone_have_mission(self, drone_instance):
         if not self.downloaded_plan:
             self.downloaded_plan = await self.download_mission(drone_instance)
@@ -124,10 +113,9 @@ class Mission:
     async def get_mission_progress(self, drone_instance):
         async for progress in drone_instance.drone.mission.mission_progress():
             if progress.current == progress.total:
-                print('-- Mission Complete!')
                 return None
-                break
-            return progress.current
+            self.current_progress = progress.current
+            return progress.current, progress.total
 
     async def set_current_mission_target(self, drone_instance, index):
         await drone_instance.drone.mission.set_current_mission_item(index)
