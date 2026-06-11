@@ -351,8 +351,8 @@ class TC_Drone_App(QMainWindow):
         self.waypoint_info.clicked.connect(self.openNewWindow)
 
         #--- Progress Bar Title + file name
-        self.pbtitle = QLabel("No Mission Uploaded...")
-        self.pbfilename = QLabel("No Mission Uploaded...")
+        self.pbtitle = QLabel(self)
+        self.pbtitle.setText("Mission Progress:")
 
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.waypoint_info)
@@ -481,7 +481,6 @@ class TC_Drone_App(QMainWindow):
         main_layout.addWidget(self.console)
         main_layout.addWidget(self.pbtitle)
         main_layout.addLayout(progress_layout)
-        main_layout.addWidget(self.pbfilename)
         main_layout.addWidget(self.tabs)
         central.setLayout(main_layout)
         self.setCentralWidget(central)
@@ -583,12 +582,14 @@ class TC_Drone_App(QMainWindow):
         battery = asyncio.create_task(self.update_battery())
         takeoff_toggle = asyncio.create_task(self.takeoff_land_toggle())
         mission_buttons = asyncio.create_task(self.mission_button_toggles())
+        mission_progress = asyncio.create_task(self.track_mission_progress())
 
         battery.add_done_callback(log_task_result)
         takeoff_toggle.add_done_callback(log_task_result)
         mission_buttons.add_done_callback(log_task_result)
+        mission_progress.add_done_callback(log_task_result)
 
-        self._tasks.extend([battery, takeoff_toggle, mission_buttons])
+        self._tasks.extend([battery, takeoff_toggle, mission_buttons, mission_progress])
 
     def closeEvent(self, event):
         if self.connected:
@@ -761,9 +762,7 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(f"-- Return to Launch Error: {e}")
 
-    @asyncSlot()
     async def track_mission_progress(self):
-
         async for progress in self.drone.drone.mission.mission_progress():
             current = progress.current
             total = progress.total
@@ -795,10 +794,9 @@ class TC_Drone_App(QMainWindow):
                 print('-- Mission Started...')
                 self.progress_bar.setEnabled(True)
 
-                await self.track_mission_progress()
-
                 while not await self.mission.is_mission_finished(self.drone):
                         await asyncio.sleep(1)
+
                 print("-- Mission Finished!")
                 if self.mission.RTL == True:
                     await self.return_to_launch(self.drone)
@@ -837,8 +835,6 @@ class TC_Drone_App(QMainWindow):
             print("-- Uploading Mission...")
             self.mission.parse_file(file_path)
             await self.mission.upload_mission(self.drone)
-            self.pbtitle.setText("Mission Progress:")
-            self.pbfilename.setText(f"{path.basename(self.mission.file)}")
             print("-- Mission Uploaded Successfully")
         except Exception as e:
             print(f'-- Uploading Mission Error: {e}')
@@ -858,8 +854,6 @@ class TC_Drone_App(QMainWindow):
         try:
             print('-- Clearing old mission from drone...')
             await self.drone.drone.mission.clear_mission()
-            self.pbtitle.setText("No Mission Uploaded...")
-            self.pbfilename.setText("No Mission Uploaded...")
             print("-- Clearing Mission Success!")
         except Exception as e:
             print(f"Clearing Mission Error: {e}")

@@ -130,7 +130,7 @@ class Mission:
         await drone_instance.drone.mission.clear_mission()
 
     async def is_mission_finished(self, drone_instance):
-        return drone_instance.drone.mission.is_mission_finished()
+        return await drone_instance.drone.mission.is_mission_finished()
     
     async def get_return_to_launch_after_mission(self, drone_instance):
         return drone_instance.drone.mission.get_return_to_launch_after_mission()
