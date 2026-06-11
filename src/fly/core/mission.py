@@ -1,20 +1,22 @@
 import json
 import asyncio
 from mavsdk.mission import MissionItem, MissionPlan
+from mavsdk.telemetry import FlightMode
 
 class Mission:
-    def __init__(self, file):
+    def __init__(self, *, file = None):
         self.file = file
         self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
 
-        self.parse_file()
+        if self.file:
+            self.parse_file(self.file)
 
-    def parse_file(self):
-        print(f"-- Parsing {self.file}")
+    def parse_file(self, file):
+        print(f"-- Parsing {file}")
 
-        with open(self.file, "r") as read_file:
+        with open(file, "r") as read_file:
             self.data = json.load(read_file)
             self.total_waypoints = len(self.waypoints)
 
@@ -62,7 +64,7 @@ class Mission:
         return plan.mission_items[current_progress]
 
 
-    async def get_previous_waypoint(self, drone_instance):
+    async def get_current_waypoint(self, drone_instance):
         if not self.mission_plan:
             print("-- No mission uploaded")
             return None
@@ -71,15 +73,9 @@ class Mission:
         current_progress = await self.get_mission_progress(drone_instance)
 
         if current_progress is None:
-            if len(plan.mission_items) > 0:
-                return plan.mission_items[-1]
             return None
 
-        previous_index = current_progress - 1
-        if previous_index < 0:
-            return None
-
-        return plan.mission_items[previous_index]
+        return plan.mission_items[current_progress]
     
     def get_keys(self):
         return list(self.waypoints[-1].keys())
@@ -158,3 +154,11 @@ class Mission:
         self.convert_mission_items_to_plan()
         await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
         await drone_instance.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
+
+    async def is_drone_on_mission(self, drone_instance):
+        async for current_mode in drone_instance.drone.telemetry.flight_mode():
+            if current_mode == FlightMode.MISSION:
+                return True
+            return False   
+    
+
