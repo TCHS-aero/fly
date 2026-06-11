@@ -1,0 +1,35 @@
+[
+    true,
+    {
+        "latitude_deg": 47.399075,
+        "longitude_deg": 8.545180,
+        "relative_altitude_m": 45.0,
+        "speed_m_s" : 5.0,
+        "is_fly_through" : false,
+        "gimbal_pitch_deg" : null,
+        "gimbal_yaw_deg" : null,
+        "camera_action" : 0,
+        "loiter_time_s" : 0.0,
+        "camera_photo_interval_s": 0.000,
+        "acceptance_radius_m" : 20.0,
+        "yaw_deg" : 0.0,
+        "camera_photo_distance_m" : 15.0,
+        "vehicle_action" : 0
+    },
+    {
+        "latitude_deg": 47.398814,
+        "longitude_deg": 8.546558,
+        "relative_altitude_m": 45,
+        "speed_m_s": 5.0,
+        "is_fly_through" : false,
+        "gimbal_pitch_deg" : null,
+        "gimbal_yaw_deg" : null,
+        "camera_action" : 0,
+        "loiter_time_s" : 0.0,
+        "camera_photo_interval_s": 0.000,
+        "acceptance_radius_m" : 20.0,
+        "yaw_deg" : 0.0,
+        "camera_photo_distance_m" : 15.0,
+        "vehicle_action" : 0
+    }
+]

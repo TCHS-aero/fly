@@ -1,5 +1,7 @@
 {
     "port": "",
     "port-history": [
-    ]
+    ],
+    "current-mission-progress": 0,
+    "total-mission-progress": 0,
 }
