@@ -1,7 +1,6 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
-
-# ...
+from fly.poi.poiManager import POIManager
 from fly.comms.protocol import ImagePayload
 
 # module level so ProcessPoolExecutor can pickle
@@ -24,7 +23,28 @@ class GCSPipeline:
         self. stats = {"processed": 0, "detections": 0, "errors": 0}
 
     async def start(self):
-        # runs until stop() is called. Launch asyncio.create_task(pipeline.start())
+        # runs until stop() is called.
+        self._running = True
+        loop = asyncio.get_running_loop()
+        while self._running:
+            payload, image_path = await self.queue.get()
+            try:
+                detections = await loop.run_in_executor(
+                    self._pool, _detect, str(image_path), self.model_path, self.confidence
+                )
+                self.stats["processed"] += 1
+                for det in detections:
+                    await self.pois.add_detection(
+                        payload.pos,
+                        det["confidence"],
+                        payload.filename,
+                    )
+                    self.stats["detections"] += 1
+            except Exception as e:
+                self.stats["errors"] += 1
+                print(f"Pipeline error on {payload.filename}: {e}")
+            finally:
+                self.queue.task_done()
 
     async def stop(self):
         self._running = False
