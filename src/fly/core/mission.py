@@ -55,7 +55,7 @@ class Mission:
         self.downloaded_plan = await self.download_mission(drone_instance)
 
         if current_progress is None or current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
-            return None, None
+            return (self.donwloaded_plan.mission_items[current_progress - 1]), None
 
         if current_progress == 0:
             return (None, self.downloaded_plan.mission_items[current_progress])
