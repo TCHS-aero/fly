@@ -795,12 +795,12 @@ class TC_Drone_App(QMainWindow):
             current, total = await self.mission.get_mission_progress(self.drone)
       
             if hasattr(self, "new_window") and self.new_window is not None:
-                await self.new_window.refresh_waypoint_information(current)
+                await self.new_window.refresh_waypoint_information(current+1)
 
             self.progress_bar.setMaximum(total)
-            self.progress_bar.setValue(current)
-            self.progress_bar.setFormat(f"Waypoint {current} / {total}")
-            update_mission_data(current, total)
+            self.progress_bar.setValue(current+1)
+            self.progress_bar.setFormat(f"Waypoint {current+1} / {total}")
+            update_mission_data(current+1, total)
             if current == total:
                 self.progress_bar.setMaximum(0)
                 self.progress_bar.setValue(0)
@@ -829,7 +829,7 @@ class TC_Drone_App(QMainWindow):
 
                 print("-- Mission Finished!")
                 if self.mission.RTL == True:
-                    await self.return_to_launch(self.drone)
+                    await self.return_to_launch()
                     print("-- Returning to launch...")
                 else:
                     print("-- Not Returning to launch...")
