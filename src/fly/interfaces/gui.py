@@ -114,7 +114,6 @@ class Waypoint_Info_Window(QWidget):
         self.setMinimumHeight(500)
         self.setMaximumHeight(500)
 
-        main_layout = QVBoxLayout()
         self.box_layout = QHBoxLayout()
 
         self.next_layout = QVBoxLayout()
@@ -516,7 +515,10 @@ class TC_Drone_App(QMainWindow):
         self.new_window.raise_()
         self.new_window.activateWindow()
 
-        await self.new_window.refresh_waypoint_information(self.mission.current_progress)
+        current_progress, progress_total = await self.mission.get_mission_progress(self.drone)
+
+        await self.new_window.refresh_waypoint_information(current_progress)
+        print(current_progress)
 
     class StreamToTextBox:
         def __init__(self, text_edit):
@@ -795,12 +797,12 @@ class TC_Drone_App(QMainWindow):
             current, total = await self.mission.get_mission_progress(self.drone)
       
             if hasattr(self, "new_window") and self.new_window is not None:
-                await self.new_window.refresh_waypoint_information(current+1)
+                await self.new_window.refresh_waypoint_information(current)
 
             self.progress_bar.setMaximum(total)
-            self.progress_bar.setValue(current+1)
-            self.progress_bar.setFormat(f"Waypoint {current+1} / {total}")
-            update_mission_data(current+1, total)
+            self.progress_bar.setValue(current)
+            self.progress_bar.setFormat(f"Waypoint {current} / {total}")
+            update_mission_data(current, total)
             if current == total:
                 self.progress_bar.setMaximum(0)
                 self.progress_bar.setValue(0)
