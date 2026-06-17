@@ -11,7 +11,6 @@ from fly.core.dataManager import (
     pull_data,
     update_mission_data,
 )
-#test 1234
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -515,10 +514,10 @@ class TC_Drone_App(QMainWindow):
         self.new_window.raise_()
         self.new_window.activateWindow()
 
-        current_progress, progress_total = await self.mission.get_mission_progress(self.drone)
+        current_progress = pull_data()["current-mission-progress"]
+        if current_progress:
+            await self.new_window.refresh_waypoint_information(current_progress)
 
-        await self.new_window.refresh_waypoint_information(current_progress)
-        print(current_progress)
 
     class StreamToTextBox:
         def __init__(self, text_edit):
@@ -650,8 +649,8 @@ class TC_Drone_App(QMainWindow):
                     total = data.get("total-mission-progress", None)
         
                     if current == total:
-                        self.progress_bar.setMaximum(0)
-                        self.progress_bar.setValue(0)
+                        self.progress_bar.setMaximum(1)
+                        self.progress_bar.setValue(1)
                         self.progress_bar.setFormat("Mission Complete!")
                     else:
                         self.progress_bar.setMaximum(total)
@@ -793,8 +792,9 @@ class TC_Drone_App(QMainWindow):
             print(f"-- Return to Launch Error: {e}")
 
     async def track_mission_progress(self):
-        while True:
+        while self.mission.is_drone_on_mission(self.drone):
             current, total = await self.mission.get_mission_progress(self.drone)
+            update_mission_data(current, total)
       
             if hasattr(self, "new_window") and self.new_window is not None:
                 await self.new_window.refresh_waypoint_information(current)
@@ -802,10 +802,9 @@ class TC_Drone_App(QMainWindow):
             self.progress_bar.setMaximum(total)
             self.progress_bar.setValue(current)
             self.progress_bar.setFormat(f"Waypoint {current} / {total}")
-            update_mission_data(current, total)
             if current == total:
-                self.progress_bar.setMaximum(0)
-                self.progress_bar.setValue(0)
+                self.progress_bar.setMaximum(1)
+                self.progress_bar.setValue(1)
                 self.progress_bar.setFormat("Mission Complete!")
 
             await asyncio.sleep(2)
@@ -836,7 +835,6 @@ class TC_Drone_App(QMainWindow):
                 else:
                     print("-- Not Returning to launch...")
                     return
-                    
             else:
                 print('-- Takeoff required to Start Mission!...')
                 return
@@ -885,6 +883,7 @@ class TC_Drone_App(QMainWindow):
         try:
             print('-- Clearing old mission from drone...')
             await self.mission.clear_mission(self.drone)
+            update_mission_data(current = None, total = None)
             print("-- Clearing Mission Success!")
         except Exception as e:
             print(f"Clearing Mission Error: {e}")

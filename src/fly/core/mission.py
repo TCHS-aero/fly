@@ -9,7 +9,6 @@ class Mission:
         self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
-        self.current_progress = 0
         self.RTL = False
         self.downloaded_plan = None
 
@@ -127,7 +126,6 @@ class Mission:
 
         self.downloaded_plan = None
         self.mission_plan = []
-        self.current_progress = 0
         self.total_waypoints = 0
 
     async def is_mission_finished(self, drone_instance):
