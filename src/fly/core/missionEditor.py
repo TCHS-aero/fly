@@ -121,7 +121,7 @@ class MissionEditor:
             idx = (await self.current_total_index())[0]
             await self._pause()
             wps = self.mission.waypoints
-            wps.insert(0, wp)
+            wps.insert(at, wp)
             clean = self.save_waypoints(wps)
             await self._upload_and_resume(clean, idx)
 
