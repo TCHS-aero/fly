@@ -1,4 +1,5 @@
 import asyncio
+from math import sqrt
 
 from mavsdk import System
 from mavsdk.offboard import PositionGlobalYaw, VelocityNedYaw
@@ -93,6 +94,26 @@ class Drone:
             east_m = ned_object.east_m
             down_m = ned_object.down_m
             return (north_m, east_m, down_m)
+
+    async def current_ground_speed(self) -> float:
+        async for telemetry in self.drone.telemetry.position_velocity_ned():
+            velocity = telemetry.velocity
+    
+            return sqrt(
+                velocity.north_m_s**2 +
+                velocity.east_m_s**2
+            )
+
+    async def wait_until_stopped(self, threshold):
+        async for velocity in self.drone.telemetry.velocity_ned():
+            speed = math.sqrt(
+                velocity.north_m_s**2 +
+                velocity.east_m_s**2 +
+                velocity.down_m_s**2
+            )
+
+            if speed < threshold:
+                return
 
     async def stop_movement(self):
         north, east, down = await self.current_ned()

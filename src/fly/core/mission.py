@@ -1,5 +1,6 @@
 import json
 import asyncio
+from pathlib import Path
 from mavsdk.mission import MissionItem, MissionPlan
 from mavsdk.telemetry import FlightMode
 
@@ -9,6 +10,7 @@ class Mission:
         self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
+        self.path = Path(self.file)
         self.RTL = False
         self.downloaded_plan = None
 
@@ -16,6 +18,8 @@ class Mission:
             self.parse_file(self.file)
 
     def parse_file(self, file):
+        self.file = file
+        self.path = Path(file)
         print(f"-- Parsing {file}")
 
         with open(file, "r") as read_file:
@@ -24,8 +28,8 @@ class Mission:
                 print("-- Your mission have have more than one waypoint!")
                 return
 
-            self.RTL = self.data.pop(0)
-            self.waypoints = self.data
+            self.RTL = self.data[0]
+            self.waypoints = self.data[1:]
 
 
             for waypoint in self.waypoints:
@@ -149,7 +153,7 @@ class Mission:
     async def pause_mission(self, drone_instance):
         await drone_instance.drone.mission.pause_mission()
 
-    async def upload_mission_with_progress(self, drone_instance, mission):
+    async def upload_mission_with_progress(self, drone_instance):
         self.convert_mission_items_to_plan()
         await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
         await drone_instance.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
