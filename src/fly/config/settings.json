@@ -1,8 +1,6 @@
 {
-    "port": "udpin://0.0.0.0:14540",
-    "port-history": [
-        "udpin://0.0.0.0:14540"
-    ],
-    "current-mission-progress": 2,
-    "total-mission-progress": 5
+    "port": "",
+    "port-history": [],
+    "current-mission-progress": 0,
+    "total-mission-progress": 0
 }

@@ -112,8 +112,8 @@ class MissionEditor:
             await self._pause()
             wps = self.mission.waypoints
             wps.append(wp)
-            self.save_waypoints(wps)
-            await self._upload_and_resume(wps,idx)
+            clean = self.save_waypoints(wps)
+            await self._upload_and_resume(clean, idx)
 
     @require_safe_edit_window
     async def insert_waypoint(self, at: int, wp: dict):
@@ -122,8 +122,8 @@ class MissionEditor:
             await self._pause()
             wps = self.mission.waypoints
             wps.insert(0, wp)
-            self.save_waypoints(wps)
-            await self._upload_and_resume(wps,idx)
+            clean = self.save_waypoints(wps)
+            await self._upload_and_resume(clean, idx)
 
     @require_safe_edit_window
     async def remove_waypoint(self, at: int):
@@ -132,8 +132,8 @@ class MissionEditor:
             await self._pause()
             wps = self.mission.waypoints
             wps.pop(at)
-            self.save_waypoints(wps)
-            await self._upload_and_resume(wps,idx)
+            clean = self.save_waypoints(wps)
+            await self._upload_and_resume(clean, idx)
 
     # private helpers
     async def _pause (self):
@@ -155,13 +155,15 @@ class MissionEditor:
 
     def save_waypoints(self, waypoints: list[dict]):
         # writes waypoints, stripping '_meta' keys MAVSDK would reject
+        with open(self.path, "w") as f:
+            json.dump(waypoints, f, indent = 2)
 
         clean = [
             waypoints[0], # retain the rtl flag
             *({k: v for k, v in wp.items() if k!="_meta"} for wp in waypoints[1:])
         ]
-        with open(self.path, "w") as f:
-            json.dump(clean, f, indent = 2)
+
+        return clean
 
         # _meta is for something like this:
             # "_meta": {"type": "poi_approach", "poi_id":1}
