@@ -110,7 +110,8 @@ class MissionEditor:
         async with self._lock:
             idx = (await self.current_total_index())[0]
             await self._pause()
-            self.mission.waypoints.append(wp)
+            wps = self.mission.waypoints
+            wps.append(wp)
             clean = self.save_waypoints(wps)
             await self._upload_and_resume(clean, idx)
 
@@ -119,7 +120,8 @@ class MissionEditor:
         async with self._lock:
             idx = (await self.current_total_index())[0]
             await self._pause()
-            self.mission.waypoints.insert(at, wp)
+            wps = self.mission.waypoints
+            wps.insert(0, wp)
             clean = self.save_waypoints(wps)
             await self._upload_and_resume(clean, idx)
 
@@ -128,7 +130,8 @@ class MissionEditor:
         async with self._lock:
             idx = (await self.current_total_index())[0]
             await self._pause()
-            self.mission.waypoints.pop(at)
+            wps = self.mission.waypoints
+            wps.pop(at)
             clean = self.save_waypoints(wps)
             await self._upload_and_resume(clean, idx)
 
