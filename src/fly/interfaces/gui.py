@@ -2,10 +2,14 @@ import sys
 import asyncio
 import re
 
+
+from os import path
 from fly.core.drone import Drone
+from fly.core.mission import Mission
 from fly.core.dataManager import (
     update_port_data,
-    pull_port_data,
+    pull_data,
+    update_mission_data,
 )
 
 from PyQt6.QtWidgets import (
@@ -15,15 +19,20 @@ from PyQt6.QtWidgets import (
     QLabel,
     QDoubleSpinBox,
     QVBoxLayout,
+    QHBoxLayout,
     QWidget,
     QTextEdit,
     QComboBox,
     QTabWidget,
     QGridLayout,
+    QFileDialog,
+    QProgressBar,
     QSizePolicy,
     QMessageBox,
     QMenu,
+    QCheckBox,
     QToolButton,
+    QLineEdit
 )
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
@@ -69,16 +78,17 @@ class HistoryLineEdit(QComboBox):
         self.addItems(items)
 
     def load_history(self):
-        data = pull_port_data()
-        _, history = data 
+        data = pull_data()
+        history = data.get("port-history", None)
         self.update_items(history)
 
-    def save_history(self):
-        data = pull_port_data()
+    def save_history(self):  
+        data = pull_data()
         if not data:
             return
 
-        port, history = data
+        port = data["port"]
+        history = data["port-history"]
         if self.currentText() in history:
             history.remove(self.currentText())
         history.insert(0, self.currentText())
@@ -89,33 +99,259 @@ class HistoryLineEdit(QComboBox):
     def text(self):
         return self.currentText()
 
+class Waypoint_Info_Window(QWidget):
+    def __init__(self, drone, mission, connected):
+        super().__init__()
+
+        self.drone = drone
+        self.mission = mission
+        self.connected = connected
+
+        self.setWindowTitle("Waypoint Info")
+        self.resize(800, 500)
+
+        self.setMinimumHeight(500)
+        self.setMaximumHeight(500)
+
+        self.box_layout = QHBoxLayout()
+
+        self.next_layout = QVBoxLayout()
+        self.current_layout = QVBoxLayout()
+
+        self.next_grid = QGridLayout()
+        self.current_grid = QGridLayout()
+
+        self.next_title = QLabel("Next Objective Waypoint")
+        self.current_title = QLabel("Last Completed Waypoint")
+
+        self.nwp_latitude = QLineEdit()
+        self.nwp_longitude = QLineEdit()
+        self.nwp_relative_altitude = QLineEdit()
+        self.nwp_speed = QLineEdit()
+        self.nwp_is_fly_through = QLineEdit()
+        self.nwp_gimbal_pitch = QLineEdit()
+        self.nwp_gimbal_yaw = QLineEdit()
+        self.nwp_camera_action = QLineEdit()
+        self.nwp_loiter_time = QLineEdit()
+        self.nwp_camera_photo_interval = QLineEdit()
+        self.nwp_acceptance_radius = QLineEdit()
+        self.nwp_yaw = QLineEdit()
+        self.nwp_camera_photo_distance = QLineEdit()
+        self.nwp_vehicle_action = QLineEdit()
+
+        self.cwp_latitude = QLineEdit()
+        self.cwp_longitude = QLineEdit()
+        self.cwp_relative_altitude = QLineEdit()
+        self.cwp_speed = QLineEdit()
+        self.cwp_is_fly_through = QLineEdit()
+        self.cwp_gimbal_pitch = QLineEdit()
+        self.cwp_gimbal_yaw = QLineEdit()
+        self.cwp_camera_action = QLineEdit()
+        self.cwp_loiter_time = QLineEdit()
+        self.cwp_camera_photo_interval = QLineEdit()
+        self.cwp_acceptance_radius = QLineEdit()
+        self.cwp_yaw = QLineEdit()
+        self.cwp_camera_photo_distance = QLineEdit()
+        self.cwp_vehicle_action = QLineEdit()
+
+        self.next_waypoint_fields = [
+            ("Latitude (deg)", self.nwp_latitude),
+            ("Longitude (deg)", self.nwp_longitude),
+            ("Relative Altitude (m)", self.nwp_relative_altitude),
+            ("Speed (m/s)", self.nwp_speed),
+            ("Is Fly Through", self.nwp_is_fly_through),
+            ("Gimbal Pitch (deg)", self.nwp_gimbal_pitch),
+            ("Gimbal Yaw (deg)", self.nwp_gimbal_yaw),
+            ("Camera Action", self.nwp_camera_action),
+            ("Loiter Time (s)", self.nwp_loiter_time),
+            ("Camera Photo Interval (s)", self.nwp_camera_photo_interval),
+            ("Acceptance Radius (m)", self.nwp_acceptance_radius),
+            ("Yaw (deg)", self.nwp_yaw),
+            ("Camera Photo Distance (m)", self.nwp_camera_photo_distance),
+            ("Vehicle Action", self.nwp_vehicle_action),
+        ]
+
+        self.current_waypoint_fields = [
+            ("Latitude (deg)", self.cwp_latitude),
+            ("Longitude (deg)", self.cwp_longitude),
+            ("Relative Altitude (m)", self.cwp_relative_altitude),
+            ("Speed (m/s)", self.cwp_speed),
+            ("Is Fly Through", self.cwp_is_fly_through),
+            ("Gimbal Pitch (deg)", self.cwp_gimbal_pitch),
+            ("Gimbal Yaw (deg)", self.cwp_gimbal_yaw),
+            ("Camera Action", self.cwp_camera_action),
+            ("Loiter Time (s)", self.cwp_loiter_time),
+            ("Camera Photo Interval (s)", self.cwp_camera_photo_interval),
+            ("Acceptance Radius (m)", self.cwp_acceptance_radius),
+            ("Yaw (deg)", self.cwp_yaw),
+            ("Camera Photo Distance (m)", self.cwp_camera_photo_distance),
+            ("Vehicle Action", self.cwp_vehicle_action),
+        ]
+
+        for row, (label_text, field) in enumerate(self.next_waypoint_fields):
+            field.setReadOnly(True)
+            self.next_grid.addWidget(QLabel(label_text), row, 0)
+            self.next_grid.addWidget(field, row, 1)
+
+        for row, (label_text, field) in enumerate(self.current_waypoint_fields):
+            field.setReadOnly(True)
+            self.current_grid.addWidget(QLabel(label_text), row, 0)
+            self.current_grid.addWidget(field, row, 1)
+
+        self.next_layout.addWidget(self.next_title)
+        self.next_layout.addLayout(self.next_grid)
+
+        self.current_layout.addWidget(self.current_title)
+        self.current_layout.addLayout(self.current_grid)
+
+        self.box_layout.addLayout(self.current_layout)
+        self.box_layout.addLayout(self.next_layout)
+
+
+        self.setLayout(self.box_layout)
+        main_widget = QWidget()
+        main_widget.setLayout(self.box_layout)
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(main_widget, "Info")
+
+        window_layout = QVBoxLayout()
+        window_layout.addWidget(self.tabs)
+        self.setLayout(window_layout)       
+
+    async def refresh_waypoint_information(self, current):
+        try:
+            current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current)
+
+            self.set_next_waypoint_info(next_item)
+            self.set_current_waypoint_info(current_item)
+
+            print("-- Waypoint info updated.")
+
+        except Exception as e:
+            print(f"-- Waypoint Info Error: {e}")
+
+    def set_next_waypoint_info(self, next_item):
+        if next_item is None:
+            next_item = "No Waypoint Available"
+            self.nwp_latitude.setText(next_item)
+            self.nwp_longitude.setText(next_item)
+            self.nwp_relative_altitude.setText(next_item)
+            self.nwp_speed.setText(next_item)
+            self.nwp_is_fly_through.setText(next_item)
+            self.nwp_gimbal_pitch.setText(next_item)
+            self.nwp_gimbal_yaw.setText(next_item)
+            self.nwp_camera_action.setText(next_item)
+            self.nwp_loiter_time.setText(next_item)
+            self.nwp_camera_photo_interval.setText(next_item)
+            self.nwp_acceptance_radius.setText(next_item)
+            self.nwp_yaw.setText(next_item)
+            self.nwp_camera_photo_distance.setText(next_item)
+            self.nwp_vehicle_action.setText(next_item)        
+        else:
+            self.nwp_latitude.setText(str(next_item.latitude_deg))  
+            self.nwp_longitude.setText(str(next_item.longitude_deg))
+            self.nwp_relative_altitude.setText(str(next_item.relative_altitude_m))
+            self.nwp_speed.setText(str(next_item.speed_m_s))
+            self.nwp_is_fly_through.setText(str(next_item.is_fly_through))
+            self.nwp_gimbal_pitch.setText(str(next_item.gimbal_pitch_deg))
+            self.nwp_gimbal_yaw.setText(str(next_item.gimbal_yaw_deg))
+            self.nwp_camera_action.setText(next_item.camera_action.name)
+            self.nwp_loiter_time.setText(str(next_item.loiter_time_s))
+            self.nwp_camera_photo_interval.setText(str(next_item.camera_photo_interval_s))
+            self.nwp_acceptance_radius.setText(str(next_item.acceptance_radius_m))
+            self.nwp_yaw.setText(str(next_item.yaw_deg))
+            self.nwp_camera_photo_distance.setText(str(next_item.camera_photo_distance_m))
+            self.nwp_vehicle_action.setText(next_item.vehicle_action.name)
+
+    def set_current_waypoint_info(self, current_item):
+        if current_item is None:
+            current_item = "No Waypoint Available"
+            self.cwp_latitude.setText(current_item)
+            self.cwp_longitude.setText(current_item)
+            self.cwp_relative_altitude.setText(current_item)
+            self.cwp_speed.setText(current_item)
+            self.cwp_is_fly_through.setText(current_item)
+            self.cwp_gimbal_pitch.setText(current_item)
+            self.cwp_gimbal_yaw.setText(current_item)
+            self.cwp_camera_action.setText(current_item)
+            self.cwp_loiter_time.setText(current_item)
+            self.cwp_camera_photo_interval.setText(current_item)
+            self.cwp_acceptance_radius.setText(current_item)
+            self.cwp_yaw.setText(current_item)
+            self.cwp_camera_photo_distance.setText(current_item)
+            self.cwp_vehicle_action.setText(current_item)        
+        else:
+            self.cwp_latitude.setText(str(current_item.latitude_deg))
+            self.cwp_longitude.setText(str(current_item.longitude_deg))
+            self.cwp_relative_altitude.setText(str(current_item.relative_altitude_m))
+            self.cwp_speed.setText(str(current_item.speed_m_s))
+            self.cwp_is_fly_through.setText(str(current_item.is_fly_through))
+            self.cwp_gimbal_pitch.setText(str(current_item.gimbal_pitch_deg))
+            self.cwp_gimbal_yaw.setText(str(current_item.gimbal_yaw_deg))
+            self.cwp_camera_action.setText(current_item.camera_action.name)
+            self.cwp_loiter_time.setText(str(current_item.loiter_time_s))
+            self.cwp_camera_photo_interval.setText(str(current_item.camera_photo_interval_s))
+            self.cwp_acceptance_radius.setText(str(current_item.acceptance_radius_m))
+            self.cwp_yaw.setText(str(current_item.yaw_deg))
+            self.cwp_camera_photo_distance.setText(str(current_item.camera_photo_distance_m))
+            self.cwp_vehicle_action.setText(str(current_item.vehicle_action.name))
 
 class TC_Drone_App(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Drone Controls")
         self.drone = None
+        self.mission = Mission()
         self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
+        self.setMinimumWidth(400)
         central = QWidget()
         main_layout = QVBoxLayout()
         self._tasks = []
         self.tabs = QTabWidget()
         self.connected = False
+        
+        self.new_window = None
 
         general_widget = QWidget()
         general_layout = QVBoxLayout()
-        
+
+        mission_widget = QWidget()
+        mission_layout = QVBoxLayout()
+
+        progress_layout = QHBoxLayout()
+
         self.port_edit = HistoryLineEdit()
 
-        data = pull_port_data()
-        if data[0]:
-            self.port_edit.lineEdit().setText(data[0])
+        data = pull_data()
+        if data["port"]:
+            self.port_edit.lineEdit().setText(data["port"])
 
+        #--- Title
         printo = QLabel("TCHS Aero GUI v1")
+
+        #--- Console
         self.console = QTextEdit(self)
         self.console.setStyleSheet("background-color: black; color: white;")
         self.console.setReadOnly(True)
 
+        #--- Progress Bar
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setMaximum(0)
+        self.progress_bar.setValue(0)
+
+        self.waypoint_info = QPushButton("+")
+        self.waypoint_info.setFixedSize(30,30)
+        self.waypoint_info.clicked.connect(self.openNewWindow)
+
+        #--- Progress Bar Title + file name
+        self.pbtitle = QLabel(self)
+        self.pbtitle.setText("")
+
+        progress_layout.addWidget(self.progress_bar)
+        progress_layout.addWidget(self.waypoint_info)
+
+        #---- general tab
         self.button_connect = QPushButton("Connect")
         self.button_connect.clicked.connect(self.on_connect)
 
@@ -139,6 +375,30 @@ class TC_Drone_App(QMainWindow):
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
 
+        self.StartMission = QPushButton("Start the Mission")
+        self.StartMission.clicked.connect(self.StartMissionFunc)
+
+        self.UploadMission = QPushButton('Upload Mission')
+        self.UploadMission.clicked.connect(self.UploadMissionFunc)
+
+        self.ResetMission = QPushButton("Reset the Mission") #makes drone go to 1st waypoint
+        self.ResetMission.clicked.connect(self.ResetMissionFunc)
+
+        self.ClearMission = QPushButton("Clear the Mission") #deletes the uploaded mission so it starts with a clean slate
+        self.ClearMission.clicked.connect(self.ClearMissionFunc)
+
+        self.PauseMission = QPushButton('Pause Ongoing Mission')
+        self.PauseMission.clicked.connect(self.PauseMissionFunc)
+
+        mission_layout.addWidget(self.UploadMission)
+        mission_layout.addWidget(self.StartMission)
+        mission_layout.addWidget(self.ResetMission)
+        mission_layout.addWidget(self.ClearMission)
+        mission_layout.addWidget(self.PauseMission)
+        mission_widget.setLayout(mission_layout)
+        self.tabs.addTab(mission_widget, "Mission")
+
+        #---movement tab
         movement_widget = QWidget()
         movement_layout = QVBoxLayout()
 
@@ -169,12 +429,19 @@ class TC_Drone_App(QMainWindow):
             self.button_takeoff, self.button_land,
             self.button_stop_movement, self.button_rth,
             self.button_up, self.button_down, self.button_left,
-            self.button_right, self.button_forward, self.button_backward
+            self.button_right, self.button_forward, self.button_backward,
+            self.StartMission, self.UploadMission, self.PauseMission, 
+            self.ResetMission, self.ClearMission, 
         ]:
             policy = btn.sizePolicy()
             policy.setVerticalPolicy(QSizePolicy.Policy.Expanding)
             btn.setSizePolicy(policy)
             btn.setMinimumHeight(60)
+
+        policyWP = self.waypoint_info.sizePolicy()
+        policyWP.setHorizontalPolicy(QSizePolicy.Policy.Fixed)
+        policyWP.setVerticalPolicy(QSizePolicy.Policy.Fixed)
+        self.waypoint_info.setSizePolicy(policyWP)
 
         grid.addWidget(self.button_up, 0, 4)
         grid.addWidget(self.button_down, 2, 4)
@@ -205,10 +472,13 @@ class TC_Drone_App(QMainWindow):
 
         main_layout.addWidget(printo)
         main_layout.addWidget(self.console)
+        main_layout.addWidget(self.pbtitle)
+        main_layout.addLayout(progress_layout)
         main_layout.addWidget(self.tabs)
         central.setLayout(main_layout)
         self.setCentralWidget(central)
 
+        #---battery percentage counter
         self.battery_menu = QMenu()
         self.battery_menu.setToolTipsVisible(True)
 
@@ -229,6 +499,25 @@ class TC_Drone_App(QMainWindow):
         self.battery_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
 
         self.statusBar().addPermanentWidget(self.battery_button)
+
+    #--- opens new window to waypoint info
+    @asyncSlot()
+    async def openNewWindow(self):
+        if not self.drone:
+            print("-- Please connect the drone to view additional waypoint information/")
+            return
+
+        if self.new_window is None:
+            self.new_window = Waypoint_Info_Window(self.drone, self.mission, self.connected)
+
+        self.new_window.show()
+        self.new_window.raise_()
+        self.new_window.activateWindow()
+
+        current_progress = pull_data()["current-mission-progress"]
+        if current_progress:
+            await self.new_window.refresh_waypoint_information(current_progress)
+
 
     class StreamToTextBox:
         def __init__(self, text_edit):
@@ -263,11 +552,58 @@ class TC_Drone_App(QMainWindow):
             else:
                 self.button_land.setEnabled(True)
                 self.button_takeoff.setEnabled(False)
-    
+   
+    async def mission_button_toggles(self):
+        while True:
+            if await self.mission.is_drone_on_mission(self.drone):
+                self.StartMission.setEnabled(False)
+                self.UploadMission.setEnabled(False)
+                self.ClearMission.setEnabled(False)
+                self.PauseMission.setEnabled(True)
+                self.ResetMission.setEnabled(True)
+            else:
+                self.StartMission.setEnabled(True)
+                self.UploadMission.setEnabled(True)
+                self.ClearMission.setEnabled(True)
+                self.PauseMission.setEnabled(False)
+                self.ResetMission.setEnabled(True)
+            await asyncio.sleep(2)
+   
+    async def mission_uploaded(self):
+        while True:
+            if await self.mission.drone_have_mission(self.drone):
+                self.pbtitle.setText("Mission Progress:")
+                self.progress_bar.setEnabled(True)
+            else:
+                self.pbtitle.setText("No Uploaded Mission")
+                self.progress_bar.setMaximum(0)
+                self.progress_bar.setValue(0)
+                self.progress_bar.setFormat("")
+                self.progress_bar.setEnabled(False)
+            await asyncio.sleep(2)
+
     async def run_checks_on_connect(self):
-        battery = asyncio.ensure_future(self.update_battery())
-        takeoff_toggle = asyncio.ensure_future(self.takeoff_land_toggle())
-        self._tasks.extend([battery, takeoff_toggle])
+        def log_task_result(task):
+            try:
+                task.result()
+            except asyncio.CancelledError:
+                return
+            except Exception as e:
+                print(f"Task failed: {e}")
+
+        battery = asyncio.create_task(self.update_battery())
+        takeoff_toggle = asyncio.create_task(self.takeoff_land_toggle())
+        mission_buttons = asyncio.create_task(self.mission_button_toggles())
+        mission_progress = asyncio.create_task(self.track_mission_progress())
+        mission_uploaded = asyncio.create_task(self.mission_uploaded())
+
+        battery.add_done_callback(log_task_result)
+        takeoff_toggle.add_done_callback(log_task_result)
+        mission_buttons.add_done_callback(log_task_result)
+        mission_progress.add_done_callback(log_task_result)
+        mission_uploaded.add_done_callback(log_task_result)
+
+        self._tasks.extend([battery, takeoff_toggle, mission_buttons, mission_progress, mission_uploaded])
 
     def closeEvent(self, event):
         if self.connected:
@@ -282,6 +618,8 @@ class TC_Drone_App(QMainWindow):
     
         if reply == QMessageBox.StandardButton.Yes:
             event.accept()
+            if self.new_window:
+                self.new_window.close()
         else:
             event.ignore()
  
@@ -304,6 +642,21 @@ class TC_Drone_App(QMainWindow):
                 self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
                 print(f"\nCurrent Position\n    - Latitude: {lat:.5f}\n    - Longitude: {lon:.5f}\n    - Altitude: {alt:.1f} (meters)\n")
+
+                data = pull_data()
+                if data:
+                    current = data.get("current-mission-progress", None)
+                    total = data.get("total-mission-progress", None)
+        
+                    if current == total:
+                        self.progress_bar.setMaximum(1)
+                        self.progress_bar.setValue(1)
+                        self.progress_bar.setFormat("Mission Complete!")
+                    else:
+                        self.progress_bar.setMaximum(total)
+                        self.progress_bar.setValue(current)
+                        self.progress_bar.setFormat(f"Waypoint {current} / {total}")
+ 
                 await self.run_checks_on_connect()
             else:
                 sys.stdout = sys.__stdout__
@@ -313,7 +666,6 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             sys.stdout = sys.__stdout__
             print(f"Error: {e}")
-
 
     @asyncSlot()
     async def on_disconnect(self):
@@ -439,6 +791,112 @@ class TC_Drone_App(QMainWindow):
         except Exception as e:
             print(f"-- Return to Launch Error: {e}")
 
+    async def track_mission_progress(self):
+        while self.mission.is_drone_on_mission(self.drone):
+            current, total = await self.mission.get_mission_progress(self.drone)
+            update_mission_data(current, total)
+      
+            if hasattr(self, "new_window") and self.new_window is not None:
+                await self.new_window.refresh_waypoint_information(current)
+
+            self.progress_bar.setMaximum(total)
+            self.progress_bar.setValue(current)
+            self.progress_bar.setFormat(f"Waypoint {current} / {total}")
+            if current == total:
+                self.progress_bar.setMaximum(1)
+                self.progress_bar.setValue(1)
+                self.progress_bar.setFormat("Mission Complete!")
+
+            await asyncio.sleep(2)
+        
+    @asyncSlot()
+    async def StartMissionFunc(self):
+        if not self.connected:
+            return
+
+        print("-- Starting Mission...")
+        try:
+            async for state in self.drone.drone.telemetry.in_air(): 
+                in_the_air = state
+                break 
+
+            if in_the_air:
+                await self.mission.start_mission(self.drone)
+                print('-- Mission Started...')
+                self.progress_bar.setEnabled(True)
+
+                while not await self.mission.is_mission_finished(self.drone):
+                        await asyncio.sleep(1)
+
+                print("-- Mission Finished!")
+                if self.mission.RTL == True:
+                    await self.return_to_launch()
+                    print("-- Returning to launch...")
+                else:
+                    print("-- Not Returning to launch...")
+                    return
+            else:
+                print('-- Takeoff required to Start Mission!...')
+                return
+            
+        except Exception as e:
+            print(f'-- Starting Mission Error: {e}')
+
+    def UploadMissionFunc(self):
+        if not self.connected:
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Mission File",
+            "",
+            "JSON files (*.json)"
+        )
+
+        if not file_path:
+            return
+
+        task = asyncio.create_task(self.do_upload(file_path))
+        task.add_done_callback(lambda t: task.cancel())
+
+    async def do_upload(self, file_path):
+        try:
+            print("-- Uploading Mission...")
+            self.mission.parse_file(file_path)
+            await self.mission.upload_mission(self.drone)
+            print("-- Mission Uploaded Successfully")
+        except Exception as e:
+            print(f'-- Uploading Mission Error: {e}')
+
+
+    @asyncSlot()
+    async def ResetMissionFunc(self):
+        try:
+            print("-- Resetting Mission to 1st waypoint...")
+            await self.mission.reset_mission(self.drone)
+            print("-- Reset Mission Success!")
+        except Exception as e:
+            print(f"-- Reset Mission Error: {e}")
+
+    @asyncSlot()
+    async def ClearMissionFunc(self):
+        try:
+            print('-- Clearing old mission from drone...')
+            await self.mission.clear_mission(self.drone)
+            update_mission_data(current = None, total = None)
+            print("-- Clearing Mission Success!")
+        except Exception as e:
+            print(f"Clearing Mission Error: {e}")
+    
+    @asyncSlot()
+    async def PauseMissionFunc(self):
+        try:
+            print("-- Pausing Mission...")
+            await self.mission.pause_mission(self.drone)
+            print("-- Pause Mission Success!")
+
+        except Exception as e:
+            print(f'-- Pausing Mission Error: {e}')
 
 def main():
     app = QApplication(sys.argv)

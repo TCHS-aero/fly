@@ -234,3 +234,6 @@ src/fly/config/.DS_Store
 src/fly/config/settings.json
 src/fly/interfaces/.DS_Store
 src/fly/config/settings.json
+
+# Macos Exclusive
+**/.DS_Store
