@@ -69,7 +69,6 @@ class Mission:
         if not self.downloaded_plan:
             self.downloaded_plan = await self.download_mission(drone_instance)
 
-        print(self.downloaded_plan)
         if not self.downloaded_plan:
             return False
         return True
