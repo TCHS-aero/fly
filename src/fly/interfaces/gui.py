@@ -219,10 +219,8 @@ class Waypoint_Info_Window(QWidget):
         window_layout.addWidget(self.tabs)
         self.setLayout(window_layout)       
 
-    async def refresh_waypoint_information(self, current):
+    async def refresh_waypoint_information(self, current_item, next_item):
         try:
-            current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current)
-
             self.set_next_waypoint_info(next_item)
             self.set_current_waypoint_info(current_item)
 
@@ -514,10 +512,16 @@ class TC_Drone_App(QMainWindow):
         self.new_window.raise_()
         self.new_window.activateWindow()
 
-        current_progress = pull_data()["current-mission-progress"]
-        if current_progress:
-            await self.new_window.refresh_waypoint_information(current_progress)
+        try:
+            if not await self.mission.drone_have_mission(self.drone):
+                await self.new_window.refresh_waypoint_information(None, None)
+                return
 
+            current_progress = pull_data()["current-mission-progress"]
+            current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current_progress)
+            await self.new_window.refresh_waypoint_information(current_item, next_item)
+        except Exception as e:
+            print(e)
 
     class StreamToTextBox:
         def __init__(self, text_edit):
@@ -792,12 +796,14 @@ class TC_Drone_App(QMainWindow):
             print(f"-- Return to Launch Error: {e}")
 
     async def track_mission_progress(self):
-        while self.mission.is_drone_on_mission(self.drone):
+        while True:
+            await asyncio.sleep(2)
             current, total = await self.mission.get_mission_progress(self.drone)
             update_mission_data(current, total)
-      
+
             if hasattr(self, "new_window") and self.new_window is not None:
-                await self.new_window.refresh_waypoint_information(current)
+                current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current)
+                await self.new_window.refresh_waypoint_information(current_item, next_item)
 
             self.progress_bar.setMaximum(total)
             self.progress_bar.setValue(current)
@@ -807,7 +813,6 @@ class TC_Drone_App(QMainWindow):
                 self.progress_bar.setValue(1)
                 self.progress_bar.setFormat("Mission Complete!")
 
-            await asyncio.sleep(2)
         
     @asyncSlot()
     async def StartMissionFunc(self):

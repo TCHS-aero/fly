@@ -28,6 +28,7 @@ def update_port_data(port: str = None, history: list = None):
         with open(settings, "w") as write_file:
             print("-- Writing...")
             json.dump(existing_data, write_file, ensure_ascii=False, indent=4)
+        print("-- Writing Success!")
     except Exception as e:
         print(e)
     
