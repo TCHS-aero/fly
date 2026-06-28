@@ -324,6 +324,8 @@ class TC_Drone_App(QMainWindow):
         self.clear_history_button.setFixedSize(28, 28)
         icon_path = base_dir / "assets" / "broom.png"
         self.clear_history_button.setIcon(QIcon(str(icon_path)))
+        self.clear_history_button.setEnabled(True)
+        self.clear_history_button.clicked.connect(self.clear_history)
 
         data = pull_data()
         if data["port"]:
@@ -505,6 +507,13 @@ class TC_Drone_App(QMainWindow):
         self.battery_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
 
         self.statusBar().addPermanentWidget(self.battery_button)
+
+    @asyncSlot()
+    async def clear_history(self):
+        print("-- Clearing port history...")
+        update_port_data(history = [])
+        self.port_edit.load_history()
+        print("-- Port history cleared! Your current port is saved.")
 
     #--- opens new window to waypoint info
     @asyncSlot()
