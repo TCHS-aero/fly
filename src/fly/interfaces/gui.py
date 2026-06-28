@@ -522,6 +522,9 @@ class TC_Drone_App(QMainWindow):
         print("-- Clearing port history...")
         update_port_data(history = [])
         self.port_edit.load_history()
+        data = pull_data()
+        if data["port"]:
+            self.port_edit.lineEdit().setText(data["port"])
         print("-- Port history cleared! Your current port is saved.")
 
     #--- opens new window to waypoint info
