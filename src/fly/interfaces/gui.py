@@ -33,8 +33,8 @@ from PyQt6.QtWidgets import (
     QToolButton,
     QLineEdit
 )
-from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QAction, QPixmap
+from PyQt6.QtCore import Qt, QSize
 from qasync import asyncSlot, QEventLoop
 
 base_dir = Path(__file__).resolve().parent.parent
@@ -298,10 +298,11 @@ class Waypoint_Info_Window(QWidget):
 class TC_Drone_App(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Drone Controls")
+        self.setWindowTitle("Ground Control")
         self.drone = None
         self.mission = Mission()
-        self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
+        window_icon = base_dir / "assets" / "logo_small.png"
+        self.setWindowIcon(QIcon(str(window_icon)))
         self.setMinimumWidth(400)
         central = QWidget()
         main_layout = QVBoxLayout()
@@ -331,8 +332,16 @@ class TC_Drone_App(QMainWindow):
         if data["port"]:
             self.port_edit.lineEdit().setText(data["port"])
 
-        #--- Title
-        printo = QLabel("TCHS Aero GUI v1")
+        #--- Title Icon
+        logo_label = QLabel()
+        small_pixmap = QPixmap(str(window_icon)).scaled(
+            QSize(150, 150), 
+            Qt.AspectRatioMode.KeepAspectRatio, 
+            Qt.TransformationMode.SmoothTransformation
+        )
+
+        logo_label.setPixmap(small_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         #--- Console
         self.console = QTextEdit(self)
@@ -478,7 +487,7 @@ class TC_Drone_App(QMainWindow):
         movement_widget.setLayout(movement_layout)
         self.tabs.addTab(movement_widget, "Movement")
 
-        main_layout.addWidget(printo)
+        main_layout.addWidget(logo_label)
         main_layout.addWidget(self.console)
         main_layout.addWidget(self.pbtitle)
         main_layout.addLayout(progress_layout)
