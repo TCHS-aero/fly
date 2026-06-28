@@ -347,7 +347,7 @@ class TC_Drone_App(QMainWindow):
         self.console = QTextEdit(self)
         self.console.setStyleSheet("background-color: black; color: white;")
         self.console.setReadOnly(True)
-
+        sys.stdout = self.StreamToTextBox(self.console)
         #--- Progress Bar
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setMaximum(0)
@@ -531,7 +531,7 @@ class TC_Drone_App(QMainWindow):
     @asyncSlot()
     async def openNewWindow(self):
         if not self.drone:
-            print("-- Please connect the drone to view additional waypoint information/")
+            print("-- Please connect the drone to view additional waypoint information!")
             return
 
         if self.new_window is None:
@@ -658,7 +658,6 @@ class TC_Drone_App(QMainWindow):
  
     @asyncSlot()
     async def on_connect(self):
-        sys.stdout = self.StreamToTextBox(self.console)
         self.button_connect.setEnabled(False)
         port = self.port_edit.text().strip()
         if not is_valid_port(port):
@@ -692,12 +691,10 @@ class TC_Drone_App(QMainWindow):
  
                 await self.run_checks_on_connect()
             else:
-                sys.stdout = sys.__stdout__
                 print(f"-- Failed to connect to the drone within {self.drone.connection_timeout} seconds.")
                 self.button_connect.setEnabled(True)
                 self.button_disconnect.setEnabled(False)
         except Exception as e:
-            sys.stdout = sys.__stdout__
             print(f"Error: {e}")
 
     @asyncSlot()
