@@ -28,8 +28,8 @@ class POIManager:
         # merges into nearset POI within DEDUP_RADIUS_M, or creates a new one
         # returns (poi_id, is_new). Saves and notifies every call
         # Running weighted average merge:
-            # merged_lat = (lat * n + pos[0]) / (n+1)
-            # merged_lon = (lon * n + pos[1]) / (n+1)
+            # merged_lat = (lat * n + pos.lat) / (n+1)
+            # merged_lon = (lon * n + pos.lon) / (n+1)
             # merged_conf = (conf * n + new_conf) / (n+1)
 
         async with self._lock:
@@ -37,8 +37,8 @@ class POIManager:
             if poi_id is not None:
                 p = self._pois[poi_id]
                 n = p["detection_count"]
-                p["lat"] = (p["lat"] * n + pos[0]) / (n+1)
-                p["lon"] = (p["lon"] * n + pos[1]) / (n+1)
+                p["lat"] = (p["lat"] * n + pos.lat) / (n+1)
+                p["lon"] = (p["lon"] * n + pos.lon) / (n+1)
                 p["confidence_avg"] = (p["confidence_avg"] * n + confidence) / (n+1)
                 p["detection_count"] += 1
                 p["source_images"].append(source_image)
@@ -48,7 +48,7 @@ class POIManager:
                 self._next_id += 1
                 self._pois[poi_id] = {
                     "poi_id": poi_id, "status": "candidate",
-                    "lat": pos[0], "lon": pos[1],
+                    "lat": pos.lat, "lon": pos.lon,
                     "confidence_avg": confidence, "detection_count": 1,
                     "source_images": [source_image],
                 }

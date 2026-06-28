@@ -3,7 +3,14 @@ import math
 from haversine import haversine, Unit, inverse_haversine, Direction
 from geographiclib.geodesic import Geodesic
 
-Point = tuple[float,float] # lat_deg, lon_deg
+import numpy as np
+import pymap3d as pm
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    lat: float
+    lon: float
 
 def haversine_m(pt1: Point, pt2: Point) -> float:
     return haversine(pt1, pt2, unit = Unit.METERS) # could also use Geodesic but haversine is more lightweight and accurate enough
@@ -22,12 +29,43 @@ def bearing_between(p1: Point, p2: Point) -> float:
     return bearing % 360
 
 def pixel_to_ground(
-    detected_xy: tuple[int,int],
+    detected_xy: tuple[int,int], # comes from the ai output
     image_wh: tuple[int,int],
-    drone_pt: Point,
+    drone_pos: Point,
     alt_m: float,
-    fov_h_deg: float,
-    fov_v_deg: float,
+    fov_h_deg: float = 81,
+    fov_v_deg: float = 51.3,
     heading_deg: float
 ) -> Point:
     # projects a pixel detection to ground coordinate, assuming nadir camera (90deg)
+    cx, cy = detected_xy
+    w, h = image_wh
+
+    # camera intrinsic matrix
+    fx = (w / 2.0) / np.tan(np.radians(fov_h_deg / 2.0)) # focal lengths expressed in pixels rather than mm
+    fy = (h / 2.0) / np.tan(np.radians(fov_v_deg / 2.0))
+    K = np.array([
+        [fx, 0, w/2.0],
+        [0, fy, h/2.0],
+        [0, 0, 1.0]
+    ])
+
+    # back-project pixel -> camera-frame ray, scale to ground plane
+    ray = np.linalg.solve(K, np.array([cx, cy, 1.0]))
+    ray *= alt_m / ray[2]
+    dx_m = ray[0] # meters in image +x direction (right)
+    dy_m = ray[1] # meters in image +y (aft)
+
+    # rotate image frame -> NED via drone heaing
+    hr = np.radians(heading_deg)
+    R = np.array([[-np.sine(hr), -np.cos(hr)],
+                    [np.cos(hr), -np.sin(hr)]])
+    north_m, east_m = R @ np.array([dx_m, dy_m])
+
+    # NED offset -> WGS-84 via pymap3d
+    # pm.ned2geodetic handles the ellipsoidal maths
+    lat, lon, = pm.ned2geodetic(
+        north_m, east_m, 0.0,
+        drone_pos.lat, drone_pos.lon, float(alt_m)
+    )
+    return Point(lat = lat, lon = lon)
