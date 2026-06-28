@@ -7,6 +7,8 @@ from time import time
 from fly.core.mission import Mission
 from fly.core.dataManager import pull_data
 
+from fly.utils.geo import haversine
+
 import functools
 
 def require_safe_edit_window(func):
@@ -36,26 +38,6 @@ class MissionEditor:
         self.mission = mission
         self._lock = asyncio.Lock()
 
-    def haversine(lat1, lon1, lat2, lon2):
-        R = 6371000
-
-        lat1, lon1, lat2, lon2 = map(
-            math.radians,
-            [lat1, lon1, lat2, lon2]
-        )
-
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-
-        a = (
-            math.sin(dlat / 2) ** 2
-            + math.cos(lat1)
-            * math.cos(lat2)
-            * math.sin(dlon / 2) ** 2
-        )
-
-        return 2 * R * math.asin(math.sqrt(a))
-
     async def current_total_index(self) -> int:
         data = pull_data()
 
@@ -75,11 +57,9 @@ class MissionEditor:
         current, total = await self.current_total_index()
         current_waypoint, next_waypoint = self.mission.get_current_next_waypoint_information(self.drone, current)
         
-        distance = self.haversine(
-            current_waypoint["lat"],
-            current_waypoint["lon"],
-            next_waypoint["lat"],
-            next_waypoint["lon"]
+        distance = haversine(
+            (current_waypoint["lat"], current_waypoint["lon"]),
+            (next_waypoint["lat"], next_waypoint["lon"])
         )
 
         ground_speed = await self.drone.current_ground_speed()
