@@ -2,8 +2,7 @@ import sys
 import asyncio
 import re
 
-
-from os import path
+from pathlib import Path
 from fly.core.drone import Drone
 from fly.core.mission import Mission
 from fly.core.dataManager import (
@@ -38,6 +37,7 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
 from qasync import asyncSlot, QEventLoop
 
+base_dir = Path(__file__).resolve().parent.parent
 
 def is_valid_port(port: str) -> bool:
     udp_pattern = r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$"
@@ -320,6 +320,10 @@ class TC_Drone_App(QMainWindow):
         progress_layout = QHBoxLayout()
 
         self.port_edit = HistoryLineEdit()
+        self.clear_history_button = QPushButton()
+        self.clear_history_button.setFixedSize(28, 28)
+        icon_path = base_dir / "assets" / "broom.png"
+        self.clear_history_button.setIcon(QIcon(str(icon_path)))
 
         data = pull_data()
         if data["port"]:
@@ -365,7 +369,11 @@ class TC_Drone_App(QMainWindow):
         self.button_land.setEnabled(False)
         self.button_land.clicked.connect(self.on_land)
 
-        general_layout.addWidget(self.port_edit)
+        self.history_group = QHBoxLayout()
+        self.history_group.addWidget(self.port_edit)
+        self.history_group.addWidget(self.clear_history_button)
+
+        general_layout.addLayout(self.history_group)
         general_layout.addWidget(self.button_connect)
         general_layout.addWidget(self.button_disconnect)
         general_layout.addWidget(self.button_takeoff)

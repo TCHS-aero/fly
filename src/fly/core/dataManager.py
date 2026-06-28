@@ -47,25 +47,3 @@ def update_mission_data(current: int = None, total: int = None):
     except Exception as e:
         print(e)
 
-
-def wipe_config():
-    confirm = True
-    while confirm:
-        ans = (
-            input(f"Are you sure you want to wipe all information in {settings}? y/n: ")
-            .lower()
-            .strip()
-        )
-        if ans == "y":
-            confirm = False
-            break
-        if ans == "n":
-            return
-
-        print("\nPlease type either y or n to signify yes or no.")
-
-    if ans == "n":
-        return
-
-    update_port_data(port = "", history = [])
-    print("-- Data wiped! This is irreversible.")
