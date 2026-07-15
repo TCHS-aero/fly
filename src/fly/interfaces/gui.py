@@ -859,23 +859,22 @@ class TC_Drone_App(QMainWindow):
                 in_the_air = state
                 break 
 
-            if in_the_air:
-                await self.mission.start_mission(self.drone)
-                print('-- Mission Started...')
-                self.progress_bar.setEnabled(True)
+            if not in_the_air:
+                await self.drone.takeoff(self.takeoff_increment.value())
 
-                while not await self.mission.is_mission_finished(self.drone):
-                        await asyncio.sleep(1)
+            await self.mission.start_mission(self.drone)
+            print('-- Mission Started...')
+            self.progress_bar.setEnabled(True)
 
-                print("-- Mission Finished!")
-                if self.mission.RTL == True:
-                    await self.return_to_launch()
-                    print("-- Returning to launch...")
-                else:
-                    print("-- Not Returning to launch...")
-                    return
+            while not await self.mission.is_mission_finished(self.drone):
+                    await asyncio.sleep(1)
+
+            print("-- Mission Finished!")
+            if self.mission.RTL == True:
+                await self.return_to_launch()
+                print("-- Returning to launch...")
             else:
-                print('-- Takeoff required to Start Mission!...')
+                print("-- Not Returning to launch...")
                 return
             
         except Exception as e:
