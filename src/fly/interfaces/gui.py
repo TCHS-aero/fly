@@ -376,6 +376,14 @@ class TC_Drone_App(QMainWindow):
         self.button_takeoff.setEnabled(False)
         self.button_takeoff.clicked.connect(self.on_takeoff)
 
+        self.takeoff_increment = QDoubleSpinBox()
+        self.takeoff_increment.setValue(10.0)
+        self.takeoff_increment.setFixedSize(70, 100)
+
+        self.takeoff_group = QHBoxLayout()
+        self.takeoff_group.addWidget(self.button_takeoff)
+        self.takeoff_group.addWidget(self.takeoff_increment)
+
         self.button_land = QPushButton("Land")
         self.button_land.setEnabled(False)
         self.button_land.clicked.connect(self.on_land)
@@ -387,7 +395,7 @@ class TC_Drone_App(QMainWindow):
         general_layout.addLayout(self.history_group)
         general_layout.addWidget(self.button_connect)
         general_layout.addWidget(self.button_disconnect)
-        general_layout.addWidget(self.button_takeoff)
+        general_layout.addLayout(self.takeoff_group)
         general_layout.addWidget(self.button_land)
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
@@ -738,7 +746,7 @@ class TC_Drone_App(QMainWindow):
 
         print("-- Starting Takeoff Sequence...")
         try:
-            await self.drone.takeoff(10.0)
+            await self.drone.takeoff(self.takeoff_increment.value())
             print("-- Takeoff...")
         except Exception as e:
             print(f"-- Takeoff Error: {e}")
