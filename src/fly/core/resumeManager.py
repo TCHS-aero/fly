@@ -1,9 +1,10 @@
 import json
+import os
+import tempfile
 from enum import Enum
 from pathlib import Path
 from datetime import datetime, timezone
 
-from mavsdk.calibration import Calibration
 
 class FlightPhase(Enum):
     IDLE = "idle"
@@ -22,9 +23,36 @@ class ResumeManager:
 
     def load(self) -> bool:
         # loads previous state, returns true if interrupted mission found
+        try:
+            with open(self.path) as f:
+                data = json.load(f)
+            self.phase = FlightPhase(data.get("phase", FlightPhase.IDLE.value))
+            self.last_waypoint = int(data.get("last_waypoint", -1))
+            self.survey_complete = bool(data.get("survey_complete", False))
+            return self.last_waypoint >= 0 and not self.survey_complete
+        except (FileNotFoundError, json.JSONDecodeError, KeyError, ValueError):
+            return False
 
     def save(self):
         # write then rename
+        data = {
+            "phase": self.phase.value,
+            "last_waypoint": self.last_waypoint,
+            "survey_complete": self.survey_complete,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }
+        # mkstemp in the same directory guarantees os.replace is on one filesystem
+        fd, tmp = tempfile.mkstemp(dir=self.path.parent, prefix=".resume_tmp_")
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data,f,indent=2)
+            os.replace(tmp, self.path) # no risk of half-written file since self.path will point to data in tmp; tmp is deleted
+        except Exception:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
 
     def transition(self, phase: FlightPhase):
         self.phase = phase
