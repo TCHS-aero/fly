@@ -41,7 +41,7 @@ class ResumeManager:
             "survey_complete": self.survey_complete,
             "saved_at": datetime.now(timezone.utc).isoformat(),
         }
-        # mkstemp in the same directory guarantees os.replace is on one filesystem
+        # mkstemp in the same directory guarantees os.replace is on one filesystem (/tmp uses RAM)
         fd, tmp = tempfile.mkstemp(dir=self.path.parent, prefix=".resume_tmp_")
         try:
             with os.fdopen(fd, "w") as f:
