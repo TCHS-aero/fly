@@ -13,7 +13,7 @@ class ImagePayload:
     alt_rel: float  # meters above home
     wp_index: int
     phase: str  # survey | calibration | manual
-    image_path: str
+    filename: str # filename instead of image path: helps with log lookup; building path is trivial (StreamCapture)
 
     @property
     def pos(self) -> Point:

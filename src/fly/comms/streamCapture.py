@@ -53,7 +53,8 @@ class StreamCapture:
         ts = ImagePayload.now_ts()
 
         # creates image path under self.image_dir
-        image_path = self.image_dir / f"frame_{ts}.png"
+        filename = f"frame_{ts}.png"
+        image_path = self.image_dir / filename
 
         # 3. drone.current_position() - lat, lon, alt_rel from MAVSDK
         lat, lon, alt_rel = self.drone.current_position()
@@ -69,7 +70,7 @@ class StreamCapture:
             alt_rel = alt_rel,
             wp_index = wp_index,
             phase = phase,
-            image_path = image_path
+            filename = filename
         )
 
         return (payload, image_path)
