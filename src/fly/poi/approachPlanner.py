@@ -1,3 +1,5 @@
+""" Not in use since it may slow down the mission too much
+
 import asyncio
 from fly.utils.geo import offset_coords, haversine_m, bearing_between, pixel_to_ground, Point
 
@@ -36,3 +38,4 @@ async def run_centering_loop(
         # 3. Best detection within threshold_px of image center -> done, return payload.pos
         # 4. Else centering_nudge() -> drone.move_to_location(nudged coords)
     # returns payload.pos when centered, or best position reached after max steps
+"""

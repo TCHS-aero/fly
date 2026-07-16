@@ -79,7 +79,7 @@ class POIManager:
     def _nearest(self, pos:Point) -> int | None:
         best, best_d = None, self.DEDUP_RADIUS_M
         for pid, p in self._pois.items():
-            d = haversine_m(pos, (p["lat"], p["lon"]))
+            d = haversine_m(pos, Point(p["lat"], p["lon"]))
             if d<best_d:
                 best, best_d = pid, d
         return best
