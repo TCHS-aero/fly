@@ -13,6 +13,13 @@ class Point:
     lat: float
     lon: float
 
+    def __iter__(self):
+        # Makes Point work as (lat, lon) tuple for haversine function input
+        yield self.lat
+        yield self.lon
+
+    def __getitem__(self, idx): # haversine requires an indexed list
+        return (self.lat, self.lon)[idx]
 
 def haversine_m(pt1: Point, pt2: Point) -> float:
     return haversine(
@@ -24,15 +31,15 @@ def haversine_m(pt1: Point, pt2: Point) -> float:
 def offset_coords(start_pt: Point, north_m: float, east_m: float) -> Point:
     # returns (lat, lon) after moving a certain meters north and east
     temp_pt = inverse_haversine(start_pt, north_m, Direction.NORTH, unit=Unit.METERS)
-    return inverse_haversine(temp_pt, east_m, Direction.EAST, unit=Unit.METERS)
-
+    res = inverse_haversine(temp_pt, east_m, Direction.EAST, unit=Unit.METERS)
+    return Point(lat=res[0], lon=res[1])
 
 def bearing_between(p1: Point, p2: Point) -> float:
     # Compass bearing from p1 to p2
     geo = Geodesic.WGS84.Inverse(p1.lat, p1.lon, p2.lat, p2.lon)
 
     bearing = geo[
-        "azil"
+        "azi1"
     ]  # s12: distance, azi1: bearing from starting, azi2: bearing from endpoint
     return bearing % 360
 
@@ -65,7 +72,7 @@ def pixel_to_ground(
 
     # rotate image frame -> NED via drone heaing
     hr = np.radians(heading_deg)
-    R = np.array([[-np.sine(hr), -np.cos(hr)], [np.cos(hr), -np.sin(hr)]])
+    R = np.array([[-np.sin(hr), -np.cos(hr)], [np.cos(hr), -np.sin(hr)]])
     north_m, east_m = R @ np.array([dx_m, dy_m])
 
     # NED offset -> WGS-84 via pymap3d
@@ -73,6 +80,7 @@ def pixel_to_ground(
     (
         lat,
         lon,
+        _alt,
     ) = pm.ned2geodetic(
         north_m, east_m, 0.0, drone_pos.lat, drone_pos.lon, float(alt_m)
     )
