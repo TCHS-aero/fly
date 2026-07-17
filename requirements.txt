@@ -8,6 +8,7 @@ asyncclick
 numpy
 pymap3d
 geographiclib
+haversine
 
-# poi/poiManager.py
+# poi/poiManager.py, logging/flightLog.py
 aiofiles
