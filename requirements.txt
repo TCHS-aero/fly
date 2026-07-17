@@ -2,3 +2,12 @@ mavsdk
 PyQt6
 qasync
 asyncclick
+
+# new-code pipeline --------
+# utils/geo.py
+numpy
+pymap3d
+geographiclib
+
+# poi/poiManager.py
+aiofiles

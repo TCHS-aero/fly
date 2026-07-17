@@ -8,12 +8,6 @@ version = "0.1.0"
 description = "Drone CLI from Aero workspace"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [
-  "mavsdk",
-  "PyQt6",
-  "qasync",
-  "asyncclick",
-]
 
 [project.scripts]
 aero_cli = "fly.interfaces.cli:main"
