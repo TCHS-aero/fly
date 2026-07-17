@@ -10,7 +10,7 @@ class Mission:
         self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
-        self.path = Path(self.file)
+        self.path = Path(self.file) if self.file else None
         self.RTL = False
         self.downloaded_plan = None
 
@@ -24,8 +24,8 @@ class Mission:
 
         with open(file, "r") as read_file:
             self.data = json.load(read_file)
-            if len(self.data) < 3:
-                print("-- Your mission have have more than one waypoint!")
+            if len(self.data) < 2:
+                print("-- Your mission must have at least one waypoint! ")
                 return
 
             self.RTL = self.data[0]
@@ -33,12 +33,12 @@ class Mission:
 
 
             for waypoint in self.waypoints:
-                
+
                 if None not in waypoint.values():
                     continue
-                
+
                 try:
-                    for item in waypoint.items():  
+                    for item in waypoint.items():
                         k, v = item
 
                         if v is None:
@@ -46,8 +46,8 @@ class Mission:
 
                 except Exception as e:
                     print(e)
-                    return 
-            
+                    return
+
             print("-- Success!")
             return self.waypoints
 
@@ -56,17 +56,19 @@ class Mission:
 
     async def get_current_next_waypoint_info(self, drone_instance, current_progress):
         self.downloaded_plan = await self.download_mission(drone_instance)
+        items = self.downloaded_plan.mission_items
+        n = len(items)
 
-        if current_progress is None or current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
-            return (self.downloaded_plan.mission_items[current_progress - 1]), None
+        if current_progress is None or current_progress < 0 or n == 0:
+            return (None, None)
+
+        if current_progress >= n:
+            return (items[n - 1], None)
 
         if current_progress == 0:
-            return (None, self.downloaded_plan.mission_items[current_progress])
+            return (None, items[0])
 
-        try:
-            return (self.downloaded_plan.mission_items[current_progress - 1], self.downloaded_plan.mission_items[current_progress])
-        except Exception:
-            return (self.downloaded_plan.mission_items[current_progress], None)
+        return (items[current_progress-1], items[current_progress])
 
     async def drone_have_mission(self, drone_instance):
         self.downloaded_plan = await self.download_mission(drone_instance)
@@ -110,7 +112,7 @@ class Mission:
         await self.clear_mission(drone_instance)
         self.convert_mission_items_to_plan()
         if self.mission_plan:
-            await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan)) 
+            await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan))
             return
         print("-- No mission to upload")
 
@@ -123,8 +125,8 @@ class Mission:
 
     async def set_current_mission_target(self, drone_instance, index):
         await drone_instance.drone.mission.set_current_mission_item(index)
+        # meta note: Resuming mid-mission must not destroy RTL intent
 
-        self.RTL = False
     async def clear_mission(self, drone_instance):
         await drone_instance.drone.mission.clear_mission()
 
@@ -134,9 +136,9 @@ class Mission:
 
     async def is_mission_finished(self, drone_instance):
         return await drone_instance.drone.mission.is_mission_finished()
-    
+
     async def get_return_to_launch_after_mission(self, drone_instance):
-        return drone_instance.drone.mission.get_return_to_launch_after_mission()
+        return await drone_instance.drone.mission.get_return_to_launch_after_mission()
 
     async def cancel_mission_download(self, drone_instance):
         await drone_instance.drone.mission.cancel_mission_download()
@@ -154,14 +156,13 @@ class Mission:
         await drone_instance.drone.mission.pause_mission()
 
     async def upload_mission_with_progress(self, drone_instance):
+        await self.clear_mission(drone_instance) # same as upload_mission
         self.convert_mission_items_to_plan()
-        await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
+        await self.return_to_launch_after_mission_completion(drone_instance, self.RTL)
         await drone_instance.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
 
     async def is_drone_on_mission(self, drone_instance):
         async for current_mode in drone_instance.drone.telemetry.flight_mode():
             if current_mode == FlightMode.MISSION:
                 return True
-            return False   
-    
-
+            return False
