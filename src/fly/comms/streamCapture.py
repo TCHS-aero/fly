@@ -22,23 +22,25 @@ class StreamCapture:
     async def open(self) -> bool:
         # opens the rtsp stream via cv2.VideoCapture (runs in executor to avoid
         # blocking the event loop during the 1s RTSP handshake)
-        self._cap = await asyncio.to_thread(cv2.VideoCapture(self.rtsp_url))
+        self._cap = await asyncio.to_thread(cv2.VideoCapture, self.rtsp_url)
 
         # Creates image_dir if it doesn't exist.
-        self.image_dir.mkdir(parents = True, exist_ok = True):
+        self.image_dir.mkdir(parents = True, exist_ok = True)
 
-        # Checks if image_dir exists and returns True, otherwise returns False
-        if self.image_dir.exists():
+        # Checks if stream opened
+        if self._cap is not None and self._cap.isOpened():
             return True
+        print("-- Failed to open RTSP stream.")
         return False
 
     async def capture_frame(
         self, wp_index: int, phase: str = "survey"
     ) -> tuple[ImagePayload, Path] | None:
-        # Note: must wrap OpenCV logic in a thread pool `await asyncio.to_thread(...)`, just like what is in open()
+        # cap.read() - live frame from HM30
+        if (self._cap is None):
+            return None
 
-        # 2. cap.read() - live frame from HM30
-        ret, frame = await asyncio.to_thread(self._cap.read())
+        ret, frame = await asyncio.to_thread(self._cap.read)
 
         # Returns None if the stream is unavaliable (caller can retry next tick)
         if not self._cap.isOpened():
@@ -56,13 +58,12 @@ class StreamCapture:
         filename = f"frame_{ts}.png"
         image_path = self.image_dir / filename
 
-        # 3. drone.current_position() - lat, lon, alt_rel from MAVSDK
-        lat, lon, alt_rel = self.drone.current_position()
+        # drone.current_position() - lat, lon, alt_rel from MAVSDK
+        lat, lon, alt_rel = await self.drone.current_position()
 
-        # 4. cv2.imwrite(path, frame) - save as JPEG; filename derived from ts
-        await asyncio.to_thread(cv2.imwrite(image_path, frame))
+        # cv2.imwrite(path, frame) - save as JPEG; filename derived from ts
+        await asyncio.to_thread(cv2.imwrite, str(image_path), frame)
 
-        # 5. Return (ImagePayload and Path)
         payload = ImagePayload(
             ts = ts,
             lat = lat,
@@ -72,7 +73,6 @@ class StreamCapture:
             phase = phase,
             filename = filename
         )
-
         return (payload, image_path)
 
 

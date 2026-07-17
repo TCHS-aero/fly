@@ -12,3 +12,6 @@ haversine
 
 # poi/poiManager.py, logging/flightLog.py
 aiofiles
+
+# comms/streamCapture.py
+opencv-python-headless # for cv2; headless because we're interacting via cli
