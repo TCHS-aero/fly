@@ -18,7 +18,7 @@ class ImagePayload:
     @property
     def pos(self) -> Point:
         # Bridge to any geo function that takes a Point
-        return (self.lat, self.lon)
+        return Point(self.lat, self.lon)
 
     @staticmethod
     def now_ts() -> str:  # `:-3` chops off 3 digits to get milliseconds
