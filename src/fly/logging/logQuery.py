@@ -1,3 +1,6 @@
+# Not called by any other module; poiManager's _nearest may seem similar to entries_near but it only queries POIs
+# Helpful for testing if used in cli
+
 from fly.logging.flightLog import FlightLog
 from fly.utils.geo import haversine_m, Point
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
-from operator import is_
+import os
+import aiofiles
 from pathlib import Path
 
 from fly.utils.geo import Point, haversine_m
@@ -20,9 +21,22 @@ class POIManager:
 
     async def load(self):
         # loads poi_registry.json. Reconstructs _pois and _next_id
+        try:
+            with open(self.path) as f:
+                data = json.load(f)
+            self._pois = {p["poi_id"]: p for p in data}
+            self._next_id = max(self._pois.keys(), default=0) + 1
+        except (FileNotFoundError, json.JSONDecodeError):
+            self._pois = {}
+            self._next_id = 1
 
     async def save(self):
         # atomically writes all POIS ( write temp file, then rename)
+        tmp = self.path.with_suffix(".poi_tmp")
+        payload = json.dumps(list(self._pois.values()), indent = 2)
+        async with aiofiles.open(tmp, "w") as f:
+            await f.write(payload)
+        os.replace(str(tmp), str(self.path))
 
     async def add_detection(self, pos: Point, confidence: float, source_image:str) -> tuple[int, bool]:
         # merges into nearset POI within DEDUP_RADIUS_M, or creates a new one
