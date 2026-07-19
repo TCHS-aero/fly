@@ -73,6 +73,6 @@ def pixel_to_ground(
         lon,
         _alt,
     ) = pm.ned2geodetic(
-        north_m, east_m, 0.0, drone_pos.lat, drone_pos.lon, float(alt_m)
+        north_m, east_m, float(alt_m), drone_pos.lat, drone_pos.lon, 0.0
     )
     return Point(lat=lat, lon=lon)
