@@ -20,8 +20,12 @@ def require_safe_edit_window(func):
     return wrapper # runs once for each decorator call during Module Import Time
 
 def _to_f(value, default: float = float("nan")) -> float:
-    # coerce None -> nan and anything else -> float (matches Mission.parse_file behaviour)
     return default if value is None else float(value)
+
+def _sanitize_waypoint(wp: dict) -> dict:
+    # Mirrors Mission.parse_file's None -> NaN coercion so waypoints built at runtime
+    # (a CLI prompt) behave identically to ones loaded from a mission file once they reach convert_mission_items_to_plan()
+    return {k: (_to_f(v) if v is None else v) for k, v in wp.items()}
 
 class MissionEditor:
     """
@@ -90,6 +94,7 @@ class MissionEditor:
     # public -----
     @require_safe_edit_window
     async def append_waypoint(self, wp:dict):
+        wp = _sanitize_waypoint(wp)
         async with self._lock:
             idx = await self.current_index()
             if not await self.is_safe_to_edit(): # double check: repeated across insert and remove waypoint as well
@@ -104,6 +109,7 @@ class MissionEditor:
 
     @require_safe_edit_window
     async def insert_waypoint(self, at: int, wp: dict):
+        wp = _sanitize_waypoint(wp)
         async with self._lock:
             idx = await self.current_index()
             if not await self.is_safe_to_edit():
