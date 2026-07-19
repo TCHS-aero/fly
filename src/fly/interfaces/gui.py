@@ -2,8 +2,7 @@ import sys
 import asyncio
 import re
 
-
-from os import path
+from pathlib import Path
 from fly.core.drone import Drone
 from fly.core.mission import Mission
 from fly.core.dataManager import (
@@ -34,10 +33,11 @@ from PyQt6.QtWidgets import (
     QToolButton,
     QLineEdit
 )
-from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QAction, QPixmap
+from PyQt6.QtCore import Qt, QSize
 from qasync import asyncSlot, QEventLoop
 
+base_dir = Path(__file__).resolve().parent.parent
 
 def is_valid_port(port: str) -> bool:
     udp_pattern = r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$"
@@ -219,10 +219,8 @@ class Waypoint_Info_Window(QWidget):
         window_layout.addWidget(self.tabs)
         self.setLayout(window_layout)       
 
-    async def refresh_waypoint_information(self, current):
+    async def refresh_waypoint_information(self, current_item, next_item):
         try:
-            current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current)
-
             self.set_next_waypoint_info(next_item)
             self.set_current_waypoint_info(current_item)
 
@@ -300,10 +298,11 @@ class Waypoint_Info_Window(QWidget):
 class TC_Drone_App(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Drone Controls")
+        self.setWindowTitle("Ground Control")
         self.drone = None
         self.mission = Mission()
-        self.setWindowIcon(QIcon("src/fly/assets/tc_aero_logo.png"))
+        window_icon = base_dir / "assets" / "logo_small.png"
+        self.setWindowIcon(QIcon(str(window_icon)))
         self.setMinimumWidth(400)
         central = QWidget()
         main_layout = QVBoxLayout()
@@ -322,19 +321,33 @@ class TC_Drone_App(QMainWindow):
         progress_layout = QHBoxLayout()
 
         self.port_edit = HistoryLineEdit()
+        self.clear_history_button = QPushButton()
+        self.clear_history_button.setFixedSize(28, 28)
+        icon_path = base_dir / "assets" / "broom.png"
+        self.clear_history_button.setIcon(QIcon(str(icon_path)))
+        self.clear_history_button.setEnabled(True)
+        self.clear_history_button.clicked.connect(self.clear_history)
 
         data = pull_data()
         if data["port"]:
             self.port_edit.lineEdit().setText(data["port"])
 
-        #--- Title
-        printo = QLabel("TCHS Aero GUI v1")
+        #--- Title Icon
+        logo_label = QLabel()
+        small_pixmap = QPixmap(str(window_icon)).scaled(
+            QSize(150, 150), 
+            Qt.AspectRatioMode.KeepAspectRatio, 
+            Qt.TransformationMode.SmoothTransformation
+        )
+
+        logo_label.setPixmap(small_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         #--- Console
         self.console = QTextEdit(self)
         self.console.setStyleSheet("background-color: black; color: white;")
         self.console.setReadOnly(True)
-
+        sys.stdout = self.StreamToTextBox(self.console)
         #--- Progress Bar
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setMaximum(0)
@@ -363,14 +376,26 @@ class TC_Drone_App(QMainWindow):
         self.button_takeoff.setEnabled(False)
         self.button_takeoff.clicked.connect(self.on_takeoff)
 
+        self.takeoff_increment = QDoubleSpinBox()
+        self.takeoff_increment.setValue(10.0)
+        self.takeoff_increment.setFixedSize(70, 100)
+
+        self.takeoff_group = QHBoxLayout()
+        self.takeoff_group.addWidget(self.button_takeoff)
+        self.takeoff_group.addWidget(self.takeoff_increment)
+
         self.button_land = QPushButton("Land")
         self.button_land.setEnabled(False)
         self.button_land.clicked.connect(self.on_land)
 
-        general_layout.addWidget(self.port_edit)
+        self.history_group = QHBoxLayout()
+        self.history_group.addWidget(self.port_edit)
+        self.history_group.addWidget(self.clear_history_button)
+
+        general_layout.addLayout(self.history_group)
         general_layout.addWidget(self.button_connect)
         general_layout.addWidget(self.button_disconnect)
-        general_layout.addWidget(self.button_takeoff)
+        general_layout.addLayout(self.takeoff_group)
         general_layout.addWidget(self.button_land)
         general_widget.setLayout(general_layout)
         self.tabs.addTab(general_widget, "General")
@@ -470,7 +495,7 @@ class TC_Drone_App(QMainWindow):
         movement_widget.setLayout(movement_layout)
         self.tabs.addTab(movement_widget, "Movement")
 
-        main_layout.addWidget(printo)
+        main_layout.addWidget(logo_label)
         main_layout.addWidget(self.console)
         main_layout.addWidget(self.pbtitle)
         main_layout.addLayout(progress_layout)
@@ -500,11 +525,21 @@ class TC_Drone_App(QMainWindow):
 
         self.statusBar().addPermanentWidget(self.battery_button)
 
+    @asyncSlot()
+    async def clear_history(self):
+        print("-- Clearing port history...")
+        update_port_data(history = [])
+        self.port_edit.load_history()
+        data = pull_data()
+        if data["port"]:
+            self.port_edit.lineEdit().setText(data["port"])
+        print("-- Port history cleared! Your current port is saved.")
+
     #--- opens new window to waypoint info
     @asyncSlot()
     async def openNewWindow(self):
         if not self.drone:
-            print("-- Please connect the drone to view additional waypoint information/")
+            print("-- Please connect the drone to view additional waypoint information!")
             return
 
         if self.new_window is None:
@@ -514,10 +549,16 @@ class TC_Drone_App(QMainWindow):
         self.new_window.raise_()
         self.new_window.activateWindow()
 
-        current_progress = pull_data()["current-mission-progress"]
-        if current_progress:
-            await self.new_window.refresh_waypoint_information(current_progress)
+        try:
+            if not await self.mission.drone_have_mission(self.drone):
+                await self.new_window.refresh_waypoint_information(None, None)
+                return
 
+            current_progress = pull_data()["current-mission-progress"]
+            current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current_progress)
+            await self.new_window.refresh_waypoint_information(current_item, next_item)
+        except Exception as e:
+            print(e)
 
     class StreamToTextBox:
         def __init__(self, text_edit):
@@ -625,7 +666,7 @@ class TC_Drone_App(QMainWindow):
  
     @asyncSlot()
     async def on_connect(self):
-        sys.stdout = self.StreamToTextBox(self.console)
+        self.connected = True
         self.button_connect.setEnabled(False)
         port = self.port_edit.text().strip()
         if not is_valid_port(port):
@@ -636,8 +677,7 @@ class TC_Drone_App(QMainWindow):
 
         try:
             self.drone = Drone(port)
-            self.connected = await self.drone.connect()
-            if self.connected:
+            if await self.drone.connect():
                 self.button_disconnect.setEnabled(True)
                 self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
@@ -659,12 +699,12 @@ class TC_Drone_App(QMainWindow):
  
                 await self.run_checks_on_connect()
             else:
-                sys.stdout = sys.__stdout__
+                self.connected = False
                 print(f"-- Failed to connect to the drone within {self.drone.connection_timeout} seconds.")
                 self.button_connect.setEnabled(True)
                 self.button_disconnect.setEnabled(False)
         except Exception as e:
-            sys.stdout = sys.__stdout__
+            self.connected = False
             print(f"Error: {e}")
 
     @asyncSlot()
@@ -695,7 +735,6 @@ class TC_Drone_App(QMainWindow):
 
             print("-- Disconnected")
             self.connected = False
-            sys.stdout = sys.__stdout__
         except Exception as e:
             print(f"Disconnect Error: {e}")
 
@@ -708,7 +747,7 @@ class TC_Drone_App(QMainWindow):
 
         print("-- Starting Takeoff Sequence...")
         try:
-            await self.drone.takeoff(10.0)
+            await self.drone.takeoff(self.takeoff_increment.value())
             print("-- Takeoff...")
         except Exception as e:
             print(f"-- Takeoff Error: {e}")
@@ -792,12 +831,14 @@ class TC_Drone_App(QMainWindow):
             print(f"-- Return to Launch Error: {e}")
 
     async def track_mission_progress(self):
-        while self.mission.is_drone_on_mission(self.drone):
+        while True:
+            await asyncio.sleep(2)
             current, total = await self.mission.get_mission_progress(self.drone)
             update_mission_data(current, total)
-      
+
             if hasattr(self, "new_window") and self.new_window is not None:
-                await self.new_window.refresh_waypoint_information(current)
+                current_item, next_item = await self.mission.get_current_next_waypoint_info(self.drone, current)
+                await self.new_window.refresh_waypoint_information(current_item, next_item)
 
             self.progress_bar.setMaximum(total)
             self.progress_bar.setValue(current)
@@ -807,7 +848,6 @@ class TC_Drone_App(QMainWindow):
                 self.progress_bar.setValue(1)
                 self.progress_bar.setFormat("Mission Complete!")
 
-            await asyncio.sleep(2)
         
     @asyncSlot()
     async def StartMissionFunc(self):
@@ -820,23 +860,22 @@ class TC_Drone_App(QMainWindow):
                 in_the_air = state
                 break 
 
-            if in_the_air:
-                await self.mission.start_mission(self.drone)
-                print('-- Mission Started...')
-                self.progress_bar.setEnabled(True)
+            if not in_the_air:
+                await self.drone.takeoff(self.takeoff_increment.value())
 
-                while not await self.mission.is_mission_finished(self.drone):
-                        await asyncio.sleep(1)
+            await self.mission.start_mission(self.drone)
+            print('-- Mission Started...')
+            self.progress_bar.setEnabled(True)
 
-                print("-- Mission Finished!")
-                if self.mission.RTL == True:
-                    await self.return_to_launch()
-                    print("-- Returning to launch...")
-                else:
-                    print("-- Not Returning to launch...")
-                    return
+            while not await self.mission.is_mission_finished(self.drone):
+                    await asyncio.sleep(1)
+
+            print("-- Mission Finished!")
+            if self.mission.RTL == True:
+                await self.return_to_launch()
+                print("-- Returning to launch...")
             else:
-                print('-- Takeoff required to Start Mission!...')
+                print("-- Not Returning to launch...")
                 return
             
         except Exception as e:

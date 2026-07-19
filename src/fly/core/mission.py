@@ -55,7 +55,11 @@ class Mission:
         return self.waypoints
 
     async def get_current_next_waypoint_info(self, drone_instance, current_progress):
-        self.downloaded_plan = await self.download_mission(drone_instance)
+        if not self.downloaded_plan:
+            self.downloaded_plan = await self.download_mission(drone_instance)
+        if self.downloaded_plan is None:
+            return (None, None)
+
         items = self.downloaded_plan.mission_items
         n = len(items)
 
@@ -71,11 +75,12 @@ class Mission:
         return (items[current_progress-1], items[current_progress])
 
     async def drone_have_mission(self, drone_instance):
-        self.downloaded_plan = await self.download_mission(drone_instance)
+        if not self.downloaded_plan:
+            self.downloaded_plan = await self.download_mission(drone_instance)
 
-        if len(list(self.downloaded_plan.mission_items)) > 1:
-            return True
-        return False
+        if not self.downloaded_plan:
+            return False
+        return True
 
     def get_keys(self):
         return list(self.waypoints[-1].keys())
@@ -147,7 +152,13 @@ class Mission:
         return await drone_instance.drone.mission.cancel_mission_upload()
 
     async def download_mission(self, drone_instance):
-        return await drone_instance.drone.mission.download_mission()
+        mission = await drone_instance.drone.mission.download_mission()
+        items = mission.mission_items
+        if len(items) == 1:
+            if items[0].latitude_deg != items[0].latitude_deg:
+                return None
+        return mission
+
 
     async def download_mission_with_progress(self, drone_instance):
         return await drone_instance.drone.mission.download_mission_with_progress()
