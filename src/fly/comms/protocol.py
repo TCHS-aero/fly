@@ -14,6 +14,7 @@ class ImagePayload:
     wp_index: int
     phase: str  # survey | calibration | manual
     filename: str # filename instead of image path: helps with log lookup; building path is trivial (StreamCapture)
+    heading_deg: float = float("nan") # compass heading at capture time; required by utils.geo.pixel_to_ground()
 
     @property
     def pos(self) -> Point:
