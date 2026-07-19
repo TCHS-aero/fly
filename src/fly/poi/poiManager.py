@@ -80,6 +80,8 @@ class POIManager:
 
     async def update_status(self, poi_id: int, new_status: str):
         # valid transitions: candidate -> queued -> approached -> delivered | dismissed
+        if poi_id not in self._pois:
+            raise KeyError(f"No POI with id {poi_id}")
         self._pois[poi_id]["status"] = new_status
         await self.save()
         self._notify(poi_id, "status_changed")
