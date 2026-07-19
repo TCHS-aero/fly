@@ -666,6 +666,7 @@ class TC_Drone_App(QMainWindow):
  
     @asyncSlot()
     async def on_connect(self):
+        self.connected = True
         self.button_connect.setEnabled(False)
         port = self.port_edit.text().strip()
         if not is_valid_port(port):
@@ -676,8 +677,7 @@ class TC_Drone_App(QMainWindow):
 
         try:
             self.drone = Drone(port)
-            self.connected = await self.drone.connect()
-            if self.connected:
+            if await self.drone.connect():
                 self.button_disconnect.setEnabled(True)
                 self.port_edit.save_history()
                 lat, lon, alt = await self.drone.current_position()
@@ -699,10 +699,12 @@ class TC_Drone_App(QMainWindow):
  
                 await self.run_checks_on_connect()
             else:
+                self.connected = False
                 print(f"-- Failed to connect to the drone within {self.drone.connection_timeout} seconds.")
                 self.button_connect.setEnabled(True)
                 self.button_disconnect.setEnabled(False)
         except Exception as e:
+            self.connected = False
             print(f"Error: {e}")
 
     @asyncSlot()
@@ -733,7 +735,6 @@ class TC_Drone_App(QMainWindow):
 
             print("-- Disconnected")
             self.connected = False
-            sys.stdout = sys.__stdout__
         except Exception as e:
             print(f"Disconnect Error: {e}")
 
