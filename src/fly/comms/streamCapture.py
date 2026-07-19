@@ -54,6 +54,7 @@ class StreamCapture:
         image_path = self.image_dir / filename
 
         lat, lon, alt_rel = await self.drone.current_position()
+        heading_deg = await self.drone.current_heading()
 
         await asyncio.to_thread(cv2.imwrite, str(image_path), frame)
 
@@ -64,7 +65,8 @@ class StreamCapture:
             alt_rel = alt_rel,
             wp_index = wp_index,
             phase = phase,
-            filename = filename
+            filename = filename,
+            heading_deg = heading_deg
         )
         return (payload, image_path)
 
