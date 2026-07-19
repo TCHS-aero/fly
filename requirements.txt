@@ -15,3 +15,11 @@ aiofiles
 
 # comms/streamCapture.py
 opencv-python-headless # for cv2; headless because we're interacting via cli
+
+# poi/approachPlanner.py (image dimensions in run_centering_loop)
+Pillow
+
+# vision/*: torch, torchvision, supervision, rfdetr are intentionally not listed here
+# Most of the CLI does not need the stack, and they're heavy.
+# Install them via src/fly/vision/setup_env.sh only if you're using
+# `fly vision detect-image` / `fly poi center` / `fly vision pipeline`.
