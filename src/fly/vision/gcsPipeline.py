@@ -55,8 +55,10 @@ class GCSPipeline:
         loop = asyncio.get_running_loop()
         while self._running:
             item = await self.queue.get() # unpacks input from streamCapture.watch_and_capture()
-            if (item is _STOP
-                or not isinstance(item, tuple)): # prevents type checking error while unpacking item later
+            if (
+                item is _STOP
+                or not isinstance(item, tuple) # prevents type checking error while unpacking item later
+            ):
                 self.queue.task_done()
                 break
             payload, image_path = item
