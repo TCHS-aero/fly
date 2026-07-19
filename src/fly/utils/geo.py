@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 import pymap3d as pm
@@ -8,18 +8,9 @@ from geographiclib.geodesic import Geodesic
 from haversine import Direction, Unit, haversine, inverse_haversine
 
 
-@dataclass
-class Point:
+class Point(NamedTuple):
     lat: float
     lon: float
-
-    def __iter__(self):
-        # Makes Point work as (lat, lon) tuple for haversine function input
-        yield self.lat
-        yield self.lon
-
-    def __getitem__(self, idx): # haversine requires an indexed list
-        return (self.lat, self.lon)[idx]
 
 def haversine_m(pt1: Point, pt2: Point) -> float:
     return haversine(
