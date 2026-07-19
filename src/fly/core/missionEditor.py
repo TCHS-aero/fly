@@ -118,7 +118,9 @@ class MissionEditor:
 
             wps = self.mission.waypoints
             if at < 0 or at > len(wps):
+                clamped = max(0, min(at, len(wps)))
                 print(f"insert_waypoint: index {at} out of range (0-{len(wps)}), clamping")
+                at = clamped
 
             await self._pause()
             wps.insert(at, wp)
