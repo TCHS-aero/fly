@@ -24,10 +24,8 @@ class StreamCapture:
         # blocking the event loop during the 1s RTSP handshake)
         self._cap = await asyncio.to_thread(cv2.VideoCapture, self.rtsp_url)
 
-        # Creates image_dir if it doesn't exist.
         self.image_dir.mkdir(parents = True, exist_ok = True)
 
-        # Checks if stream opened
         if self._cap is not None and self._cap.isOpened():
             return True
         print("-- Failed to open RTSP stream.")
@@ -58,10 +56,8 @@ class StreamCapture:
         filename = f"frame_{ts}.png"
         image_path = self.image_dir / filename
 
-        # drone.current_position() - lat, lon, alt_rel from MAVSDK
         lat, lon, alt_rel = await self.drone.current_position()
 
-        # cv2.imwrite(path, frame) - save as JPEG; filename derived from ts
         await asyncio.to_thread(cv2.imwrite, str(image_path), frame)
 
         payload = ImagePayload(
