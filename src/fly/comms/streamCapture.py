@@ -34,16 +34,13 @@ class StreamCapture:
     async def capture_frame(
         self, wp_index: int, phase: str = "survey"
     ) -> tuple[ImagePayload, Path] | None:
-        # cap.read() - live frame from HM30
-        if (self._cap is None):
+
+        # Returns None if the stream is unavaliable (caller can retry next tick)
+        if self._cap is None or not self._cap.isOpened():
+            print("-- Video stream is not opened.")
             return None
 
         ret, frame = await asyncio.to_thread(self._cap.read)
-
-        # Returns None if the stream is unavaliable (caller can retry next tick)
-        if not self._cap.isOpened():
-            print("-- Video stream is not opened.")
-            return None
 
         if not ret:
             print("-- Failed to capture frame.")
