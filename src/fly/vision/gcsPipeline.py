@@ -45,7 +45,7 @@ class GCSPipeline:
         self._running = True
         loop = asyncio.get_running_loop()
         while self._running:
-            payload, image_path = await self.queue.get()
+            payload, image_path = await self.queue.get() # unpacks input from streamCapture.watch_and_capture()
             try:
                 detections = await loop.run_in_executor(
                     self._pool, _detect, str(image_path), self.model_path, self.confidence

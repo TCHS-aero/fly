@@ -94,7 +94,7 @@ class StreamCapture:
                     # put result onto queue; another part of program will listen
                     payload, img_path = capture_result
                     try:
-                        notify_queue.put_nowait(payload)
+                        notify_queue.put_nowait((payload, img_path)) # (GCSPipeline.start() expects (payload, image_path) tuple)
                     except asyncio.QueueFull:
                         print(
                             f"-- Queue full, dropping frame. Dropping image payload for waypoint {progress.current}"
