@@ -42,6 +42,7 @@ class ResumeManager:
             "saved_at": datetime.now(timezone.utc).isoformat(),
         }
         # mkstemp in the same directory guarantees os.replace is on one filesystem (/tmp uses RAM)
+        self.path.parent.mkdir(parents = True, exist_ok = True) # creates the directory if it doesn't exist (on first time save)
         fd, tmp = tempfile.mkstemp(dir=self.path.parent, prefix=".resume_tmp_")
         try:
             with os.fdopen(fd, "w") as f:
