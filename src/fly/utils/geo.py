@@ -41,8 +41,8 @@ def pixel_to_ground(
     drone_pos: Point,
     alt_m: float,
     heading_deg: float,
-    fov_h_deg: float = 81,
-    fov_v_deg: float = 51.3,
+    fov_h_deg: float = 81, # This number is checked against the doc for 1080p (16:9): 81 deg horizontal, 93 deg diagonal (anomaly, skipping)
+    fov_v_deg: float = 51.3, # tan(H/2) / tan(V/2) = w/h = 16/9
 ) -> Point:
     # projects a pixel detection to ground coordinate, assuming nadir camera (90deg)
     cx, cy = detected_xy
