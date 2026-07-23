@@ -2,7 +2,6 @@
 
 import re
 from pathlib import Path
-from sqlite3.dbapi2 import connect
 
 from fly.core.dataManager import get_setting, pull_data, update_port_data, update_setting
 from fly.core.drone import Drone
@@ -40,7 +39,7 @@ def _remember_port(port: str) -> None:
         history.append(port)
     update_port_data(port=port, history=history)
 
-def resolve_setting(value, key: str, default=None, *, quiet: bool = False):
+def resolve_setting(value, key: str, default=None, *, quiet: bool = False) -> str | None:
     # generic version of resolve_port()
     if value is not None:
         return value
@@ -81,6 +80,12 @@ async def get_connected_drone(port: str | None, *, timeout: int=10) -> Drone | N
     _remember_port(resolved)
     return drone
 
+async def require_drone(port: str | None, *, timeout: int = 10) -> Drone:
+    drone = await get_connected_drone(port, timeout=timeout)
+    if not drone:
+        raise SystemExit(1)
+    return drone
+
 def load_mission(file: str | Path) -> Mission | None:
     # parses json into Mission
     path = Path(file)
@@ -92,3 +97,30 @@ def load_mission(file: str | Path) -> Mission | None:
     except Exception as e:
         print(f"-- Failed to load mission {path}: {e}")
         return None
+
+def require_mission(file: str | Path) -> Mission:
+    # load_mission() but exits on failure
+    mission = load_mission(file)
+    if not mission:
+        raise SystemExit(1)
+    return mission
+
+def resolve_data_dir_paths(
+    data_dir: str | None,
+    *,
+    image_dir: str | None = None,
+    poi_registry: str | None = None,
+    flight_log: str | None = None,
+    resume_state: str | None = None
+) -> dict[str, str]:
+    # shared by `fly run` and `fly status`: resolves --data-dir
+    # (flag > saved > .)
+    data_dir = resolve_setting(data_dir, "data-dir", ".", quiet=True) or "."  # `or "."` calms typechecker
+    base = Path(data_dir)
+    return {
+        "data_dir": data_dir,
+        "image_dir": image_dir or str(base / "captured_images"),
+        "poi_registry": poi_registry or str(base / "poi_registry.json"),
+        "flight_log": flight_log or str(base / "flight_log.jsonl"),
+        "resume_state": resume_state or str(base / "resume_state.json")
+    }
