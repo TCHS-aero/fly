@@ -12,8 +12,8 @@ def require_safe_edit_window(func):
     # checks if it's safe to edit. decorator so code isn't duplicated
     @functools.wraps(func)
     async def wrapper(self, *args, **kwargs):
-        if not await self.is_safe_to_edit():
-            print("Cannot edit mission now; not enough time before next waypoint")
+        if await self.safe_edit_index() is None:
+            print("-- Unable to edit mission.")
             return
         # if safe, do original function
         return await func(self, *args, **kwargs)
@@ -43,14 +43,14 @@ class MissionEditor:
         self.mission = mission
         self._lock = asyncio.Lock()
 
-    async def current_index(self) -> int:
+    async def current_index(self) -> int | None:
         progress = await self.mission.get_mission_progress(self.drone)
         if progress is None:
-            return -1
+            return None
         current, _ = progress
         return current
 
-    async def seconds_until_next_waypoint(self, current: int) -> float: # used by is_safe_to_edit
+    async def seconds_until_next_waypoint(self, current: int) -> float:
         # returns estimated seconds until the next waypoint
         # straight-line distance / ground speed. returns inf if speed = 0
         # The GUI uses this to enable the edit button when the value exceeds 8s
@@ -75,30 +75,36 @@ class MissionEditor:
 
         return (distance / ground_speed)
 
-    async def is_safe_to_edit(self, time_buffer_s: int = 8) -> bool:
+    async def safe_edit_index(self, time_buffer_s: int = 8) -> int | None:
         current = await self.current_index()
 
-        if current < 0:
+        if current is None:
             # mission not active so we can't insert/append anything
-            return False
+            print("-- Mission is likely inactive")
+            return None
 
         time_to_next = await self.seconds_until_next_waypoint(current)
 
         if time_to_next > time_buffer_s:
-            print(f"SAFE: {time_to_next:.1f}s until next waypoint")
-            return True
+            print(f"-- SAFE edit: {time_to_next:.1f}s until next waypoint")
+            return current
         else:
-            print(f"UNSAFE: {time_to_next:.1f}s until next waypoint")
-            return False
+            print(f"-- UNSAFE edit: {time_to_next:.1f}s until next waypoint")
+            return None
+
+    async def _begin_edit(self) -> int | None:
+        idx = await self.safe_edit_index()
+        if idx is None:
+            print("-- Safety window closed by the time lock was acquired")
+        return idx
 
     # public -----
     @require_safe_edit_window
     async def append_waypoint(self, wp:dict):
         wp = _sanitize_waypoint(wp)
         async with self._lock:
-            idx = await self.current_index()
-            if not await self.is_safe_to_edit(): # double check: repeated across insert and remove waypoint as well
-                print("Safety window closed by the time lock was acquired")
+            idx = await self._begin_edit()
+            if idx is None:
                 return
 
             await self._pause()
@@ -111,15 +117,14 @@ class MissionEditor:
     async def insert_waypoint(self, at: int, wp: dict):
         wp = _sanitize_waypoint(wp)
         async with self._lock:
-            idx = await self.current_index()
-            if not await self.is_safe_to_edit():
-                print("Safety window closed by the time lock was acquired")
+            idx = await self._begin_edit()
+            if idx is None:
                 return
 
             wps = self.mission.waypoints
             if at < 0 or at > len(wps):
                 clamped = max(0, min(at, len(wps)))
-                print(f"insert_waypoint: index {at} out of range (0-{len(wps)}), clamping")
+                print(f"-- insert_waypoint: index {at} out of range (0-{len(wps)}), clamping")
                 at = clamped
 
             await self._pause()
@@ -131,14 +136,13 @@ class MissionEditor:
     @require_safe_edit_window
     async def remove_waypoint(self, at: int):
         async with self._lock:
-            idx = await self.current_index()
-            if not await self.is_safe_to_edit():
-                print("Safety window closed by the time lock was acquired")
+            idx = await self._begin_edit()
+            if idx is None:
                 return
 
             wps = self.mission.waypoints
             if at < 0 or at >= len(wps):
-                print(f"remove_waypoint: index {at} out of range (0-{len(wps)-1})") # check happens before pause
+                print(f"-- remove_waypoint: index {at} out of range (0-{len(wps)-1})") # check happens before pause
                 return
 
             await self._pause()
@@ -164,7 +168,7 @@ class MissionEditor:
             async with asyncio.timeout(10):
                 await self.drone.wait_until_stopped(0.1)
         except TimeoutError:
-            print("Timeout 10s")
+            print("-- Timeout 10s")
 
     async def _upload_and_resume(self, waypoints: list[dict], resume_index:int):
         # converts waypoints to missionitems, uploads, sets item, starts mission
@@ -176,14 +180,14 @@ class MissionEditor:
             await self.mission.set_current_mission_target(self.drone, resume_index)
             await self.mission.start_mission(self.drone)
         except Exception as e:
-            print(f"_upload_and_resume failed at resume_index={resume_index}: {e}")
+            print(f"-- _upload_and_resume failed at resume_index={resume_index}: {e}")
             raise
 
     def _save(self, waypoints: list[dict]):
         # writes waypoints
         # there will no longer be a _meta key planned
         if self.mission.path is None:
-            print("Cannot save: mission has no file path")
+            print("-- Cannot save: mission has no file path")
             return
         with open(self.mission.path, "w") as f:
             json.dump([self.mission.RTL] + waypoints, f, indent = 2)
