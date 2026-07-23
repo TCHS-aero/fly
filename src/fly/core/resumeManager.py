@@ -47,7 +47,7 @@ class ResumeManager:
         fd, tmp = tempfile.mkstemp(dir=self.path.parent, prefix=".resume_tmp_")
         try:
             with os.fdopen(fd, "w") as f:
-                json.dump(data,f,indent=2)
+                json.dump(data, f, indent=2)
             os.replace(tmp, self.path)  # no risk of half-written file since self.path will point to data in tmp; tmp is deleted
         except Exception:
             with contextlib.suppress(OSError)
