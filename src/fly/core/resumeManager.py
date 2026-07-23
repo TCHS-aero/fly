@@ -50,7 +50,7 @@ class ResumeManager:
                 json.dump(data, f, indent=2)
             os.replace(tmp, self.path)  # no risk of half-written file since self.path will point to data in tmp; tmp is deleted
         except Exception:
-            with contextlib.suppress(OSError)
+            with contextlib.suppress(OSError):
                 os.unlink(tmp)
             raise
 
