@@ -7,12 +7,11 @@ from fly.utils.geo import haversine_m, Point
 def entries_near(log: FlightLog, pos:Point, radius_m: float) -> list[dict]:
     # All entries whose capture position is within radius_m of pos,
     # sorted by ascending distance
-    hits: list[tuple[float, dict]] = []
-    for entry in log.all_entries():
-        d = haversine_m(pos, Point(entry["lat"], entry["lon"]))
-        if  d<=radius_m:
-            hits.append((d, entry))
-    return [e for _, e in sorted(hits, key=lambda x: x[0])]
+    hits = sorted(
+        ((haversine_m(pos, Point(entry["lat"], entry["lon"])), entry) for entry in log.all_entries()),
+        key=lambda hit: hit[0]
+    )
+    return [entry for distance, entry in hits if distance <= radius_m]
 
 def entries_by_phase(log: FlightLog, phase: str) -> list[dict]:
     # all entries matching phase ("survey" | "calibration" | "manual")
