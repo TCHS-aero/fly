@@ -35,7 +35,6 @@ class StreamCapture:
         self, wp_index: int, phase: str = "survey"
     ) -> tuple[ImagePayload, Path] | None:
 
-        # Returns None if the stream is unavaliable (caller can retry next tick)
         if self._cap is None or not self._cap.isOpened():
             print("-- Video stream is not opened.")
             return None
@@ -46,10 +45,8 @@ class StreamCapture:
             print("-- Failed to capture frame.")
             return None
 
-        # grabs current frame and pairs it with live telemetry
         ts = ImagePayload.now_ts()
 
-        # creates image path under self.image_dir
         filename = f"frame_{ts}.png"
         image_path = self.image_dir / filename
 
@@ -59,14 +56,14 @@ class StreamCapture:
         await asyncio.to_thread(cv2.imwrite, str(image_path), frame)
 
         payload = ImagePayload(
-            ts = ts,
-            lat = lat,
-            lon = lon,
-            alt_rel = alt_rel,
-            wp_index = wp_index,
-            phase = phase,
-            filename = filename,
-            heading_deg = heading_deg
+            ts=ts,
+            lat=lat,
+            lon=lon,
+            alt_rel=alt_rel,
+            wp_index=wp_index,
+            phase=phase,
+            filename=filename,
+            heading_deg=heading_deg
         )
         return (payload, image_path)
 

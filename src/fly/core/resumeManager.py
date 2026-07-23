@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import tempfile
@@ -15,7 +16,7 @@ class FlightPhase(Enum):
 class ResumeManager:
     # write state to resume_state.json on every transition
 
-    def __init__(self, state_file:str = "resume_state.json"):
+    def __init__(self, state_file: str = "resume_state.json"):
         self.path = Path(state_file)
         self.phase = FlightPhase.IDLE
         self.last_waypoint = -1
@@ -47,19 +48,17 @@ class ResumeManager:
         try:
             with os.fdopen(fd, "w") as f:
                 json.dump(data,f,indent=2)
-            os.replace(tmp, self.path) # no risk of half-written file since self.path will point to data in tmp; tmp is deleted
+            os.replace(tmp, self.path)  # no risk of half-written file since self.path will point to data in tmp; tmp is deleted
         except Exception:
-            try:
+            with contextlib.suppress(OSError)
                 os.unlink(tmp)
-            except OSError:
-                pass
             raise
 
     def transition(self, phase: FlightPhase):
         self.phase = phase
         self.save()
 
-    def waypoint_done(self, index:int):
+    def waypoint_done(self, index: int):
         # called on each MAVSDK mission_progress tick
         self.last_waypoint = index
         self.save()
