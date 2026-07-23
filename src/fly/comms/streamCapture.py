@@ -65,7 +65,7 @@ class StreamCapture:
             filename=filename,
             heading_deg=heading_deg
         )
-        return (payload, image_path)
+        return payload, image_path
 
 
     async def watch_and_capture(self, notify_queue: asyncio.Queue):
@@ -78,24 +78,18 @@ class StreamCapture:
         # loop runs whenever drone sends progress update
         async for progress in self.drone.drone.mission.mission_progress():
             if progress.current > last_seen_waypoint:
-                print(
-                    f"-- Reached new waypoint #{progress.current}. Capturing frame..."
-                )
+                print(f"-- Reached new waypoint #{progress.current}. Capturing frame...")
 
                 last_seen_waypoint = progress.current
 
-                capture_result = await self.capture_frame(
-                    wp_index=progress.current, phase="survey"
-                )
+                capture_result = await self.capture_frame(wp_index=progress.current, phase="survey")
                 if capture_result is not None:
                     # put result onto queue; another part of program will listen
                     payload, img_path = capture_result
                     try:
                         notify_queue.put_nowait((payload, img_path)) # (GCSPipeline.start() expects (payload, image_path) tuple)
                     except asyncio.QueueFull:
-                        print(
-                            f"-- Queue full, dropping frame. Dropping image payload for waypoint {progress.current}"
-                        )
+                        print(f"-- Queue full, dropping frame. Dropping image payload for waypoint {progress.current}")
 
         print("Watcher stopped.")
 
