@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
+
 from fly.poi.poiManager import POIManager
 from fly.comms.protocol import ImagePayload
 from src.fly.logging.flightLog import FlightLog
