@@ -8,7 +8,7 @@ from fly.utils.geo import Point, haversine_m
 
 
 class POIManager:
-    # Detectio aggregation, deduplication, and lifecycle management.
+    # Detection aggregation, deduplication, and lifecycle management.
     # Detections within DEDUP_RADIUS_M of an existing POI are merged using a running weighted average.
     DEDUP_RADIUS_M = 5.0
 
@@ -22,8 +22,9 @@ class POIManager:
     async def load(self):
         # loads poi_registry.json. Reconstructs _pois and _next_id
         try:
-            with open(self.path) as f:
-                data = json.load(f)
+            async with aiofiles.open(self.path) as f:
+                content = await f.read()
+            data = json.loads(content)
             self._pois = {p["poi_id"]: p for p in data}
             self._next_id = max(self._pois.keys(), default=0) + 1
         except (FileNotFoundError, json.JSONDecodeError):
