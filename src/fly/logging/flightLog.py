@@ -1,7 +1,9 @@
 import asyncio
-import aiofiles
 import json
 from pathlib import Path
+
+import aiofiles
+
 from fly.comms.protocol import ImagePayload
 
 class FlightLog:
@@ -11,7 +13,7 @@ class FlightLog:
     def __init__(self, log_path:str):
         self.path = Path(log_path)
         self._lock = asyncio.Lock()
-        self._index: dict[str, dict] = {} # filename -> entry
+        self._index: dict[str, dict] = {}  # filename -> entry
         self._seq = 0
 
     async def load_existing(self):
