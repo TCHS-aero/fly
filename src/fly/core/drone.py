@@ -53,6 +53,13 @@ class Drone:
             rel_altitude_m = telemetry.relative_altitude_m
             return lat_deg, lon_deg, rel_altitude_m
 
+    async def current_heading(self):
+        # Needed by vision pipeline (utils.geo.pixel_to_ground) to project
+        # a pixel detection to a ground coordinate
+        # 0 = North
+        async for heading in self.drone.telemetry.heading():
+            return heading.heading_deg
+
     async def move_to_location(self, lat, lon, alt, yaw):
         clat, clon, calt = await self.current_position()
         await self.drone.offboard.set_position_global(
@@ -98,7 +105,7 @@ class Drone:
     async def current_ground_speed(self) -> float:
         async for telemetry in self.drone.telemetry.position_velocity_ned():
             velocity = telemetry.velocity
-    
+
             return sqrt(
                 velocity.north_m_s**2 +
                 velocity.east_m_s**2
