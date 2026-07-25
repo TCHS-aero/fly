@@ -115,7 +115,7 @@ def resolve_data_dir_paths(
 ) -> dict[str, str]:
     # shared by `fly run` and `fly status`: resolves --data-dir
     # (flag > saved > .)
-    data_dir = resolve_setting(data_dir, "data-dir", ".", quiet=True) or "."  # `or "."` calms typechecker
+    data_dir = resolve_setting(data_dir, "data-dir", ".", quiet=True) or "."  # or "." prevents linter thinking its None
     base = Path(data_dir)
     return {
         "data_dir": data_dir,
