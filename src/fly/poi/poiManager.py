@@ -1,8 +1,9 @@
 import asyncio
 import json
 import os
-import aiofiles
 from pathlib import Path
+
+import aiofiles
 
 from fly.utils.geo import Point, haversine_m
 

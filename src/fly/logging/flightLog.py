@@ -6,6 +6,7 @@ import aiofiles
 
 from fly.comms.protocol import ImagePayload
 
+
 class FlightLog:
     # append-only jsonl file linking image filenames to GPS coordinates;
     # in-memory dictionary for O(1) filename lookup

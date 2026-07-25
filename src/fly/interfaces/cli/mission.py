@@ -6,6 +6,7 @@ from fly.core.mission import Mission
 from fly.core.missionEditor import MissionEditor
 from fly.interfaces.cli.session import require_drone, require_mission
 
+
 @click.group(help = "Load, upload, start, pause, and inspect missions.")
 def mission():
     pass

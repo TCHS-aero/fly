@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import fly
+
 PACKAGE_DIR = Path(fly.__file__).resolve().parent # tracks the top of the fly package
 settings = PACKAGE_DIR / "config" / "settings.json"
 

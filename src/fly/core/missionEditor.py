@@ -1,9 +1,10 @@
 import asyncio
-import json
 import functools
+import json
 
 from fly.core.mission import Mission
-from fly.utils.geo import haversine_m, Point
+from fly.utils.geo import Point, haversine_m
+
 
 def require_safe_edit_window(func):
     # checks if it's safe to edit. decorator so code isn't duplicated

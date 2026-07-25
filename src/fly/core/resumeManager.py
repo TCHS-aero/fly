@@ -2,9 +2,9 @@ import contextlib
 import json
 import os
 import tempfile
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from datetime import datetime, timezone
 
 
 class FlightPhase(Enum):

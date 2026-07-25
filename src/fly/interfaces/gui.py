@@ -1,41 +1,40 @@
-import sys
 import asyncio
 import re
-
+import sys
 from pathlib import Path
-from fly.core.drone import Drone
-from fly.core.mission import Mission
-from fly.core.dataManager import (
-    update_port_data,
-    pull_data,
-    update_mission_data,
-)
 
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QAction, QIcon, QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
-    QMainWindow,
-    QPushButton,
-    QLabel,
-    QDoubleSpinBox,
-    QVBoxLayout,
-    QHBoxLayout,
-    QWidget,
-    QTextEdit,
     QComboBox,
-    QTabWidget,
-    QGridLayout,
+    QDoubleSpinBox,
     QFileDialog,
-    QProgressBar,
-    QSizePolicy,
-    QMessageBox,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
     QMenu,
-    QCheckBox,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QSizePolicy,
+    QTabWidget,
+    QTextEdit,
     QToolButton,
-    QLineEdit
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtGui import QIcon, QAction, QPixmap
-from PyQt6.QtCore import Qt, QSize
-from qasync import asyncSlot, QEventLoop
+from qasync import QEventLoop, asyncSlot
+
+from fly.core.dataManager import (
+    pull_data,
+    update_mission_data,
+    update_port_data,
+)
+from fly.core.drone import Drone
+from fly.core.mission import Mission
 
 base_dir = Path(__file__).resolve().parent.parent
 

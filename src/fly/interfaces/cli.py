@@ -1,16 +1,18 @@
-import asyncclick as click
 import json
 import re
+
+import asyncclick as click
+
+from fly.core.dataManager import (
+    drone_instance_json,
+    load_drone,
+    mission_file_json,
+    pull_from_json,
+    wipe_config,
+    write_to_json,
+)
 from fly.core.drone import Drone
 from fly.core.mission import Mission
-from fly.core.dataManager import (
-    write_to_json,
-    pull_from_json,
-    load_drone,
-    drone_instance_json,
-    mission_file_json,
-    wipe_config,
-)
 
 
 @click.group()

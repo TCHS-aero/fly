@@ -21,10 +21,11 @@ Usage:
 import argparse
 import json
 from pathlib import Path
+
 try:
     from .rf_detr_nano import NanoDetector
 except ImportError:
-    from rf_detr_nano import NanoDetector # Works when running as standalone script
+    from rf_detr_nano import NanoDetector  # Works when running as standalone script
 
 
 def load_class_names(filepath):

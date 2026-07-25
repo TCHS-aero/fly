@@ -2,7 +2,8 @@
 # Helpful for testing if used in cli
 
 from fly.logging.flightLog import FlightLog
-from fly.utils.geo import haversine_m, Point
+from fly.utils.geo import Point, haversine_m
+
 
 def entries_near(log: FlightLog, pos:Point, radius_m: float) -> list[dict]:
     # All entries whose capture position is within radius_m of pos,

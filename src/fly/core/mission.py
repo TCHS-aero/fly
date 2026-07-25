@@ -1,8 +1,9 @@
 import json
-import asyncio
 from pathlib import Path
+
 from mavsdk.mission import MissionItem, MissionPlan
 from mavsdk.telemetry import FlightMode
+
 
 class Mission:
     def __init__(self, *, file = None):

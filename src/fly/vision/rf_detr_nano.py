@@ -3,12 +3,13 @@ Core logic for RF-DETR Nano Detection Module
 Modified to support custom-trained models
 """
 
-from PIL import Image
+import time
+
 import numpy as np
+import supervision as sv
+from PIL import Image
 from rfdetr import RFDETRNano
 from rfdetr.util.coco_classes import COCO_CLASSES
-import supervision as sv
-import time
 
 
 class NanoDetector:
