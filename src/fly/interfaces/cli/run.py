@@ -16,7 +16,7 @@ from fly.interfaces.cli.session import (
 
 
 async def _resolve_resume(rm: ResumeManager, do_resume: bool | None) -> None:
-    # checks resume_state for interrupted flight
+    # checks state_file for interrupted flight
     if not rm.load():
         return
 
@@ -76,28 +76,28 @@ async def _build_vision_pipeline(drone, rtsp_url, image_dir, poi_registry, fligh
 @click.option("--image-dir", default=None, help="[default: <data-dir>/captured_images]")
 @click.option("--poi-registry", default=None, help="[default: <data-dir>/poi_registry.json]")
 @click.option("--flight-log", default=None, help="[default: <data-dir>/flight_log.jsonl]")
-@click.option("--resume-state", default=None, help="[default: <data-dir>/resume_state.json]")
+@click.option("--state-file", default=None, help="[default: <data-dir>/state_file.json]")
 @click.option("--model", "model_path", default=None, help="Custom detector weights (.pth). Defaults to last-used, or COCO weights if none are on record.")
 @click.option("--confidence", type=float, default=None, help="Detection confidence threshold. Defaults to the last-used value, or 0.5.")
 @click.option("--takeoff-alt", type=float, default=None, help="Arm and take off to this altitude first. Omit if the drone is already airborne or if the autopilot auto-takeoffs on mission start.")
 @click.option("--resume/--fresh", "do_resume", default=None, help="Resume a prior interrupted flight if one is on record. Default: ask.")
 @click.option("--land-on-finish/--rtl-on-finish", "land_on_finish", default=None, help="Override the mission file's RTL-after-mission flag.")
-async def run(file_, port, rtsp_url, data_dir, image_dir, poi_registry, flight_log, resume_state, model_path, confidence, takeoff_alt, do_resume, land_on_finish):
+async def run(file_, port, rtsp_url, data_dir, image_dir, poi_registry, flight_log, state_file, model_path, confidence, takeoff_alt, do_resume, land_on_finish):
     m = require_mission(file_)
 
     # resolve
     paths = resolve_data_dir_paths(
-        data_dir, image_dir=image_dir, poi_registry=poi_registry, flight_log=flight_log, resume_state=resume_state
+        data_dir, image_dir=image_dir, poi_registry=poi_registry, flight_log=flight_log, state_file=state_file
     )
     data_dir, image_dir = paths["data_dir"], paths["image_dir"]
-    poi_registry, flight_log, resume_state = paths["poi_registry"], paths["flight_log"], paths["resume_state"]
+    poi_registry, flight_log, state_file = paths["poi_registry"], paths["flight_log"], paths["state_file"]
 
     rtsp_url = resolve_setting(rtsp_url, "rtsp-url", None)
     model_path = resolve_setting(model_path, "model-path", None, quiet=True)
     confidence = resolve_setting(confidence, "confidence-threshold", 0.5, quiet=True)
 
     # resume check
-    rm = ResumeManager(state_file=resume_state)
+    rm = ResumeManager(state_file=state_file)
     await _resolve_resume(rm, do_resume)
 
     # connect
