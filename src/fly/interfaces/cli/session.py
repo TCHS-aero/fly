@@ -115,7 +115,7 @@ def resolve_data_dir_paths(
     image_dir: str | None = None,
     poi_registry: str | None = None,
     flight_log: str | None = None,
-    resume_state: str | None = None
+    state_file: str | None = None
 ) -> dict[str, str]:
     # shared by `fly run` and `fly status`: resolves --data-dir
     # (flag > saved > .)
@@ -126,5 +126,5 @@ def resolve_data_dir_paths(
         "image_dir": image_dir or str(base / "captured_images"),
         "poi_registry": poi_registry or str(base / "poi_registry.json"),
         "flight_log": flight_log or str(base / "flight_log.jsonl"),
-        "resume_state": resume_state or str(base / "resume_state.json")
+        "state_file": state_file or str(base / "state_file.json")
     }
