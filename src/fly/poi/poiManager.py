@@ -64,13 +64,14 @@ class POIManager:
                 self._next_id += 1
                 self._pois[poi_id] = {
                     "poi_id": poi_id, "status": "candidate",
-                    "lat": pos.lat, "lon": pos.lon,
-                    "confidence_avg": confidence, "detection_count": 1,
+                    "lat": pos.lat,
+                    "lon": pos.lon,
+                    "confidence_avg": confidence,
+                    "detection_count": 1,
                     "source_images": [source_image],
                 }
                 is_new=True
             await self.save()
-            self._notify(poi_id, "created" if is_new else "updated")
             return poi_id, is_new
 
     def get(self, poi_id: int) -> dict | None:
@@ -86,11 +87,6 @@ class POIManager:
             raise KeyError(f"No POI with id {poi_id}")
         self._pois[poi_id]["status"] = new_status
         await self.save()
-        self._notify(poi_id, "status_changed")
-
-    def subscribe(self, callback):
-        # callback(poi_id: int, event: str, poi:dict) on every change
-        self._subscribers.append(callback)
 
     # private
 
@@ -101,7 +97,3 @@ class POIManager:
             if d<best_d:
                 best, best_d = pid, d
         return best
-
-    def _notify(self, poi_id: int, event: str):
-        for cb in self._subscribers:
-            cb(poi_id, event, self._pois.get(poi_id))
