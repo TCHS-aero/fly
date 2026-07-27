@@ -2,7 +2,7 @@ import contextlib
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
@@ -40,7 +40,7 @@ class ResumeManager:
             "phase": self.phase.value,
             "last_waypoint": self.last_waypoint,
             "survey_complete": self.survey_complete,
-            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "saved_at": datetime.now(UTC).isoformat(),
         }
         # mkstemp in the same directory guarantees os.replace is on one filesystem (/tmp uses RAM)
         self.path.parent.mkdir(parents = True, exist_ok = True) # creates the directory if it doesn't exist (on first time save)

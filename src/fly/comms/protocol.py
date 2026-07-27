@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fly.utils.geo import Point
 
@@ -23,4 +23,4 @@ class ImagePayload:
 
     @staticmethod
     def now_ts() -> str:  # `:-3` chops off 3 digits to get milliseconds
-        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
