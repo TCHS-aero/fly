@@ -240,3 +240,6 @@ src/fly/config/settings.json
 
 # -----------
 pyvenv.cfg
+
+# most of the team members are using pip. remove in the future if migrating to uv
+uv.lock
