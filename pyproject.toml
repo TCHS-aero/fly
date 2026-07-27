@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
-aero_cli = "fly.interfaces.cli:main"
+aero = "fly.interfaces.cli:main"
 aero_gui = "fly.interfaces.gui:main"
 
 
