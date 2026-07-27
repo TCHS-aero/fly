@@ -135,18 +135,14 @@ async def _load_editor(file_: str, port: str | None) -> MissionEditor:
     drone = await require_drone(port)
     return MissionEditor(drone, m)
 
-def _load_waypoints_from_file(path: str) -> list[dict]:
-    # read a mission JSON file and return its waypoints, skipping RTL flag
-    with open(path) as f:
-        data = json.load(f)
-    if not isinstance(data, list) or len(data) < 2:
-        raise click.BadParameter(f"{path} is not a valid mission file (expected [RTL, wp, ...]).")
-    return data [1:]
-
 def _extract_waypoints(waypoints_file: str | None, kwargs: dict) -> list[dict]:
     # validate flags/options and return a list of waypoint dicts to append or insert
     if waypoints_file:
-        return _load_waypoints_from_file(waypoints_file)
+        with open(waypoints_file) as f:
+            data = json.load(f)
+        if not isinstance(data, list) or len(data) < 2:
+            raise click.BadParameter(f"{waypoints_file} is not a valid mission file (expected [RTL, wp, ...]).")
+        return data [1:]
 
     lat, lon, alt = kwargs.get("lat"), kwargs.get("lon"), kwargs.get("alt")
     if lat is None or lon is None or alt is None:
@@ -163,10 +159,8 @@ async def edit_append(file_, port, waypoints_file, **kwargs):
     editor = await _load_editor(file_, port)
     for wp in wps:
         await editor.append_waypoint(wp)
-    if waypoints_file:
-        print(f"-- Append was requested: {len(wps)} waypoint(s) from {waypoints_file}.")
-    else:
-        print("-- Append was requested.")
+
+    print(f"-- Append was requested: {len(wps)} waypoint(s).")
 
 @mission_edit.command(name="insert", help="Insert a waypoint at a specific index in the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
@@ -178,11 +172,8 @@ async def edit_insert(file_, port, at, waypoints_file, **kwargs):
     editor = await _load_editor(file_, port)
     for i, wp in enumerate(wps):
         await editor.insert_waypoint(at + i, wp)
-        print(f"-- Inserted {len(wps)} waypoint(s) from {waypoints_file} starting at index {at}.")
-    if waypoints_file:
-        print(f"-- Insert was requested: {len(wps)} waypoint(s) from {waypoints_file}.")
-    else:
-        print("-- Insert was requested.")
+
+    print(f"-- Insert was requested: {len(wps)} waypoint(s) starting at index {at}.")
 
 @mission_edit.command(name="remove", help="Remove a waypoint at a specific index from the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
