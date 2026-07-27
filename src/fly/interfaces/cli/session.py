@@ -128,3 +128,14 @@ def resolve_data_dir_paths(
         "flight_log": flight_log or str(base / "flight_log.jsonl"),
         "state_file": state_file or str(base / "state_file.json")
     }
+
+
+def require_nano_detector():
+    try:
+        from fly.vision.rf_detr_nano import NanoDetector
+
+        return NanoDetector
+    except ImportError as e:
+        print(f"-- Vision dependencies not installed ({e}).")
+        print("-- Run src/fly/vision/setup_env.sh first.")
+        raise SystemExit(1) from e
