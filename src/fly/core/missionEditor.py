@@ -177,6 +177,7 @@ class MissionEditor:
             await self.mission.upload_mission(self.drone)
             await self.mission.set_current_mission_target(self.drone, resume_index)
             await self.mission.start_mission(self.drone)
+            print("-- Upload and resume success.")
         except Exception as e:
             print(f"-- _upload_and_resume failed at resume_index={resume_index}: {e}")
             raise
