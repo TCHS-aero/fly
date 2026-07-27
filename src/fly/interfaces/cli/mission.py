@@ -1,4 +1,5 @@
 # Mission and MissionEditor
+import json
 
 import asyncclick as click
 
@@ -94,11 +95,11 @@ mission.add_command(mission_edit)
 def _waypoint_options(fn):
     # shared flag set for append/insert -- mirrors the mission_waypoints.json schema exactly
     # see Mission.convert_mission_items_to_plan for the field list
-    fn = click.option("--lat",   type=float,     required=True, help="Latitude, degrees.")(fn)
-    fn = click.option("--lon",   type=float,     required=True, help="Longitude, degrees.")(fn)
-    fn = click.option("--speed", type=float,     default=5.0,   show_default=True, help="Speed, m/s.")(fn)
-    fn = click.option("--lat",   type=float,     required=True, help="Latitude, degrees.")(fn)
-    fn = click.option("--acceptance-radius",     type=float,    default=10.0, show_default=True, help="acceptance radius, meters.")(fn)
+    fn = click.option("--lat",   type=float,     default=None,  help="Latitude, degrees.")(fn)
+    fn = click.option("--lon",   type=float,     default=None,  help="Longitude, degrees.")(fn)
+    fn = click.option("--alt",   type=float,     default=None,  help="Relative altitude, meters.")(fn)
+    fn = click.option("--speed", type=float,     default=5.0,   show_default=True, help="Speed, m/s")(fn)
+    fn = click.option("--acceptance-radius",     type=float,    default=10.0, show_default=True, help="Acceptance radius, meters.")(fn)
     fn = click.option("--yaw",   type=float,     default=0.0,   show_default=True, help="Yaw, degrees.")(fn)
     fn = click.option("--fly-through/--stop-at", default=True,  show_default=True, help="Fly through vs stabilize at the waypoint.")(fn)
     fn = click.option("--loiter-s", type=float,  default=0.0,   show_default=True, help="Loiter time, seconds.")(fn)
@@ -134,26 +135,56 @@ async def _load_editor(file_: str, port: str | None) -> MissionEditor:
     drone = await require_drone(port)
     return MissionEditor(drone, m)
 
+def _load_waypoints_from_file(path: str) -> list[dict]:
+    # read a mission JSON file and return its waypoints, skipping RTL flag
+    with open(path) as f:
+        data = json.load(f)
+    if not isinstance(data, list) or len(data) < 2:
+        raise click.BadParameter(f"{path} is not a valid mission file (expected [RTL, wp, ...]).")
+    return data [1:]
+
+def _extract_waypoints(waypoints_file: str | None, kwargs: dict) -> list[dict]:
+    # validate flags/options and return a list of waypoint dicts to append or insert
+    if waypoints_file:
+        return _load_waypoints_from_file(waypoints_file)
+
+    lat, lon, alt = kwargs.get("lat"), kwargs.get("lon"), kwargs.get("alt")
+    if lat is None or lon is None or alt is None:
+        raise click.UsageError("Specify either --waypoints-file or all of --lat, --lon, and --alt.")
+    return [_waypoint_from_kwargs(kwargs)]
+
 @mission_edit.command(name="append", help="Append a waypoint to the end of the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
 @click.option("--port", help="Connection port. Defaults to the last-used port.")
+@click.option("--waypoints-file", type=click.Path(exists=True), default=None, help="A mission JSON file whose waypoints will be appended (RTL flag at index 0 is skipped). Mutually exclusive with manual waypoint flags.")
 @_waypoint_options
-async def edit_append(file_, port, **kwargs):
+async def edit_append(file_, port, waypoints_file, **kwargs):
+    wps = _extract_waypoints(waypoints_file, kwargs)
     editor = await _load_editor(file_, port)
-    await editor.append_waypoint(_waypoint_from_kwargs(kwargs))
-    print("-- Append requested (see above for result mensajes ('mensajes' is messages in Spanish)).")
+    for wp in wps:
+        await editor.append_waypoint(wp)
+    if waypoints_file:
+        print(f"-- Append was requested: {len(wps)} waypoint(s) from {waypoints_file}.")
+    else:
+        print("-- Append was requested.")
 
-@mission_edit.command(name="append", help="Insert a waypoint at a specific index in the active mission.")
+@mission_edit.command(name="insert", help="Insert a waypoint at a specific index in the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
 @click.option("--port", help="Connection port. Defaults to the last-used port.")
 @click.option("--at", type=int, required=True, help="Index to insert at (0 = before the first waypoint).")
 @_waypoint_options
-async def edit_insert(file_, port, at, **kwargs):
+async def edit_insert(file_, port, at, waypoints_file, **kwargs):
+    wps = _extract_waypoints(waypoints_file, kwargs)
     editor = await _load_editor(file_, port)
-    await editor.insert_waypoint(at, _waypoint_from_kwargs(kwargs))
-    print("-- Insert requested (see above for result messages).")
+    for i, wp in enumerate(wps):
+        await editor.insert_waypoint(at + i, wp)
+        print(f"-- Inserted {len(wps)} waypoint(s) from {waypoints_file} starting at index {at}.")
+    if waypoints_file:
+        print(f"-- Insert was requested: {len(wps)} waypoint(s) from {waypoints_file}.")
+    else:
+        print("-- Insert was requested.")
 
-@mission_edit.command(name="append", help="Remove a waypoint at a specific index from the active mission.")
+@mission_edit.command(name="remove", help="Remove a waypoint at a specific index from the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
 @click.option("--port", help="Connection port. Defaults to the last-used port.")
 @click.option("--at", type=int, required=True, help="Index to insert at (0 = before the first waypoint).")
