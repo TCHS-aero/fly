@@ -15,7 +15,6 @@ dependencies = [
     "asyncclick",
     "numpy",
     "pymap3d",
-    "geographiclib",
     "haversine",
     "aiofiles",
     "opencv-python-headless",
