@@ -1,5 +1,6 @@
 import asyncclick as click
 
+from fly.interfaces.cli.session import log_file_option
 from fly.logging import logQuery
 from fly.logging.flightLog import FlightLog
 from fly.utils.geo import Point
@@ -16,7 +17,7 @@ def _print_entries(entries: list[dict]) -> None:
         return
     for e in entries:
         print(
-            f"   [{e['seq']}] {e['filename']} wp={e['wp_index']} phase={e['phase']} "
+            f"   [{e['seq']}] {e['filename']} wp={e['wp_index']} "
             f"lat={e['lat']:.6f} lon={e['lon']:.6f} alt={e['alt_rel']}m  ts={e['ts']}"
         )
 
@@ -27,14 +28,14 @@ def log():
 
 
 @log.command(name="list", help="List every entry in the flight log.")
-@click.option("--log-file", default="flight_log.jsonl", show_default=True)
+@log_file_option
 async def log_list(log_file):
     fl = await _load(log_file)
     _print_entries(fl.all_entries())
 
 
 @log.command(name="near", help="Entries within a radius (meters) of a lat/lon.")
-@click.option("--log-file", default="flight_log.jsonl", show_default=True)
+@log_file_option
 @click.option("--lat", type=float, required=True)
 @click.option("--lon", type=float, required=True)
 @click.option("--radius", type=float, default=25.0, show_default=True, help="Radius in meters.")
@@ -44,7 +45,7 @@ async def log_near(log_file, lat, lon, radius):
 
 
 @log.command(name="by-waypoint", help="Entries captured at a given waypoint index.")
-@click.option("--log-file", default="flight_log.jsonl", show_default=True)
+@log_file_option
 @click.option("--wp", type=int, required=True)
 async def log_by_waypoint(log_file, wp):
     fl = await _load(log_file)
@@ -52,7 +53,7 @@ async def log_by_waypoint(log_file, wp):
 
 
 @log.command(name="window", help="Entries captured between two ISO-8601 UTC timestamps.")
-@click.option("--log_file", default="flight_log.jsonl", show_default=True)
+@log_file_option
 @click.option("--start", required=True, help="ISO-8601 UTC, e.g. 2026-07-27T00:00:00Z")
 @click.option("--end", required=True, help="ISO-8601 UTC, e.g. 2026-07-27T23:59:59Z")
 async def log_window(log_file, start, end):
@@ -61,7 +62,7 @@ async def log_window(log_file, start, end):
 
 
 @log.command(name="nearest", help="The single closest entry to a lat/lon")
-@click.option("--log_file", default="flight_log.jsonl", show_default=True)
+@log_file_option
 @click.option("--lat", type=float, required=True)
 @click.option("--lon", type=float, required=True)
 async def log_nearest(log_file, lat, lon):
