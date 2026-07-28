@@ -113,7 +113,7 @@ class Drone:
 
     async def wait_until_stopped(self, threshold):
         async for velocity in self.drone.telemetry.velocity_ned():
-            speed = math.sqrt(
+            speed = sqrt(
                 velocity.north_m_s**2 +
                 velocity.east_m_s**2 +
                 velocity.down_m_s**2

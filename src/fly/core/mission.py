@@ -31,6 +31,7 @@ class Mission:
 
             self.RTL = self.data[0]
             self.waypoints = self.data[1:]
+            self.total_waypoints = len(self.waypoints)
 
 
             for waypoint in self.waypoints:
@@ -79,9 +80,7 @@ class Mission:
         if not self.downloaded_plan:
             self.downloaded_plan = await self.download_mission(drone_instance)
 
-        if not self.downloaded_plan:
-            return False
-        return True
+        return bool(self.downloaded_plan)
 
     def get_keys(self):
         return list(self.waypoints[-1].keys())
@@ -118,6 +117,7 @@ class Mission:
         await self.clear_mission(drone_instance)
         self.convert_mission_items_to_plan()
         if self.mission_plan:
+            await self.return_to_launch_after_mission_completion(drone_instance, self.RTL)
             await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan))
             return
         print("-- No mission to upload")
@@ -155,9 +155,8 @@ class Mission:
     async def download_mission(self, drone_instance):
         mission = await drone_instance.drone.mission.download_mission()
         items = mission.mission_items
-        if len(items) == 1:
-            if items[0].latitude_deg != items[0].latitude_deg:
-                return None
+        if len(items) == 1 and items[0].latitude_deg != items[0].latitude_deg:
+            return None
         return mission
 
 
@@ -175,6 +174,4 @@ class Mission:
 
     async def is_drone_on_mission(self, drone_instance):
         async for current_mode in drone_instance.drone.telemetry.flight_mode():
-            if current_mode == FlightMode.MISSION:
-                return True
-            return False
+            return current_mode == FlightMode.MISSION
