@@ -1,0 +1,7 @@
+-r ../../../requirements.txt
+
+torch
+torchvision
+supervision>=0.18.0
+rfdetr
+Pillow

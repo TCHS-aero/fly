@@ -1,23 +1,20 @@
 #!/bin/bash
-set -e
 
-ENV_NAME="ai"
 
-# Initialize conda
-eval "$(conda shell.bash hook)"
+set -euo pipefail
 
-# Activate the ai environment
-conda activate ${ENV_NAME}
+SCRIPT_DIR="$(cd "$(dirname "$BASH_SOURCE[0]}")" && pwd)"
+VISION_REQUIREMENTS="${SCRIPT_DIR}/requirements-vision.txt"
 
-# Install dependencies
-echo "Installing dependencies..."
-pip install --upgrade pip
-pip install torch torchvision numpy supervision>=0.18.0 Pillow rfdetr
+if [ -z "${VIRTUAL_ENV:-}" ]; then # :-fallback is necessary for the if statement to trigger when VIRTUAL_ENV dne
+    echo "No active virtual environment (\$VIRTUAL_ENV is unset)."
+    echo "Activate your project venv first, then rerun this script."
+    exit 1
+fi
+
+echo "Installing vision/detection dependencies into ${VIRTUAL_ENV}..."
+uv pip install -r "${VISION_REQUIREMENTS}"
 
 echo ""
-echo "Setup complete!"
+echo "Setup complete. ${VIRTUAL_ENV} now has the full base + vision stack."
 echo ""
-echo "Environment 'ai' is now active with rfdetr dependencies installed."
-echo ""
-echo "To activate in the future: conda activate ai"
-echo "To deactivate: conda deactivate"
