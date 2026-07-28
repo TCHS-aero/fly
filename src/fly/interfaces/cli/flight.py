@@ -2,7 +2,7 @@
 
 import asyncclick as click
 
-from fly.interfaces.cli.session import get_connected_drone, require_drone
+from fly.interfaces.cli.session import get_connected_drone, port_option, require_drone
 
 
 @click.group(help="Connect to and manually fly the drone (connect, takeoff, land, move).")
@@ -27,7 +27,7 @@ async def connect(port, timeout):
     print("-- Connected. Port saved as default for future commands.")
 
 @flight.command(help="Report the drone's current position, heading, and flight mode.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def status(port):
     drone = await require_drone(port)
 
@@ -42,7 +42,7 @@ async def status(port):
     print(f"-- heading={heading:.1f} deg   ground_speed={speed:.2f} m/s")
 
 @flight.command(help="Command the drone to take off to a specified altitude.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 @click.option("--alt", type=float, default=5.0, show_default=True, help="Takeoff altitude in meters.")
 async def takeoff(port, alt):
     if alt <= 0:
@@ -55,14 +55,14 @@ async def takeoff(port, alt):
     await drone.takeoff(alt)
 
 @flight.command(help="Land the drone at its current position.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def land(port):
     drone = await require_drone(port)
     await drone.land()
     print("-- Landing initiated.")
 
 @flight.command(name="return", help="Return to the launch (home) position and land.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def return_to_launch(port):
     drone = await require_drone(port)
     await drone.return_to_home()
@@ -94,7 +94,7 @@ async def _execute_movement(direction, port, velocity, yaw, distance):
 
 
 def _move_command(direction: str):
-    @click.option("--port", help="Connection port. Defaults to the last-used port.")
+    @port_option
     @click.option("--velocity", type=float, required=True, help="Speed in m/s.")
     @click.option("--distance", type=float, required=True, help="Distance in meters.")
     @click.option("--yaw", type=float, default=0.0, show_default=True, help="Yaw angle in degrees.")
@@ -115,7 +115,7 @@ for _direction, _help in _MOVE_DIRECTIONS.items():
     move.command(name=_direction, help=_help)(_move_command(_direction))
 
 @move.command(name="stop", help="Zero out velocity.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def stop(port):
     drone = await require_drone(port)
     await drone.stop_movement()
