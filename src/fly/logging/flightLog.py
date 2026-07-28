@@ -47,7 +47,6 @@ class FlightLog:
                 "lon": payload.lon,
                 "alt_rel": payload.alt_rel,
                 "wp_index": payload.wp_index,
-                "phase": payload.phase,
                 "filename": payload.filename,
             }
             self._seq += 1
@@ -55,10 +54,6 @@ class FlightLog:
             async with aiofiles.open(self.path, "a") as f: # "a": append mode
                 await f.write(json.dumps(entry) + "\n")
         return entry
-
-    def lookup(self, filename:str) -> dict | None:
-        # returns the entry or None
-        return self._index.get(filename)
 
     def all_entries(self) -> list[dict]:
         # returns all entries in seq order

@@ -87,7 +87,7 @@ async def capture_test(port, rtsp_url, image_dir):
     print(f"-- Stream opened: {rtsp_url}")
 
     try:
-        result = await capture.capture_frame(wp_index=0, phase="manual")
+        result = await capture.capture_frame(wp_index=0)
         if result is None:
             print("-- Failed to capture a frame.")
             raise SystemExit(1)

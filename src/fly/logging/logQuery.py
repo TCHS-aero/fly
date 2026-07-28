@@ -1,6 +1,3 @@
-# Not called by any other module; poiManager's _nearest may seem similar to entries_near but it only queries POIs
-# Helpful for testing if used in cli
-
 from fly.logging.flightLog import FlightLog
 from fly.utils.geo import Point, haversine_m
 
@@ -13,10 +10,6 @@ def entries_near(log: FlightLog, pos:Point, radius_m: float) -> list[dict]:
         key=lambda hit: hit[0]
     )
     return [entry for distance, entry in hits if distance <= radius_m]
-
-def entries_by_phase(log: FlightLog, phase: str) -> list[dict]:
-    # all entries matching phase ("survey" | "calibration" | "manual")
-    return [e for e in log.all_entries() if e.get("phase") == phase]
 
 def entries_by_waypoint(log: FlightLog, wp_index: int) -> list[dict]:
     # all entries within the ISO 8601 timestamp range [ts_start, ts_end], inclusive
