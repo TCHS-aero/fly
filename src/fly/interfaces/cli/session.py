@@ -98,7 +98,7 @@ def load_mission(file: str | Path) -> Mission | None:
         return None
     try:
         return Mission(file=str(path))
-    except Exception as e:
+    except Exception as e:  # noqa
         print(f"-- Failed to load mission {path}: {e}")
         return None
 
