@@ -5,7 +5,7 @@ import asyncclick as click
 
 from fly.core.mission import Mission
 from fly.core.missionEditor import MissionEditor
-from fly.interfaces.cli.session import require_drone, require_mission
+from fly.interfaces.cli.session import port_option, require_drone, require_mission
 
 
 @click.group(help = "Load, upload, start, pause, and inspect missions.")
@@ -25,7 +25,7 @@ def mission_load(file_):
 
 @mission.command(name="upload", help="Upload a mission file to the connected drone.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="Mission JSON file.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 @click.option("--start", is_flag=True, default = False, help="Start the mission immediately after uploading.")
 async def mission_upload(file_, port, start):
     m = require_mission(file_)
@@ -40,7 +40,7 @@ async def mission_upload(file_, port, start):
         print("-- Mission started.")
 
 @mission.command(name="start", help="Start (or resume, if paused) the mission on the connected drone.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def mission_start(port):
     drone = await require_drone(port)
     m = Mission()
@@ -48,7 +48,7 @@ async def mission_start(port):
     print("-- Mission started.")
 
 @mission.command(name="pause", help="Pause the mission currently running on the connect drone.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def mission_pause(port):
     drone = await require_drone(port)
     m = Mission()
@@ -56,7 +56,7 @@ async def mission_pause(port):
     print("-- Mission paused.")
 
 @mission.command(name="status", help="Show mission progress on the connected drone.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def mission_status(port):
     drone = await require_drone(port)
     m = Mission()
@@ -71,7 +71,7 @@ async def mission_status(port):
         print(f"-- no progress reported (no mission active?)   finished={finished}   RTL-after-mission={rtl}")
 
 @mission.command(name="download", help="Download and print the mission currently stored on the drone.")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 async def mission_download(port):
     drone = await require_drone(port)
     m = Mission()
@@ -151,7 +151,7 @@ def _extract_waypoints(waypoints_file: str | None, kwargs: dict) -> list[dict]:
 
 @mission_edit.command(name="append", help="Append a waypoint to the end of the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 @click.option("--waypoints-file", type=click.Path(exists=True), default=None, help="A mission JSON file whose waypoints will be appended (RTL flag at index 0 is skipped). Mutually exclusive with manual waypoint flags.")
 @waypoint_options
 async def edit_append(file_, port, waypoints_file, **kwargs):
@@ -164,8 +164,9 @@ async def edit_append(file_, port, waypoints_file, **kwargs):
 
 @mission_edit.command(name="insert", help="Insert a waypoint at a specific index in the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 @click.option("--at", type=int, required=True, help="Index to insert at (0 = before the first waypoint).")
+@click.option("--waypoints-file", type=click.Path(exists=True), default=None, help="A mission JSON file whose waypoints will be appended (RTL flag at index 0 is skipped). Mutually exclusive with manual waypoint flags.")
 @waypoint_options
 async def edit_insert(file_, port, at, waypoints_file, **kwargs):
     wps = _extract_waypoints(waypoints_file, kwargs)
@@ -177,7 +178,7 @@ async def edit_insert(file_, port, at, waypoints_file, **kwargs):
 
 @mission_edit.command(name="remove", help="Remove a waypoint at a specific index from the active mission.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="The mission file currently active on the drone (edits saved in this GCS)")
-@click.option("--port", help="Connection port. Defaults to the last-used port.")
+@port_option
 @click.option("--at", type=int, required=True, help="Index to insert at (0 = before the first waypoint).")
 async def edit_remove(file_, port, at):
     editor = await _load_editor(file_, port)

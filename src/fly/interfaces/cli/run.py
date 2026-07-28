@@ -12,6 +12,7 @@ from fly.interfaces.cli.session import (
     require_mission,
     resolve_data_dir_paths,
     resolve_setting,
+    state_file_option,
 )
 
 
@@ -76,7 +77,7 @@ async def _build_vision_pipeline(drone, rtsp_url, image_dir, poi_registry, fligh
 @click.option("--image-dir", default=None, help="[default: <data-dir>/captured_images]")
 @click.option("--poi-registry", default=None, help="[default: <data-dir>/poi_registry.json]")
 @click.option("--flight-log", default=None, help="[default: <data-dir>/flight_log.jsonl]")
-@click.option("--state-file", default=None, help="[default: <data-dir>/state_file.json]")
+@state_file_option
 @click.option("--model", "model_path", default=None, help="Custom detector weights (.pth). Defaults to last-used, or COCO weights if none are on record.")
 @click.option("--confidence", type=float, default=None, help="Detection confidence threshold. Defaults to the last-used value, or 0.5.")
 @click.option("--takeoff-alt", type=float, default=None, help="Arm and take off to this altitude first. Omit if the drone is already airborne or if the autopilot auto-takeoffs on mission start.")

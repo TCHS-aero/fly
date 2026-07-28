@@ -5,6 +5,7 @@ import aiofiles
 import asyncclick as click
 
 from fly.interfaces.cli.mission import waypoint_from_kwargs, waypoint_options
+from fly.interfaces.cli.session import registry_option
 from fly.poi.poiManager import POIManager
 
 _STATUS_CHOICES = click.Choice(["candidate", "queued", "delivered", "dismissed"])
@@ -28,7 +29,7 @@ def poi():
 
 
 @poi.command(name="list", help="List POIs in the registry.")
-@click.option("--registry", default="poi_registry.json", show_default=True)
+@registry_option
 @click.option("--status", default=None, type=_STATUS_CHOICES)
 async def poi_list(registry, status):
     pois = await _load_registry(registry)
@@ -43,7 +44,7 @@ async def poi_list(registry, status):
 
 
 @poi.command(name="show", help="Show full detail for one POI.")
-@click.option("--registry", default="poi_registry.json", show_default=True)
+@registry_option
 @click.option("--id", "poi_id", type=int, required=True)
 async def poi_show(registry, poi_id):
     pois = await _load_registry(registry)
@@ -52,7 +53,7 @@ async def poi_show(registry, poi_id):
 
 
 @poi.command(name="status", help="Update a POI's lifecycle status.")
-@click.option("--registry", default="poi_registry.json", show_default=True)
+@registry_option
 @click.option("--id", "poi_id", type=int, required=True)
 @click.option("--set", "new_status", required=True, type=_STATUS_CHOICES)
 async def poi_status(registry, poi_id, new_status):
@@ -66,7 +67,7 @@ async def poi_status(registry, poi_id, new_status):
 
 
 @poi.command(name="approach", help="Generate approach + delivery waypoints for a POI.")
-@click.option("--registry", default="poi_registry.json", show_default=True)
+@registry_option
 @click.option("--id", "poi_id", type=int, required=True)
 @click.option("--out", "out_file", default=None, help="Write the waypoints as a mission_waypoints.json-style file instead of printing.")
 @click.option("--rtl/--no-rtl", default=True, show_default=True, help="RTL flag to embed if --out is used.")
@@ -77,8 +78,8 @@ async def poi_approach(registry, poi_id, out_file, rtl, **kwargs):
 
     kwargs["lat"] = p["lat"]
     kwargs["lon"] = p["lon"]
-    kwargs["is_fly_through"] = False
-    wps = waypoint_from_kwargs(kwargs)
+    kwargs["fly_through"] = False
+    wps = [waypoint_from_kwargs(kwargs)]
 
     if out_file:
         if os.path.exists(out_file):

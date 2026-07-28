@@ -1,6 +1,7 @@
 import asyncclick as click
 
 from fly.core.resumeManager import ResumeManager
+from fly.interfaces.cli.session import state_file_option
 
 
 @click.group(help="Inspect or clear locally-saved flight-resume state.")
@@ -9,7 +10,7 @@ def resume():
 
 
 @resume.command(name="status", help="Show whether a resumable (interrupted) flight is on record.")
-@click.option("--state-file", default="resume_state.json", show_default=True, help="Resume state file.")
+@state_file_option
 def resume_status(state_file):
     rm = ResumeManager(state_file=state_file)
     found = rm.load()
@@ -23,7 +24,7 @@ def resume_status(state_file):
 
 
 @resume.command(name="clear", help="Clear saved resume state (e.g. after a manual recovery).")
-@click.option("--state-file", default="resume_state.json", show_default=True, help="Resume state file.")
+@state_file_option
 @click.option("--yes", is_flag=True, default=False, help="Skip the confirmation prompt.")
 def resume_clear(state_file, yes):
     rm = ResumeManager(state_file=state_file)
