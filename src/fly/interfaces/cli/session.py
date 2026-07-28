@@ -2,6 +2,8 @@
 import re
 from pathlib import Path
 
+import asyncclick as click
+
 from fly.core.dataManager import (
     get_setting,
     pull_data,
@@ -16,6 +18,13 @@ DEFAULT_PORT = "udpin://0.0.0.0:14540"
 _UDP_RE = re.compile(r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
 _TCP_RE = re.compile(r"^tcp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
 _SERIAL_RE = re.compile(r"^serial://(/dev/[a-zA-Z0-9_-]+|COM[0-9]+)(:[0-9]+)?$")
+
+# Reused across flight/mission/run commands
+# `connect` keeps its own more detailed --port option the accepted port formats are documented.
+port_option = click.option("--port", help="Connection port. Defaults to the last-used port.")
+registry_option = click.option("--registry", default="poi_registry.json", show_default=True, help="POI registry file.")
+log_file_option = click.option("--log-file", default="flight_log.jsonl", show_default=True, help="Flight log file.")
+state_file_option = click.option("--state-file", default="resume_state.json", show_default=True, help="Resume state file.")
 
 def validate_port_format(port: str) -> bool:
     # mirrors the port validation the old CLI attempted
