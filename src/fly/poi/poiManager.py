@@ -62,7 +62,8 @@ class POIManager:
                 poi_id = self._next_id
                 self._next_id += 1
                 self._pois[poi_id] = {
-                    "poi_id": poi_id, "status": "candidate",
+                    "poi_id": poi_id,
+                    "status": "candidate",
                     "lat": pos.lat,
                     "lon": pos.lon,
                     "confidence_avg": confidence,
