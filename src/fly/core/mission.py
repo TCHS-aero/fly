@@ -53,9 +53,6 @@ class Mission:
             print("-- Success!")
             return self.waypoints
 
-    def get_raw_waypoints(self):
-        return self.waypoints
-
     async def get_current_next_waypoint_info(self, drone_instance, current_progress):
         if not self.downloaded_plan:
             self.downloaded_plan = await self.download_mission(drone_instance)
@@ -146,12 +143,6 @@ class Mission:
     async def get_return_to_launch_after_mission(self, drone_instance):
         return await drone_instance.drone.mission.get_return_to_launch_after_mission()
 
-    async def cancel_mission_download(self, drone_instance):
-        await drone_instance.drone.mission.cancel_mission_download()
-
-    async def cancel_mission_upload(self, drone_instance):
-        return await drone_instance.drone.mission.cancel_mission_upload()
-
     async def download_mission(self, drone_instance):
         mission = await drone_instance.drone.mission.download_mission()
         items = mission.mission_items
@@ -159,18 +150,8 @@ class Mission:
             return None
         return mission
 
-
-    async def download_mission_with_progress(self, drone_instance):
-        return await drone_instance.drone.mission.download_mission_with_progress()
-
     async def pause_mission(self, drone_instance):
         await drone_instance.drone.mission.pause_mission()
-
-    async def upload_mission_with_progress(self, drone_instance):
-        await self.clear_mission(drone_instance) # same as upload_mission
-        self.convert_mission_items_to_plan()
-        await self.return_to_launch_after_mission_completion(drone_instance, self.RTL)
-        await drone_instance.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
 
     async def is_drone_on_mission(self, drone_instance):
         async for current_mode in drone_instance.drone.telemetry.flight_mode():
