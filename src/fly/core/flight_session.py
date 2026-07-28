@@ -5,7 +5,7 @@
 import asyncio
 
 from fly.core.mission import Mission
-from fly.core.resumeManager import ResumeManager
+from fly.core.resume_manager import ResumeManager
 
 DEFAULT_POLL_INTERVAL_S = 2
 
@@ -17,10 +17,10 @@ class FlightSession:
         drone,  # fly.core.drone.Drone is supposed to be already connected
         mission: Mission,  # already supposed to be parsed from a mission file
         resume: ResumeManager,  # already .load()-ed by the caller, so can_resume() is accurate
-        capture=None,  # fly.comms.streamCapture.StreamCapture | None, already .open()-ed
-        pipeline=None,  # fly.vision.gcsPipeline.GCSPipeline | None
-        poi_manager=None,  # fly.poi.poiManager.POIManager | None, already .load()-ed
-        flight_log=None,  # fly.logging.flightLog.FlightLog | None, already .load_existing()-ed
+        capture=None,  # fly.comms.stream_capture.StreamCapture | None, already .open()-ed
+        pipeline=None,  # fly.vision.gcs_pipeline.GCSPipeline | None
+        poi_manager=None,  # fly.poi.poi_manager.POIManager | None, already .load()-ed
+        flight_log=None,  # fly.logging.flight_log.FlightLog | None, already .load_existing()-ed
         takeoff_alt: float | None = None,
         land_on_finish: bool | None = None,  # None = defer to the mission file's own RTL flag
         poll_interval_s: float = DEFAULT_POLL_INTERVAL_S

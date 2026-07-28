@@ -6,7 +6,7 @@ import asyncclick as click
 
 from fly.interfaces.cli.mission import waypoint_from_kwargs, waypoint_options
 from fly.interfaces.cli.session import registry_option
-from fly.poi.poiManager import POIManager
+from fly.poi.poi_manager import POIManager
 
 _STATUS_CHOICES = click.Choice(["candidate", "queued", "delivered", "dismissed"])
 

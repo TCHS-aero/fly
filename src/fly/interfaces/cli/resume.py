@@ -1,6 +1,6 @@
 import asyncclick as click
 
-from fly.core.resumeManager import ResumeManager
+from fly.core.resume_manager import ResumeManager
 from fly.interfaces.cli.session import state_file_option
 
 

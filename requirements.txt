@@ -10,10 +10,10 @@ pymap3d
 geographiclib
 haversine
 
-# poi/poiManager.py, logging/flightLog.py
+# poi/poi_manager.py, logging/flight_log.py
 aiofiles
 
-# comms/streamCapture.py
+# comms/stream_capture.py
 opencv-python-headless # for cv2; headless because we're interacting via cli
 
 # vision/*: torch, torchvision, supervision, rfdetr are intentionally not listed here

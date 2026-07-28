@@ -1,3 +1,3 @@
-from .flightLog import FlightLog
+from .flight_log import FlightLog
 
 __all__ = ["FlightLog"]

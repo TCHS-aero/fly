@@ -3,8 +3,8 @@ import math
 from concurrent.futures import ProcessPoolExecutor
 
 from fly.comms.protocol import ImagePayload
-from fly.logging.flightLog import FlightLog
-from fly.poi.poiManager import POIManager
+from fly.logging.flight_log import FlightLog
+from fly.poi.poi_manager import POIManager
 from fly.utils.geo import Point, pixel_to_ground
 
 _worker_detector = None
@@ -29,7 +29,7 @@ def _detect(image_path: str, model_path: str | None, confidence: float) -> tuple
 _STOP = object()
 
 class GCSPipeline:
-    # reads (ImagePayload, Path) pairs off notify_queue, runs detection in a process pool, and forwards hits to poiManager
+    # reads (ImagePayload, Path) pairs off notify_queue, runs detection in a process pool, and forwards hits to poi_manager
 
     def __init__(
         self,
@@ -48,7 +48,7 @@ class GCSPipeline:
         self._running = False
         self.stats = {"processed": 0, "detections": 0, "errors": 0}
         # optional: every frame that passes through the pipeline gets appended here,
-        # regardless of whether a detection was found, so logQuery can later map any filename
+        # regardless of whether a detection was found, so log_query can later map any filename
         # back to where/when it was taken
         self.flight_log = flight_log
 
@@ -57,7 +57,7 @@ class GCSPipeline:
         self._running = True
         loop = asyncio.get_running_loop()
         while self._running:
-            item = await self.queue.get() # unpacks input from streamCapture.watch_and_capture()
+            item = await self.queue.get() # unpacks input from stream_capture.watch_and_capture()
             if (
                 item is _STOP
                 or not isinstance(item, tuple) # prevents type checking error while unpacking item later

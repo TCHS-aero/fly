@@ -4,8 +4,8 @@ import asyncio
 
 import asyncclick as click
 
-from fly.core.flightSession import FlightSession
-from fly.core.resumeManager import ResumeManager
+from fly.core.flight_session import FlightSession
+from fly.core.resume_manager import ResumeManager
 from fly.interfaces.cli.session import (
     remember_setting,
     require_drone,
@@ -45,10 +45,10 @@ async def _build_vision_pipeline(drone, rtsp_url, image_dir, poi_registry, fligh
         print(f"-- Vision dependencies not installed ({e}); flying without live detection.")
         return None, None, None, None
 
-    from fly.comms.streamCapture import StreamCapture
-    from fly.logging.flightLog import FlightLog
-    from fly.poi.poiManager import POIManager
-    from fly.vision.gcsPipeline import GCSPipeline
+    from fly.comms.stream_capture import StreamCapture
+    from fly.logging.flight_log import FlightLog
+    from fly.poi.poi_manager import POIManager
+    from fly.vision.gcs_pipeline import GCSPipeline
 
     capture = StreamCapture(drone, rtsp_url, image_dir)
     if not await capture.open():

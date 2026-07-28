@@ -6,7 +6,7 @@ Handles object detection and computer vision tasks.
 __all__ = ["NanoDetector"] # ignore unused type checker error
 
 def __getattr__(name):
-    # PEP 562 lazy attribute: `fly.vision.gcsPipeline` and `detect.py` already defer importing NanoDetector
+    # PEP 562 lazy attribute: `fly.vision.gcs_pipeline` and `detect.py` already defer importing NanoDetector
     # until a worker process actually runs detection.
     # setup_env.sh must be run before using this
     if name == "NanoDetector":

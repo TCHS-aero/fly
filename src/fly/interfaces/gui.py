@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (
 )
 from qasync import QEventLoop, asyncSlot
 
-from fly.core.dataManager import (
+from fly.core.data_manager import (
     pull_data,
     update_mission_data,
     update_port_data,

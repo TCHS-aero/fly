@@ -4,7 +4,7 @@ from pathlib import Path
 
 import asyncclick as click
 
-from fly.core.dataManager import (
+from fly.core.data_manager import (
     get_setting,
     pull_data,
     update_port_data,

@@ -4,7 +4,7 @@ import json
 import asyncclick as click
 
 from fly.core.mission import Mission
-from fly.core.missionEditor import MissionEditor
+from fly.core.mission_editor import MissionEditor
 from fly.interfaces.cli.session import port_option, require_drone, require_mission
 
 
@@ -84,7 +84,7 @@ async def mission_download(port):
     for i, item in enumerate(items):
         print(f"   [{i}] lat={item.latitude_deg:.6f} lon={item.longitude_deg:.6f} alt={item.relative_altitude_m}m")
 
-# mid-flight editing (core.missionEditor) ----------------------------
+# mid-flight editing (core.mission_editor) ----------------------------
 
 @click.group(name="edit", help = "Mid-flight mission editing (append/insert/remove) via MissionEditor.")
 def mission_edit():

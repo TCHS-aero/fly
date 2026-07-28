@@ -1,4 +1,4 @@
-from fly.logging.flightLog import FlightLog
+from fly.logging.flight_log import FlightLog
 from fly.utils.geo import Point, haversine_m
 
 

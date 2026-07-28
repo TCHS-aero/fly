@@ -20,7 +20,7 @@ import json
 
 import asyncclick as click
 
-from fly.core.dataManager import pull_data
+from fly.core.data_manager import pull_data
 from fly.interfaces.cli.flight import flight, move
 from fly.interfaces.cli.log import log
 from fly.interfaces.cli.mission import mission
@@ -76,7 +76,7 @@ async def detect_image(image_path, model_path, confidence, out_path):
 @click.option("--rtsp-url", required=True, help="Video stream URL, or a local video file path for bench testing.")
 @click.option("--image-dir", default="captured_images", show_default=True)
 async def capture_test(port, rtsp_url, image_dir):
-    from fly.comms.streamCapture import StreamCapture
+    from fly.comms.stream_capture import StreamCapture
 
     drone = await require_drone(port)
 
