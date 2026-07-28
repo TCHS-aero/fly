@@ -17,7 +17,6 @@ def resume_status(state_file):
         print(f"-- No resumable flight on record in {state_file}.")
         return
     print(f"-- Resumable flight found in {state_file}.")
-    print(f"   phase          : {rm.phase.value}")
     print(f"   last_waypoint  : {rm.last_waypoint}")
     print(f"   survey_complete: {rm.survey_complete}")
     print(f"   resume_index   : {rm.resume_index()} (pass to `mission edit`/`set_current_mission_target`)")

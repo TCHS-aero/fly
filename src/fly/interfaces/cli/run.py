@@ -20,7 +20,7 @@ async def _resolve_resume(rm: ResumeManager, do_resume: bool | None) -> None:
     if not rm.load():
         return
 
-    print(f"-- Found an interrupted flight: phase={rm.phase.value} last_waypoint={rm.last_waypoint}")
+    print(f"-- Found an interrupted flight: last_waypoint={rm.last_waypoint}")
     if do_resume is None:
         ans = await asyncio.to_thread(input, "Resume from there instead of starting fresh? y/n: ")
         do_resume = ans.strip().lower() == "y"

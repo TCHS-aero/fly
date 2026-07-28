@@ -5,7 +5,7 @@
 import asyncio
 
 from fly.core.mission import Mission
-from fly.core.resumeManager import FlightPhase, ResumeManager
+from fly.core.resumeManager import ResumeManager
 
 DEFAULT_POLL_INTERVAL_S = 2
 
@@ -69,8 +69,6 @@ class FlightSession:
             print(f"-- Seeking to waypoint {self._resume_index}...")
             await self.mission.set_current_mission_target(self.drone, self._resume_index)
 
-        self.resume.transition(FlightPhase.SURVEY)
-
         self._running = True
         self._interrupted = False
         if self.capture is not None and self.pipeline is not None:
@@ -96,7 +94,6 @@ class FlightSession:
             return False
 
         print("-- Mission complete.")
-        self.resume.transition(FlightPhase.RTH)
 
         should_rtl = self.mission.RTL if self.land_on_finish is None else not self.land_on_finish
         if should_rtl:
@@ -151,7 +148,6 @@ class FlightSession:
         # since it only reads already-in-memory state and never touches drone or disk
         info = {
             "running": self._running,
-            "phase": self.resume.phase.value,
             "last_waypoint": self.resume.last_waypoint,
             "total_waypoints": len(self.mission.waypoints),
             "resume_index": self._resume_index,
