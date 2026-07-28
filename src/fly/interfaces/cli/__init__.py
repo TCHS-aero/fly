@@ -34,7 +34,7 @@ from fly.interfaces.cli.session import require_drone, require_nano_detector
 def cli():
     pass
 
-@click.group(help="Show or wipe locally-saved connection settings.")
+@click.group(help="Show locally-saved connection settings.")
 def config():
     pass
 
