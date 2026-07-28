@@ -2,8 +2,8 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor
 
 from fly.comms.protocol import ImagePayload
+from fly.logging.flightLog import FlightLog
 from fly.poi.poiManager import POIManager
-from src.fly.logging.flightLog import FlightLog
 
 _worker_detector = None
 _worker_model_path: str | None = None
