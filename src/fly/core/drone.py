@@ -60,40 +60,6 @@ class Drone:
         async for heading in self.drone.telemetry.heading():
             return heading.heading_deg
 
-    async def move_to_location(self, lat, lon, alt, yaw):
-        clat, clon, calt = await self.current_position()
-        await self.drone.offboard.set_position_global(
-            PositionGlobalYaw(clat, clon, calt, 0, self.mode)
-        )
-        await self.drone.offboard.start()
-
-        await self.drone.offboard.set_position_global(
-            PositionGlobalYaw(lat, lon, alt, yaw, self.mode)
-        )
-
-        async for position in self.drone.telemetry.position():
-            if (
-                (
-                    position.latitude_deg - 0.000001
-                    < lat
-                    < position.latitude_deg + 0.000001
-                )
-                and (
-                    position.longitude_deg - 0.000001
-                    < lon
-                    < position.longitude_deg + 0.000001
-                )
-                and (
-                    position.relative_altitude_m - 0.5
-                    < alt
-                    < position.relative_altitude_m + 0.5
-                )
-            ):
-                print("-- Successfully reached checkpoint")
-                break
-
-        await self.drone.offboard.stop()
-
     async def current_ned(self):
         async for telemetry in self.drone.telemetry.position_velocity_ned():
             ned_object = telemetry.position
@@ -254,6 +220,3 @@ class Drone:
 
     async def land(self):
         await self.drone.action.land()
-
-    async def fetch_drone_instance(self):
-        return self.drone
