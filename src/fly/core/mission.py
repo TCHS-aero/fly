@@ -5,6 +5,10 @@ from mavsdk.mission import MissionItem, MissionPlan
 from mavsdk.telemetry import FlightMode
 
 
+def sanitize_waypoint(wp: dict) -> dict:
+    # replaces None with nan
+    return {k: (float("nan") if v is None else v) for k, v in wp.items()}
+
 class Mission:
     def __init__(self, *, file = None):
         self.file = file
@@ -24,31 +28,14 @@ class Mission:
         print(f"-- Parsing {file}")
 
         with open(file, "r") as read_file:
-            self.data = json.load(read_file)
-            if len(self.data) < 2:
+            data = json.load(read_file)
+            if len(data) < 2:
                 print("-- Your mission must have at least one waypoint! ")
                 return
 
-            self.RTL = self.data[0]
-            self.waypoints = self.data[1:]
+            self.RTL = data[0]
+            self.waypoints = [sanitize_waypoint(wp) for wp in data[1:]]
             self.total_waypoints = len(self.waypoints)
-
-
-            for waypoint in self.waypoints:
-
-                if None not in waypoint.values():
-                    continue
-
-                try:
-                    for item in waypoint.items():
-                        k, v = item
-
-                        if v is None:
-                            waypoint[k] = float('nan')
-
-                except Exception as e:
-                    print(e)
-                    return
 
             print("-- Success!")
             return self.waypoints

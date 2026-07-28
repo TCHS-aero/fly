@@ -2,7 +2,7 @@ import asyncio
 import functools
 import json
 
-from fly.core.mission import Mission
+from fly.core.mission import Mission, sanitize_waypoint
 from fly.utils.geo import Point, haversine_m
 
 
@@ -16,14 +16,6 @@ def require_safe_edit_window(func):
         # if safe, do original function
         return await func(self, *args, **kwargs)
     return wrapper # runs once for each decorator call during Module Import Time
-
-def _to_f(value, default: float = float("nan")) -> float:
-    return default if value is None else float(value)
-
-def _sanitize_waypoint(wp: dict) -> dict:
-    # Mirrors Mission.parse_file's None -> NaN coercion so waypoints built at runtime
-    # (a CLI prompt) behave identically to ones loaded from a mission file once they reach convert_mission_items_to_plan()
-    return {k: (_to_f(v) if v is None else v) for k, v in wp.items()}
 
 class MissionEditor:
     """
@@ -99,7 +91,7 @@ class MissionEditor:
     # public -----
     @require_safe_edit_window
     async def append_waypoint(self, wp:dict):
-        wp = _sanitize_waypoint(wp)
+        wp = sanitize_waypoint(wp)
         async with self._lock:
             idx = await self._begin_edit()
             if idx is None:
@@ -113,7 +105,7 @@ class MissionEditor:
 
     @require_safe_edit_window
     async def insert_waypoint(self, at: int, wp: dict):
-        wp = _sanitize_waypoint(wp)
+        wp = sanitize_waypoint(wp)
         async with self._lock:
             idx = await self._begin_edit()
             if idx is None:
