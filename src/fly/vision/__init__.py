@@ -3,7 +3,7 @@ Vision package for the Fly project.
 Handles object detection and computer vision tasks.
 """
 
-__all__ = ["NanoDetector"] # ignore unused type checker error
+__all__ = ["NanoDetector"]
 
 def __getattr__(name):
     # PEP 562 lazy attribute: `fly.vision.gcs_pipeline` and `detect.py` already defer importing NanoDetector
