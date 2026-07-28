@@ -2,10 +2,9 @@ from typing import NamedTuple
 
 import numpy as np
 import pymap3d as pm
-from geographiclib.geodesic import Geodesic
 
 # to find great-circle distance in meters between two WGS84 points
-from haversine import Direction, Unit, haversine, inverse_haversine
+from haversine import Unit, haversine
 
 
 class Point(NamedTuple):
@@ -16,24 +15,6 @@ def haversine_m(pt1: Point, pt2: Point) -> float:
     return haversine(
         pt1, pt2, unit=Unit.METERS
     )  # could also use Geodesic but haversine is more lightweight and accurate enough
-
-
-# choosing to input North and East offset since it is native to MAVSDK (uses NED), rather than bearing
-def offset_coords(start_pt: Point, north_m: float, east_m: float) -> Point:
-    # returns (lat, lon) after moving a certain meters north and east
-    temp_pt = inverse_haversine(start_pt, north_m, Direction.NORTH, unit=Unit.METERS)
-    res = inverse_haversine(temp_pt, east_m, Direction.EAST, unit=Unit.METERS)
-    return Point(lat=res[0], lon=res[1])
-
-def bearing_between(p1: Point, p2: Point) -> float:
-    # Compass bearing from p1 to p2
-    geo = Geodesic.WGS84.Inverse(p1.lat, p1.lon, p2.lat, p2.lon)
-
-    bearing = geo[
-        "azi1"
-    ]  # s12: distance, azi1: bearing from starting, azi2: bearing from endpoint
-    return bearing % 360
-
 
 def pixel_to_ground(
     detected_xy: tuple[int, int],  # comes from the ai output
