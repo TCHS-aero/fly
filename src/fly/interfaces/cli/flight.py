@@ -38,7 +38,7 @@ async def status(port):
     lat, lon, alt_rel = pos
     heading = await drone.current_heading()
     speed = await drone.current_ground_speed()
-    print(f"-- lat={lat:.6f} lon={lon:.f} rel_alt={alt_rel:.2f}m")
+    print(f"-- lat={lat:.6f} lon={lon:.6f} rel_alt={alt_rel:.2f}m")
     print(f"-- heading={heading:.1f} deg   ground_speed={speed:.2f} m/s")
 
 @flight.command(help="Command the drone to take off to a specified altitude.")
