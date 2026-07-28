@@ -13,9 +13,8 @@ def flight():
 @flight.command(help="Connect to a drone and remember the port for future commands.")
 @click.option(
     "--port",
-    help=("udp(in|out)://host:port, tcp(in|out)://host:port, or serial://dev/tty... "
-          "Defaults to the last-used port, or udpin://0.0.0.0:14540"
-    )
+    help=("udp(in|out)://host:port, tcp(in|out)://host:port, or serial://dev/tty...",
+          "Defaults to the last-used port, or udpin://0.0.0.0:14540")
 )
 @click.option("--timeout", type=int, default=10, show_default=True, help="Connection timeout in seconds.")
 async def connect(port, timeout):
@@ -38,7 +37,7 @@ async def status(port):
     lat, lon, alt_rel = pos
     heading = await drone.current_heading()
     speed = await drone.current_ground_speed()
-    print(f"-- lat={lat:.6f} lon={lon:.f} rel_alt={alt_rel:.2f}m")
+    print(f"-- lat={lat:.7f} lon={lon:.7f} rel_alt={alt_rel:.2f}m")
     print(f"-- heading={heading:.1f} deg   ground_speed={speed:.2f} m/s")
 
 @flight.command(help="Command the drone to take off to a specified altitude.")

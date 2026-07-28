@@ -25,7 +25,7 @@ def resume_status(state_file):
 
 @resume.command(name="clear", help="Clear saved resume state (e.g. after a manual recovery).")
 @click.option("--state-file", default="resume_state.json", show_default=True, help="Resume state file.")
-@click.option("--yes", is_flag=True, default=False, help="Skip the confirmation prompt.")
+@click.option("--yes", is_fag=True, default=False, help="Skip the confirmation prompt.")
 def resume_clear(state_file, yes):
     rm = ResumeManager(state_file=state_file)
     if not rm.path.exists():
