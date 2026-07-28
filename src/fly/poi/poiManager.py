@@ -18,7 +18,6 @@ class POIManager:
         self._pois: dict[int, dict] = {}
         self._next_id = 1
         self._lock = asyncio.Lock()
-        self._subscribers: list = []
 
     async def load(self):
         # loads poi_registry.json. Reconstructs _pois and _next_id
