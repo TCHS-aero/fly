@@ -11,10 +11,10 @@ from fly.core.dataManager import (
 from fly.core.drone import Drone
 from fly.core.mission import Mission
 
-DEFAULT_PORT = "udpin://0.0.0.0:1450"
+DEFAULT_PORT = "udpin://0.0.0.0:14540"
 
 _UDP_RE = re.compile(r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
-_TCP_RE = re.compile(r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
+_TCP_RE = re.compile(r"^tcp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
 _SERIAL_RE = re.compile(r"^serial://(/dev/[a-zA-Z0-9_-]+|COM[0-9]+)(:[0-9]+)?$")
 
 def validate_port_format(port: str) -> bool:
