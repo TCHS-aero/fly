@@ -31,9 +31,7 @@ class StreamCapture:
         print("-- Failed to open RTSP stream.")
         return False
 
-    async def capture_frame(
-        self, wp_index: int, phase: str = "survey"
-    ) -> tuple[ImagePayload, Path] | None:
+    async def capture_frame(self, wp_index: int) -> tuple[ImagePayload, Path] | None:
 
         if self._cap is None or not self._cap.isOpened():
             print("-- Video stream is not opened.")
@@ -61,7 +59,6 @@ class StreamCapture:
             lon=lon,
             alt_rel=alt_rel,
             wp_index=wp_index,
-            phase=phase,
             filename=filename,
             heading_deg=heading_deg
         )
@@ -82,7 +79,7 @@ class StreamCapture:
 
                 last_seen_waypoint = progress.current
 
-                capture_result = await self.capture_frame(wp_index=progress.current, phase="survey")
+                capture_result = await self.capture_frame(wp_index=progress.current)
                 if capture_result is not None:
                     # put result onto queue; another part of program will listen
                     payload, img_path = capture_result
