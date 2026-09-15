@@ -45,7 +45,8 @@ class StreamCapture:
 
         ts = ImagePayload.now_ts()
 
-        filename = f"frame_{ts}.png"
+        # colons are illegal in Windows filenames; colons kept for ISO style
+        filename = f"frame_{ts.replace(':', '-')}.png"
         image_path = self.image_dir / filename
 
         lat, lon, alt_rel = await self.drone.current_position()
