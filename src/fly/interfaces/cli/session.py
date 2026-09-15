@@ -135,7 +135,7 @@ def resolve_data_dir_paths(
         "image_dir": image_dir or str(base / "captured_images"),
         "poi_registry": poi_registry or str(base / "poi_registry.json"),
         "flight_log": flight_log or str(base / "flight_log.jsonl"),
-        "state_file": state_file or str(base / "state_file.json")
+        "state_file": state_file or str(base / "resume_state.json")
     }
 
 
