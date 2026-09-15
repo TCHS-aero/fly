@@ -22,7 +22,7 @@ def _print_entries(entries: list[dict]) -> None:
         )
 
 
-@click.group(help="Query the flight log (filename <-> GPS/telemetry index.")
+@click.group(help="Query the flight log (filename <-> GPS/telemetry index).")
 def log():
     pass
 
