@@ -97,7 +97,7 @@ def waypoint_options(fn):
     # see Mission.convert_mission_items_to_plan for the field list
     fn = click.option("--lat",   type=float,     default=None,  help="Latitude, degrees.")(fn)
     fn = click.option("--lon",   type=float,     default=None,  help="Longitude, degrees.")(fn)
-    fn = click.option("--alt",   type=float,     default=None,  help="Relative altitude, meters.")(fn)
+    fn = click.option("--alt",   type=float,     default=45.0, show_default=True,  help="Relative altitude, meters.")(fn)
     fn = click.option("--speed", type=float,     default=10.0,   show_default=True, help="Speed, m/s")(fn)
     fn = click.option("--acceptance-radius",     type=float,    default=10.0, show_default=True, help="Acceptance radius, meters.")(fn)
     fn = click.option("--yaw",   type=float,     default=0.0,   show_default=True, help="Yaw, degrees.")(fn)
