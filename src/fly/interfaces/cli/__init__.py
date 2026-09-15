@@ -8,7 +8,7 @@ Command groups:
     aero resume ...       inspect/clear saved crash-recovery state
     aero log ...          query the flight log
     aero poi ...          POI registry, approach-waypoint generation
-    aero config ...       show/wipe saved connections settings
+    aero config ...       show saved connections settings
     aero run              flagship end-to-end flight
     aero detect-image     run the detector on a single local image (no drone)
     aero capture-test     smoke-test StreamCapture (single frame, needs drone)

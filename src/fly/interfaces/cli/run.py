@@ -71,7 +71,7 @@ async def _build_vision_pipeline(drone, rtsp_url, image_dir, poi_registry, fligh
 @click.command(name="run", help="Fly a full mission, optionally with the live vision pipeline, and land.")
 @click.option("--file", "file_", required=True, type=click.Path(exists=True), help="Mission JSON file.")
 @click.option("--port", help="Connection port. Defauls to the last-used port.")
-@click.option("--rtsp-url", default=None, help="Video stream URL, or a local video file for testing. Defaults to the last-used stream; omit entirely and clear the saved one with `fly config wipe` to fly without the vision pipeline.")
+@click.option("--rtsp-url", default=None, help="Video stream URL, or a local video file for testing. Defaults to the last-used stream; omit entirely and clear the saved one with to fly without the vision pipeline.")
 @click.option("--data-dir", default=None, help="Base directory for image-dir, poi-registry, flight-log, resume-state defaults. Defaults to last-used directory, or '.' if none is on record.")
 @click.option("--image-dir", default=None, help="[default: <data-dir>/captured_images]")
 @click.option("--poi-registry", default=None, help="[default: <data-dir>/poi_registry.json]")
