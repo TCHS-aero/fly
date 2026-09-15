@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VISION_REQUIREMENTS="${SCRIPT_DIR}/requirements-vision.txt"
 
 if [ -z "${VIRTUAL_ENV:-}" ]; then # :-fallback is necessary for the if statement to trigger when VIRTUAL_ENV dne
