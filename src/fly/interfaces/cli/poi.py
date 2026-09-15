@@ -76,6 +76,7 @@ async def poi_approach(registry, poi_id, out_file, rtl, **kwargs):
     pois = await _load_registry(registry)
     p = _require_poi(pois, poi_id)
 
+    # disclaimer: Passing --lat and --lon into poi_approach will silently not work
     kwargs["lat"] = p["lat"]
     kwargs["lon"] = p["lon"]
     kwargs["fly_through"] = False
