@@ -115,7 +115,7 @@ class Mission:
 
     async def set_current_mission_target(self, drone_instance, index):
         await drone_instance.drone.mission.set_current_mission_item(index)
-        # meta note: Resuming mid-mission must not destroy RTL intent
+        # Resuming mid-mission must not destroy RTL intent
 
     async def clear_mission(self, drone_instance):
         await drone_instance.drone.mission.clear_mission()
