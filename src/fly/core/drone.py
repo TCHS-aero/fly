@@ -98,7 +98,7 @@ class Drone:
         await asyncio.sleep(1)
         await self.drone.offboard.stop()
 
-    async def _move_axis_offset(self, axis, sign, velocity, distance, *, yaw=0, pre_sleep=False):
+    async def _move_axis_offset(self, axis, sign, velocity, distance, *, yaw=0):
         target = (await self.current_ned())[axis] + sign * distance
 
         await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0))
