@@ -12,7 +12,6 @@ def sanitize_waypoint(wp: dict) -> dict:
 class Mission:
     def __init__(self, *, file = None):
         self.file = file
-        self.total_waypoints = 0
         self.mission_plan = []
         self.waypoints = []
         self.path = Path(self.file) if self.file else None
@@ -21,6 +20,12 @@ class Mission:
 
         if self.file:
             self.parse_file(self.file)
+
+    @property
+    def total_waypoints(self) -> int:
+        # Derived from self.waypoints so it can never go stale (e.g. after
+        # clear_mission()/upload_mission(), or after MissionEditor edits).
+        return len(self.waypoints)
 
     def parse_file(self, file):
         self.file = file
@@ -35,7 +40,6 @@ class Mission:
 
             self.RTL = data[0]
             self.waypoints = [sanitize_waypoint(wp) for wp in data[1:]]
-            self.total_waypoints = len(self.waypoints)
 
             print("-- Success!")
             return self.waypoints
@@ -122,7 +126,6 @@ class Mission:
 
         self.downloaded_plan = None
         self.mission_plan = []
-        self.total_waypoints = 0
 
     async def is_mission_finished(self, drone_instance):
         return await drone_instance.drone.mission.is_mission_finished()

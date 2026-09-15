@@ -129,14 +129,25 @@ class FlightSession:
             await asyncio.sleep(self.poll_interval_s)
 
     async def _stop_background_tasks(self):
-        for task in (self._watcher_task, self._pipeline_task):
-            if task is not None and not task.done():
-                task.cancel()
-        pending = [t for t in (self._watcher_task, self._pipeline_task) if t is not None]
-        if pending:
-            await asyncio.gather(*pending, return_exceptions=True)
+        # The watcher only grabs frames so cancelling it immediately is safe.
+        if self._watcher_task is not None and not self._watcher_task.done():
+            self._watcher_task.cancel()
+            await asyncio.gather(self._watcher_task, return_exceptions=True)
+
         if self.pipeline is not None:
+            # Signals GCSPipeline.start() (via the _STOP sentinel) to drain
+            # whatever's left in the queue and exit on its own, instead of hard-cancelling it
             await self.pipeline.stop()
+
+        if self._pipeline_task is not None and not self._pipeline_task.done():
+            try:
+                async with asyncio.timeout(10):
+                    await self._pipeline_task
+            except TimeoutError:
+                print("-- Pipeline didn't drain in time; cancelling.")
+                self._pipeline_task.cancel()
+                await asyncio.gather(self._pipeline_task, return_exceptions=True)
+
         if self.capture is not None:
             await self.capture.close()
 
