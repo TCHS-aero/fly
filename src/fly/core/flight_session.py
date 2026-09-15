@@ -126,7 +126,7 @@ class FlightSession:
                     last_seen = current
                     self.resume.waypoint_done(current)
                     print(f"-- waypoint {current}/{total}")
-                await asyncio.sleep(self.poll_interval_s)
+            await asyncio.sleep(self.poll_interval_s)
 
     async def _stop_background_tasks(self):
         for task in (self._watcher_task, self._pipeline_task):
