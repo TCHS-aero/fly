@@ -5,18 +5,23 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fly"
 version = "0.1.0"
-description = "Drone CLI from Aero workspace"
+description = "Drone control from Aero workspace"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 dependencies = [
-  "mavsdk",
-  "PyQt6",
-  "qasync",
-  "asyncclick",
+    "mavsdk",
+    "PyQt6",
+    "qasync",
+    "asyncclick",
+    "numpy",
+    "pymap3d",
+    "haversine",
+    "aiofiles",
+    "opencv-python-headless",
 ]
 
 [project.scripts]
-aero_cli = "fly.interfaces.cli:main"
+aero = "fly.interfaces.cli:main"
 aero_gui = "fly.interfaces.gui:main"
 
 

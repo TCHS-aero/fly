@@ -1,0 +1,184 @@
+import asyncio
+import functools
+import json
+
+from fly.core.mission import Mission, sanitize_waypoint
+from fly.utils.geo import Point, haversine_m
+
+
+def require_safe_edit_window(func):
+    # checks if it's safe to edit. decorator so code isn't duplicated
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        if await self.safe_edit_index() is None:
+            print("-- Unable to edit mission.")
+            return
+        # if safe, do original function
+        return await func(self, *args, **kwargs)
+    return wrapper # runs once for each decorator call during Module Import Time
+
+class MissionEditor:
+    """
+    Mid-flight mission editing: pause, modify local json, re-upload, resume
+
+    1. acquire lock to prevent concurrent edits
+    2. record current waypoint index
+    3. pause the mission and wait for the drone to stop
+    4. Load, modify, and save the local json
+    5. upload the new mission and resume at corrected index
+    """
+
+    def __init__(self, drone, mission: Mission):
+        self.drone = drone
+        self.mission = mission
+        self._lock = asyncio.Lock()
+
+    async def current_index(self) -> int | None:
+        progress = await self.mission.get_mission_progress(self.drone)
+        if progress is None:
+            return None
+        current, _ = progress
+        return current
+
+    async def seconds_until_next_waypoint(self, current: int) -> float:
+        # returns estimated seconds until the next waypoint
+        # straight-line distance / ground speed. returns inf if speed = 0
+        # The GUI uses this to enable the edit button when the value exceeds 8s
+        # 1s to detect safe window, 1s to call pause_mission(), 3s drone to stop, 2s to upload, 1s buffer
+
+        info = await self.mission.get_current_next_waypoint_info(self.drone, current)
+        current_waypoint, next_waypoint = info
+        if next_waypoint is None: # mission complete
+            return float("inf")
+        if current_waypoint is None: # drone hasn't departed yet
+            return float("inf")
+
+        distance = haversine_m(
+            Point(current_waypoint.latitude_deg, current_waypoint.longitude_deg),
+            Point(next_waypoint.latitude_deg, next_waypoint.longitude_deg)
+        )
+
+        ground_speed = await self.drone.current_ground_speed()
+
+        if ground_speed == 0:
+            return float("inf")
+
+        return (distance / ground_speed)
+
+    async def safe_edit_index(self, time_buffer_s: int = 8) -> int | None:
+        current = await self.current_index()
+
+        if current is None:
+            # mission not active so we can't insert/append anything
+            print("-- Mission is likely inactive")
+            return None
+
+        time_to_next = await self.seconds_until_next_waypoint(current)
+
+        if time_to_next > time_buffer_s:
+            print(f"-- SAFE edit: {time_to_next:.1f}s until next waypoint")
+            return current
+        else:
+            print(f"-- UNSAFE edit: {time_to_next:.1f}s until next waypoint")
+            return None
+
+    async def _begin_edit(self) -> int | None:
+        idx = await self.safe_edit_index()
+        if idx is None:
+            print("-- Safety window closed by the time lock was acquired")
+        return idx
+
+    # public -----
+    @require_safe_edit_window
+    async def append_waypoint(self, wp:dict):
+        wp = sanitize_waypoint(wp)
+        async with self._lock:
+            idx = await self._begin_edit()
+            if idx is None:
+                return
+
+            await self._pause()
+            wps = self.mission.waypoints
+            wps.append(wp)
+            self._save(wps)
+            await self._upload_and_resume(wps, idx) # append never changes idx
+
+    @require_safe_edit_window
+    async def insert_waypoint(self, at: int, wp: dict):
+        wp = sanitize_waypoint(wp)
+        async with self._lock:
+            idx = await self._begin_edit()
+            if idx is None:
+                return
+
+            wps = self.mission.waypoints
+            if at < 0 or at > len(wps):
+                clamped = max(0, min(at, len(wps)))
+                print(f"-- insert_waypoint: index {at} out of range (0-{len(wps)}), clamping")
+                at = clamped
+
+            await self._pause()
+            wps.insert(at, wp)
+            self._save(wps)
+            adjusted_idx = idx + 1 if at <= idx else idx
+            await self._upload_and_resume(wps, adjusted_idx)
+
+    @require_safe_edit_window
+    async def remove_waypoint(self, at: int):
+        async with self._lock:
+            idx = await self._begin_edit()
+            if idx is None:
+                return
+
+            wps = self.mission.waypoints
+            if at < 0 or at >= len(wps):
+                print(f"-- remove_waypoint: index {at} out of range (0-{len(wps)-1})") # check happens before pause
+                return
+
+            await self._pause()
+            del wps[at]
+            self._save(wps)
+            if at < idx: # remove past waypoint
+                adjusted_idx = idx - 1
+            elif at == idx: # waypoint being removed is the one the drone is currently flying toward
+                adjusted_idx = min(idx, len(wps) - 1)
+                # essentially: if it's the final waypoint being removed, the current waypoint
+                # should be the past one (go back to the one before final): len(wps) - 1
+                # if the waypoint being removed is in the middle of the session, then it should skip over to the next one (idx)
+                # if they're the same index number (waypoint being removed is right before final) then they end up on the same result
+            else: # remove future waypoint; no change
+                adjusted_idx = idx
+            await self._upload_and_resume(wps, adjusted_idx)
+
+    # private helpers
+    async def _pause (self):
+        # pauses the mission and waits for velocity <.1 m/s. 10s timeout
+        await self.mission.pause_mission(self.drone)
+        try:
+            async with asyncio.timeout(10):
+                await self.drone.wait_until_stopped(0.1)
+        except TimeoutError:
+            print("-- Timeout 10s")
+
+    async def _upload_and_resume(self, waypoints: list[dict], resume_index:int):
+        # converts waypoints to missionitems, uploads, sets item, starts mission
+        # explicitly sync self.mission.waypoints to the edited list so convert_mission_items_to_plan always uses the correct data
+        self.mission.waypoints = waypoints
+
+        try:
+            await self.mission.upload_mission(self.drone)
+            await self.mission.set_current_mission_target(self.drone, resume_index)
+            await self.mission.start_mission(self.drone)
+            print("-- Upload and resume success.")
+        except Exception as e:
+            print(f"-- _upload_and_resume failed at resume_index={resume_index}: {e}")
+            raise
+
+    def _save(self, waypoints: list[dict]):
+        # writes waypoints
+        # there will no longer be a _meta key planned
+        if self.mission.path is None:
+            print("-- Cannot save: mission has no file path")
+            return
+        with open(self.mission.path, "w") as f:
+            json.dump([self.mission.RTL] + waypoints, f, indent = 2)

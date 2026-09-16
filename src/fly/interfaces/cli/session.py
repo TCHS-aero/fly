@@ -1,0 +1,150 @@
+# Shared helpers
+import re
+from pathlib import Path
+
+import asyncclick as click
+
+from fly.core.data_manager import (
+    get_setting,
+    pull_data,
+    update_port_data,
+    update_setting,
+)
+from fly.core.drone import Drone
+from fly.core.mission import Mission
+
+DEFAULT_PORT = "udpin://0.0.0.0:14540"
+
+_UDP_RE = re.compile(r"^udp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
+_TCP_RE = re.compile(r"^tcp(?:in|out)?://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
+_SERIAL_RE = re.compile(r"^serial://(/dev/[a-zA-Z0-9_-]+|COM[0-9]+)(:[0-9]+)?$")
+
+# Reused across flight/mission/run commands
+# `connect` keeps its own more detailed --port option the accepted port formats are documented.
+port_option = click.option("--port", help="Connection port. Defaults to the last-used port.")
+registry_option = click.option("--registry", default="poi_registry.json", show_default=True, help="POI registry file.")
+log_file_option = click.option("--log-file", default="flight_log.jsonl", show_default=True, help="Flight log file.")
+state_file_option = click.option("--state-file", default="resume_state.json", show_default=True, help="Resume state file.")
+
+def validate_port_format(port: str) -> bool:
+    # mirrors the port validation the old CLI attempted
+    return bool(_UDP_RE.match(port) or _TCP_RE.match(port) or _SERIAL_RE.match(port))
+
+def resolve_port(port: str | None) -> str:
+    # --port flag wins; otherwise fall back to the last-successful port saved
+    # in fly/config/settings.json; otherwise the standard SITL
+    if port:
+        return port
+
+    data = pull_data() or {}
+    saved = data.get("port")
+    if saved:
+        print(f"-- No `--port` given, using last-connected port: {saved}")
+        return saved
+
+    print(f"-- No `--port` given and no saved port on record, defaulting to {DEFAULT_PORT}")
+    return DEFAULT_PORT
+
+def _remember_port(port: str) -> None:
+    data = pull_data() or {}
+    history = data.get("port-history", [])
+    if port not in history:
+        history.append(port)
+    update_port_data(port=port, history=history)
+
+def resolve_setting(value, key: str, default=None, *, quiet: bool = False) -> str | None:
+    # generic version of resolve_port()
+    if value is not None:
+        return value
+
+    saved = get_setting(key)
+    if saved is not None:
+        if not quiet:
+            flag = key.replace("_", "-")
+            print(f"-- No `--{flag}` given, using last-used value: {saved}")
+        return saved
+
+    return default
+
+def remember_setting(key: str, value) -> None:
+    # Persist a value under `key` in settings.json for resolve_setting() to find next time
+    if value is None:
+        return
+    update_setting(key,value)
+
+async def get_connected_drone(port: str | None, *, timeout: int=10) -> Drone | None:
+    # resolves a port, validates, connects, remembers it on success
+    resolved = resolve_port(port)
+
+    if not validate_port_format(resolved):
+        print(
+            f"-- Invalid port format: {resolved!r}. Expected udp(in|out)://host:port, "
+            "tcp(in|out)://host:port, or serial://dev/tty...[:baud]."
+        )
+        return None
+
+    drone = Drone(resolved, connection_timeout=timeout)
+    print(f"-- Connecting to {resolved} ...")
+    connected = await drone.connect()
+    if not connected:
+        print("-- Connection failed; consider trying a different --port.")
+        return None
+
+    _remember_port(resolved)
+    return drone
+
+async def require_drone(port: str | None, *, timeout: int = 10) -> Drone:
+    drone = await get_connected_drone(port, timeout=timeout)
+    if not drone:
+        raise SystemExit(1)
+    return drone
+
+def load_mission(file: str | Path) -> Mission | None:
+    # parses json into Mission
+    path = Path(file)
+    if not path.exists():
+        print(f"-- Mission file not found: {path}")
+        return None
+    try:
+        return Mission(file=str(path))
+    except Exception as e:  # noqa
+        print(f"-- Failed to load mission {path}: {e}")
+        return None
+
+def require_mission(file: str | Path) -> Mission:
+    # load_mission() but exits on failure
+    mission = load_mission(file)
+    if not mission:
+        raise SystemExit(1)
+    return mission
+
+def resolve_data_dir_paths(
+    data_dir: str | None,
+    *,
+    image_dir: str | None = None,
+    poi_registry: str | None = None,
+    flight_log: str | None = None,
+    state_file: str | None = None
+) -> dict[str, str]:
+    # shared by `run`
+    # (flag > saved > .)
+    data_dir = resolve_setting(data_dir, "data-dir", ".", quiet=True) or "."  # or "." prevents linter thinking its None
+    base = Path(data_dir)
+    return {
+        "data_dir": data_dir,
+        "image_dir": image_dir or str(base / "captured_images"),
+        "poi_registry": poi_registry or str(base / "poi_registry.json"),
+        "flight_log": flight_log or str(base / "flight_log.jsonl"),
+        "state_file": state_file or str(base / "resume_state.json")
+    }
+
+
+def require_nano_detector():
+    try:
+        from fly.vision.rf_detr_nano import NanoDetector
+
+        return NanoDetector
+    except ImportError as e:
+        print(f"-- Vision dependencies not installed ({e}).")
+        print("-- Run src/fly/vision/setup_env.sh first.")
+        raise SystemExit(1) from e

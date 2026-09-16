@@ -1,0 +1,29 @@
+from fly.logging.flight_log import FlightLog
+from fly.utils.geo import Point, haversine_m
+
+
+def entries_near(log: FlightLog, pos:Point, radius_m: float) -> list[dict]:
+    # All entries whose capture position is within radius_m of pos,
+    # sorted by ascending distance
+    hits = sorted(
+        ((haversine_m(pos, Point(entry["lat"], entry["lon"])), entry) for entry in log.all_entries()),
+        key=lambda hit: hit[0]
+    )
+    return [entry for distance, entry in hits if distance <= radius_m]
+
+def entries_by_waypoint(log: FlightLog, wp_index: int) -> list[dict]:
+    return [e for e in log.all_entries() if e.get("wp_index") == wp_index]
+
+def entries_in_window(log: FlightLog, ts_start: str,  ts_end:str) -> list[dict]:
+    # all entries within the ISO 8601 timestamp range [ts_start, ts_end], inclusive
+    return[
+        e for e in log.all_entries()
+        if ts_start <= e.get("ts", "") <= ts_end
+    ]
+
+def nearest_entry(log: FlightLog, pos: Point) -> dict | None:
+    # the entry whose capture position is closest to pos. None if log is empty
+    entries = log.all_entries()
+    if not entries:
+        return None
+    return min(entries, key=lambda e: haversine_m(pos, Point(e["lat"], e["lon"])))
