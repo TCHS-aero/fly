@@ -138,13 +138,14 @@ async def _load_editor(file_: str, port: str | None) -> MissionEditor:
 def _extract_waypoints(waypoints_file: str | None, kwargs: dict) -> list[dict]:
     # validate flags/options and return a list of waypoint dicts to append or insert
     if waypoints_file:
-        if any(kwargs.get(k) is not None for k in ("lat", "lon", "alt")):
-            raise click.UsageError("--waypoints-file is mutually exclusive with --lat/--lon/--alt.")
+        # Only --lat/--lon signal deliberate manual entry
+        if any(kwargs.get(k) is not None for k in ("lat", "lon")):
+            raise click.UsageError("--waypoints-file is mutually exclusive with --lat/--lon.")
         with open(waypoints_file) as f:
             data = json.load(f)
         if not isinstance(data, list) or len(data) < 2:
             raise click.BadParameter(f"{waypoints_file} is not a valid mission file (expected [RTL, wp, ...]).")
-        return data [1:]
+        return data[1:]
 
     lat, lon, alt = kwargs.get("lat"), kwargs.get("lon"), kwargs.get("alt")
     if lat is None or lon is None or alt is None:
