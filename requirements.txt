@@ -1,4 +1,4 @@
-mavsdk
+mavsdk-grpc
 PyQt6
 qasync
 asyncclick

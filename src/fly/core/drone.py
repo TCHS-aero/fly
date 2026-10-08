@@ -1,7 +1,7 @@
 import asyncio
 
-from mavsdk import System
-from mavsdk.offboard import PositionGlobalYaw, VelocityNedYaw
+from mavsdk_grpc import System
+from mavsdk_grpc.offboard import PositionGlobalYaw, VelocityNedYaw
 
 
 class Drone:

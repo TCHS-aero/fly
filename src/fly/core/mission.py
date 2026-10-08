@@ -1,10 +1,11 @@
 import json
-import asyncio
-from mavsdk.mission import MissionItem, MissionPlan
-from mavsdk.telemetry import FlightMode
+
+from mavsdk_grpc.mission import MissionItem, MissionPlan
+from mavsdk_grpc.telemetry import FlightMode
+
 
 class Mission:
-    def __init__(self, *, file = None):
+    def __init__(self, *, file=None):
         self.file = file
         self.total_waypoints = 0
         self.mission_plan = []
@@ -27,23 +28,22 @@ class Mission:
             self.RTL = self.data.pop(0)
             self.waypoints = self.data
 
-
             for waypoint in self.waypoints:
-                
+
                 if None not in waypoint.values():
                     continue
-                
+
                 try:
-                    for item in waypoint.items():  
+                    for item in waypoint.items():
                         k, v = item
 
                         if v is None:
-                            waypoint[k] = float('nan')
+                            waypoint[k] = float("nan")
 
                 except Exception as e:
                     print(e)
-                    return 
-            
+                    return
+
             print("-- Success!")
             return self.waypoints
 
@@ -54,14 +54,21 @@ class Mission:
         if not self.downloaded_plan:
             self.downloaded_plan = await self.download_mission(drone_instance)
 
-        if current_progress is None or current_progress < 0 or current_progress >= len(self.downloaded_plan.mission_items):
+        if (
+            current_progress is None
+            or current_progress < 0
+            or current_progress >= len(self.downloaded_plan.mission_items)
+        ):
             return (self.downloaded_plan.mission_items[current_progress - 1]), None
 
         if current_progress == 0:
             return (None, self.downloaded_plan.mission_items[current_progress])
 
         try:
-            return (self.downloaded_plan.mission_items[current_progress - 1], self.downloaded_plan.mission_items[current_progress])
+            return (
+                self.downloaded_plan.mission_items[current_progress - 1],
+                self.downloaded_plan.mission_items[current_progress],
+            )
         except Exception:
             return (self.downloaded_plan.mission_items[current_progress], None)
 
@@ -79,27 +86,29 @@ class Mission:
     def convert_mission_items_to_plan(self):
         self.mission_plan = []
         for item in self.waypoints:
-           mission_item = MissionItem(
-                latitude_deg=item['latitude_deg'],
-                longitude_deg=item['longitude_deg'],
-                relative_altitude_m=item['relative_altitude_m'],
-                speed_m_s=item['speed_m_s'],
-                is_fly_through=item['is_fly_through'],
-                gimbal_pitch_deg=item['gimbal_pitch_deg'],
-                gimbal_yaw_deg=item['gimbal_yaw_deg'],
-                camera_action=MissionItem.CameraAction(item['camera_action']),
-                loiter_time_s=item['loiter_time_s'],
-                camera_photo_interval_s=item['camera_photo_interval_s'],
-                acceptance_radius_m=item['acceptance_radius_m'],
-                yaw_deg=item['yaw_deg'],
-                camera_photo_distance_m=item['camera_photo_distance_m'],
-                vehicle_action=MissionItem.VehicleAction(item['vehicle_action'])
-           )
-           self.mission_plan.append(mission_item)
+            mission_item = MissionItem(
+                latitude_deg=item["latitude_deg"],
+                longitude_deg=item["longitude_deg"],
+                relative_altitude_m=item["relative_altitude_m"],
+                speed_m_s=item["speed_m_s"],
+                is_fly_through=item["is_fly_through"],
+                gimbal_pitch_deg=item["gimbal_pitch_deg"],
+                gimbal_yaw_deg=item["gimbal_yaw_deg"],
+                camera_action=MissionItem.CameraAction(item["camera_action"]),
+                loiter_time_s=item["loiter_time_s"],
+                camera_photo_interval_s=item["camera_photo_interval_s"],
+                acceptance_radius_m=item["acceptance_radius_m"],
+                yaw_deg=item["yaw_deg"],
+                camera_photo_distance_m=item["camera_photo_distance_m"],
+                vehicle_action=MissionItem.VehicleAction(item["vehicle_action"]),
+            )
+            self.mission_plan.append(mission_item)
         return self.mission_plan
 
     async def return_to_launch_after_mission_completion(self, drone_instance, boolean):
-        return await drone_instance.drone.mission.set_return_to_launch_after_mission(boolean)
+        return await drone_instance.drone.mission.set_return_to_launch_after_mission(
+            boolean
+        )
 
     async def reset_mission(self, drone_instance):
         await self.set_current_mission_target(drone_instance, 0)
@@ -108,7 +117,9 @@ class Mission:
         await self.clear_mission(drone_instance)
         self.convert_mission_items_to_plan()
         if self.mission_plan:
-            await drone_instance.drone.mission.upload_mission(MissionPlan(self.mission_plan)) 
+            await drone_instance.drone.mission.upload_mission(
+                MissionPlan(self.mission_plan)
+            )
             return
         print("-- No mission to upload")
 
@@ -123,6 +134,7 @@ class Mission:
         await drone_instance.drone.mission.set_current_mission_item(index)
 
         self.RTL = False
+
     async def clear_mission(self, drone_instance):
         await drone_instance.drone.mission.clear_mission()
 
@@ -132,7 +144,7 @@ class Mission:
 
     async def is_mission_finished(self, drone_instance):
         return await drone_instance.drone.mission.is_mission_finished()
-    
+
     async def get_return_to_launch_after_mission(self, drone_instance):
         return drone_instance.drone.mission.get_return_to_launch_after_mission()
 
@@ -149,7 +161,6 @@ class Mission:
             if items[0].latitude_deg != items[0].latitude_deg:
                 return None
         return mission
-        
 
     async def download_mission_with_progress(self, drone_instance):
         return await drone_instance.drone.mission.download_mission_with_progress()
@@ -159,13 +170,15 @@ class Mission:
 
     async def upload_mission_with_progress(self, drone_instance, mission):
         self.convert_mission_items_to_plan()
-        await self.return_to_launch_after_mission_completion(drone_instance, return_to_launch)
-        await drone_instance.drone.mission.upload_mission_with_progress(MissionPlan(self.mission_plan))
+        await self.return_to_launch_after_mission_completion(
+            drone_instance, return_to_launch
+        )
+        await drone_instance.drone.mission.upload_mission_with_progress(
+            MissionPlan(self.mission_plan)
+        )
 
     async def is_drone_on_mission(self, drone_instance):
         async for current_mode in drone_instance.drone.telemetry.flight_mode():
             if current_mode == FlightMode.MISSION:
                 return True
-            return False   
-    
-
+            return False
