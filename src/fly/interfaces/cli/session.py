@@ -96,6 +96,7 @@ async def get_connected_drone(port: str | None, *, timeout: int=10) -> Drone | N
 async def require_drone(port: str | None, *, timeout: int = 10) -> Drone:
     drone = await get_connected_drone(port, timeout=timeout)
     if not drone:
+        print("-- Drone required but load drone failed. Exiting")
         raise SystemExit(1)
     return drone
 
@@ -115,6 +116,7 @@ def require_mission(file: str | Path) -> Mission:
     # load_mission() but exits on failure
     mission = load_mission(file)
     if not mission:
+        print("-- Mission required but load mission failed. Exiting")
         raise SystemExit(1)
     return mission
 
