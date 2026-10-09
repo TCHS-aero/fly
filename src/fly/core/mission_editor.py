@@ -33,6 +33,8 @@ class MissionEditor:
         self.mission = mission
         self._lock = asyncio.Lock()
 
+    # ---------------------------------------- Safety Checks ------------------------------------------------
+    # this function is only used to help safe_edit_index(). May be useful for future functionality
     async def current_index(self) -> int | None:
         progress = await self.mission.get_mission_progress(self.drone)
         if progress is None:
@@ -87,7 +89,7 @@ class MissionEditor:
         if idx is None:
             print("-- Safety window closed by the time lock was acquired")
         return idx
-
+    # ---------------------------------------- Safety Checks end ------------------------------------------------
     # public -----
     @require_safe_edit_window
     async def append_waypoint(self, wp:dict):
