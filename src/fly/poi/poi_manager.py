@@ -37,7 +37,7 @@ class POIManager:
         payload = json.dumps(list(self._pois.values()), indent = 2)
         async with aiofiles.open(tmp, "w") as f:
             await f.write(payload)
-        os.replace(str(tmp), str(self.path))
+        os.replace(tmp, self.path)
 
     async def add_detection(self, pos: Point, confidence: float, source_image:str) -> tuple[int, bool]:
         # merges into nearset POI within DEDUP_RADIUS_M, or creates a new one
