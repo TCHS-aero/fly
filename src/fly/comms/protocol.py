@@ -1,0 +1,25 @@
+from dataclasses import dataclass
+from datetime import UTC, datetime
+
+from fly.utils.geo import Point
+
+
+@dataclass  # dataclass writes the __init__ automatically
+class ImagePayload:
+    # One captured frame plus drone state at that moment
+    ts: str  # ISO 8601 UTC
+    lat: float
+    lon: float
+    alt_rel: float  # meters above home
+    wp_index: int
+    filename: str # filename instead of image path: helps with log lookup; building path is trivial (StreamCapture)
+    heading_deg: float = float("nan") # compass heading at capture time; required by utils.geo.pixel_to_ground()
+
+    @property
+    def pos(self) -> Point:
+        # Bridge to any geo function that takes a Point
+        return Point(self.lat, self.lon)
+
+    @staticmethod
+    def now_ts() -> str:  # `:-3` chops off 3 digits to get milliseconds
+        return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"

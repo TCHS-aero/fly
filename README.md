@@ -94,7 +94,7 @@ Now, you can run any script/interface by running it's binary. It should automati
 
 ```bash
 # Here is an example of running the CLI.
-aero_cli
+aero
 ```
 
 ```bash
@@ -124,7 +124,7 @@ Simply running the [drone simulation](#sim) will forward two ports, udp://0.0.0.
 
 ```bash
 # The "--port" flag is an optional setting, and is mainly used for actual drones. Ignoring it defaults the connection to 14540.
-aero_cli connect --port udpin://0.0.0.0:14540
+aero connect --port udpin://0.0.0.0:14540
 ```
 
 > [!NOTE]
@@ -141,7 +141,7 @@ You can find plugged USB's with the command `lsusb -t`.
 ```bash
 # Replace "ttyUSB0" with whatever USB port your telemetry radio is plugged in.
 # If you have a differently configured BAUD rate for your pixhawk, change "57600" to said rate.
-aero_cli connect --port serial:///dev/ttyUSB0:57600
+aero connect --port serial:///dev/ttyUSB0:57600
 ```
 
 </details>
@@ -152,7 +152,7 @@ aero_cli connect --port serial:///dev/ttyUSB0:57600
 ```bash
 # Replace "COM3" with whatever USB port your telemetry radio is plugged in. You can find your COM port via Device Manager.
 # If you have a differently configured BAUD rate for your pixhawk, change "57600" to said rate.
-aero_cli connect --port serial://COM3:57600 
+aero connect --port serial://COM3:57600 
 ```
 
 </details>
