@@ -1,8 +1,7 @@
 import json
 from pathlib import Path
-
-from mavsdk.mission import MissionItem, MissionPlan
-from mavsdk.telemetry import FlightMode
+from mavsdk_grpc.mission import MissionItem, MissionPlan
+from mavsdk_grpc.telemetry import FlightMode
 
 
 def sanitize_waypoint(wp: dict) -> dict:
@@ -10,7 +9,7 @@ def sanitize_waypoint(wp: dict) -> dict:
     return {k: (float("nan") if v is None else v) for k, v in wp.items()}
 
 class Mission:
-    def __init__(self, *, file = None):
+    def __init__(self, *, file=None):
         self.file = file
         self.mission_plan = []
         self.waypoints = []
@@ -76,27 +75,29 @@ class Mission:
     def convert_mission_items_to_plan(self):
         self.mission_plan = []
         for item in self.waypoints:
-           mission_item = MissionItem(
-                latitude_deg=item['latitude_deg'],
-                longitude_deg=item['longitude_deg'],
-                relative_altitude_m=item['relative_altitude_m'],
-                speed_m_s=item['speed_m_s'],
-                is_fly_through=item['is_fly_through'],
-                gimbal_pitch_deg=item['gimbal_pitch_deg'],
-                gimbal_yaw_deg=item['gimbal_yaw_deg'],
-                camera_action=MissionItem.CameraAction(item['camera_action']),
-                loiter_time_s=item['loiter_time_s'],
-                camera_photo_interval_s=item['camera_photo_interval_s'],
-                acceptance_radius_m=item['acceptance_radius_m'],
-                yaw_deg=item['yaw_deg'],
-                camera_photo_distance_m=item['camera_photo_distance_m'],
-                vehicle_action=MissionItem.VehicleAction(item['vehicle_action'])
-           )
-           self.mission_plan.append(mission_item)
+            mission_item = MissionItem(
+                latitude_deg=item["latitude_deg"],
+                longitude_deg=item["longitude_deg"],
+                relative_altitude_m=item["relative_altitude_m"],
+                speed_m_s=item["speed_m_s"],
+                is_fly_through=item["is_fly_through"],
+                gimbal_pitch_deg=item["gimbal_pitch_deg"],
+                gimbal_yaw_deg=item["gimbal_yaw_deg"],
+                camera_action=MissionItem.CameraAction(item["camera_action"]),
+                loiter_time_s=item["loiter_time_s"],
+                camera_photo_interval_s=item["camera_photo_interval_s"],
+                acceptance_radius_m=item["acceptance_radius_m"],
+                yaw_deg=item["yaw_deg"],
+                camera_photo_distance_m=item["camera_photo_distance_m"],
+                vehicle_action=MissionItem.VehicleAction(item["vehicle_action"]),
+            )
+            self.mission_plan.append(mission_item)
         return self.mission_plan
 
     async def return_to_launch_after_mission_completion(self, drone_instance, boolean):
-        return await drone_instance.drone.mission.set_return_to_launch_after_mission(boolean)
+        return await drone_instance.drone.mission.set_return_to_launch_after_mission(
+            boolean
+        )
 
     async def reset_mission(self, drone_instance):
         await self.set_current_mission_target(drone_instance, 0)

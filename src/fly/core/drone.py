@@ -1,8 +1,8 @@
 import asyncio
 from math import sqrt
 
-from mavsdk import System
-from mavsdk.offboard import PositionGlobalYaw, VelocityNedYaw
+from mavsdk_grpc import System
+from mavsdk_grpc.offboard import PositionGlobalYaw, VelocityNedYaw
 
 # NED axis index, used by current_ned() results and _move_axis_offset()
 _NORTH, _EAST, _DOWN = 0, 1, 2
