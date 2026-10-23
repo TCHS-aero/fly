@@ -3,8 +3,9 @@ from pathlib import Path
 
 import fly
 
-PACKAGE_DIR = Path(fly.__file__).resolve().parent # tracks the top of the fly package
+PACKAGE_DIR = Path(fly.__file__).resolve().parent  # tracks the top of the fly package
 settings = PACKAGE_DIR / "config" / "settings.json"
+
 
 def pull_data():
     try:
@@ -16,6 +17,7 @@ def pull_data():
         print(e)
         return None
 
+
 def _write_data(data: dict) -> None:
     # shared read-modify-write tail for update_port_data/update_mission_data/update_setting
     try:
@@ -24,6 +26,7 @@ def _write_data(data: dict) -> None:
         print("-- Writing Success!")
     except Exception as e:  # noqa
         print(e)
+
 
 def update_port_data(port: str | None = None, history: list | None = None):
     data = pull_data() or {}
@@ -42,6 +45,7 @@ def update_mission_data(current: int | None = None, total: int | None = None):
         data["total-mission-progress"] = total
     _write_data(data)
 
+
 def update_setting(key: str, value) -> None:
     # Generic single-key writer, for settings that don't warrant their own update_*_data() function
     # (rtsp-url, model-path, confidence-threshold).
@@ -50,6 +54,7 @@ def update_setting(key: str, value) -> None:
         print("-- Info: existing data is empty, writing into new file.")
     data[key] = value
     _write_data(data)
+
 
 def get_setting(key: str, default=None):
     data = pull_data()

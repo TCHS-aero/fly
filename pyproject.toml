@@ -24,6 +24,8 @@ dependencies = [
 aero = "fly.interfaces.cli:main"
 aero_gui = "fly.interfaces.gui:main"
 
+[tool.setuptools.package-data]
+fly = ["config/*.json"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
