@@ -3,6 +3,7 @@ from math import sqrt
 
 from mavsdk_grpc import System
 from mavsdk_grpc.offboard import PositionGlobalYaw, VelocityNedYaw
+from mavsdk_grpc.geofence import Point, Polygon, FenceType, GeofenceData, Circle
 
 # NED axis index, used by current_ned() results and _move_axis_offset()
 _NORTH, _EAST, _DOWN = 0, 1, 2
@@ -175,3 +176,14 @@ class Drone:
 
     async def land(self):
         await self.drone.action.land()
+
+    async def set_geofence(self, user_lat, user_lon):
+        async for terrain_info in drone.telemetry.home():
+                latitude = terrain_info.latitude_deg
+                longitude = terrain_info.longitude_deg
+                break
+        p1 = Point(latitude - user_lat, longitude - user_lon)
+        p2 = Point(latitude + user_lat, longitude - user_lon)
+        p3 = Point(latitude + user_lat, longitude + user_lon)
+        p4 = Point(latitude - user_lat, longitude + user_lon)
+        
