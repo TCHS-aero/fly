@@ -1,7 +1,7 @@
 import asyncio
 from math import sqrt
 
-from mavsdk_grpc import System
+from mavsdk_grpc import Syste
 from mavsdk_grpc.offboard import PositionGlobalYaw, VelocityNedYaw
 from mavsdk_grpc.geofence import Point, Polygon, FenceType, GeofenceData, Circle
 
@@ -177,7 +177,7 @@ class Drone:
     async def land(self):
         await self.drone.action.land()
 
-    async def set_geofence(self, user_lat, user_lon):
+    async def set_geofence(self, user_lat, user_lon, fence):
         async for terrain_info in drone.telemetry.home():
                 latitude = terrain_info.latitude_deg
                 longitude = terrain_info.longitude_deg
@@ -186,4 +186,6 @@ class Drone:
         p2 = Point(latitude + user_lat, longitude - user_lon)
         p3 = Point(latitude + user_lat, longitude + user_lon)
         p4 = Point(latitude - user_lat, longitude + user_lon)
-        
+        fence_type = FenceType.fence
+
+        polygon_fence = Polygon([p1, p2, p3, p4], fence_type)
